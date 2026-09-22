@@ -222,6 +222,8 @@ const SITE_PRESETS = [
    ts:[3,3,4,7,13,18,21,21,17,12,7,4], tb:[4,4,4,4,5,5,5,5,5,5,5,4]},
   {id:'koparki', name:'Koparki (Jaworzno)', rho:1.000,
    ts:[4,4,4,6,12,18,21,21,17,12,7,4], tb:[4,4,4,5,6,7,8,8,8,7,6,4]},
+  {id:'piechcin', name:'Piechcin (kamieniołom)', rho:1.000,
+   ts:[3,3,4,8,14,19,22,22,18,12,7,4], tb:[4,4,4,5,6,7,8,8,8,7,6,4]},
   {id:'honoratka', name:'Honoratka', rho:1.000,
    ts:[3,3,4,8,14,19,22,22,18,12,7,4], tb:[4,4,4,6,10,14,16,17,15,11,7,5]},
   {id:'deepspot', name:'Deepspot (basen)', rho:1.000,

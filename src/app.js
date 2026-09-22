@@ -1,6 +1,6 @@
 // ===== Aplikacja =====
 const KEY = 'balast-ocieplenie.v1';
-let S, L, T, memOnly = false, tab = 'calc', ui = {draft:null, editGear:null, editSite:null, addQ:'', addCat:'', confirmWipe:false, quick:null, siteQ:null, hl:0, wiz:0, delDiver:null};
+let S, L, T, memOnly = false, tab = 'calc', ui = {draft:null, editGear:null, editSite:null, addQ:'', addCat:'', confirmWipe:false, quick:null, siteQ:null, hl:0, wiz:0, delDiver:null, explain:false};
 const $ = s => document.querySelector(s);
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const fmt = (x, d = 1) => { const s = (Math.round(x * Math.pow(10, d)) / Math.pow(10, d)).toFixed(d); return LANG === 'en' ? s : s.replace('.', ','); };
@@ -61,6 +61,72 @@ function setIssues(items){
   if (!items.some(i => i.cat === 'bcd' || i.cat === 'wing')) iss.push(tr('kamizelki lub skrzydła'));
   if (!items.some(i => i.cat === 'tank')) iss.push(tr('butli'));
   return iss;
+}
+
+// ---------- ikony i kafelki wyboru (mniej wpisywania, więcej klikania) ----------
+const SVG = (inner, vb) => `<svg viewBox="${vb || '0 0 24 24'}" aria-hidden="true">${inner}</svg>`;
+// sylwetka: barki i talia w jednostkach SVG — różnica między budowami jest widoczna na kafelku
+const bodyIcon = (sh, wa) => SVG(`<circle cx="12" cy="4.8" r="2.7"/><path d="M${12 - sh} 9.8q0-1.2 ${sh} -1.2t${sh} 1.2l${wa - sh} 10.4q0 1.3 -${wa} 1.3t-${wa} -1.3z"/>`);
+const barsIcon = n => SVG([0, 1, 2, 3].map(i => `<rect x="${3 + i * 5}" y="${18 - i * 4}" width="3.6" height="${3 + i * 4}" rx="1"${i < n ? ' fill="currentColor"' : ''}/>`).join(''));
+const snowIcon = `<path d="M12 3v18M4.5 7.5l15 9M19.5 7.5l-15 9"/><path d="M12 6.5 9.8 5M12 6.5l2.2-1.5M12 17.5l-2.2 1.5M12 17.5l2.2 1.5"/>`;
+const flameIcon = `<path d="M12 3c.5 3 2 3.8 3.3 5.4A6 6 0 1 1 6 12.4c0-1.4.5-2.6 1.4-3.6.2 1.6.9 2.4 1.9 2.6C8.6 8 10.3 5.3 12 3z"/>`;
+const ICON = {
+  male: SVG('<circle cx="10" cy="14.2" r="5.2"/><path d="M14.2 10 20 4.2M15 4h5v5"/>'),
+  female: SVG('<circle cx="12" cy="9" r="5.2"/><path d="M12 14.2v7M9 18.2h6"/>'),
+  cold1: SVG(snowIcon),
+  temp: SVG('<path d="M14 14.9V5.5a2 2 0 1 0-4 0v9.4a4 4 0 1 0 4 0z"/><path d="M12 8.5v5.5"/>'),
+  warm1: SVG(flameIcon),
+  ok: SVG('<path d="M4.5 12.5 9.5 17.5 19.5 6.5"/>'),
+  edge: SVG('<path d="M3 15c2.2 0 2.2-3 4.5-3S9.7 15 12 15s2.2-3 4.5-3 2.2 3 4.5 3"/><path d="M12 3.5v3M12 19v2"/>'),
+  ask: SVG('<circle cx="12" cy="12" r="9"/><path d="M9.3 9.3a2.8 2.8 0 1 1 3.4 3.3c-.5.2-.7.6-.7 1.1v.6"/><path d="M12 17.4v.2"/>')
+};
+const THERM_ICON = {cold: ICON.cold1, cool: ICON.temp, ok: ICON.ok, warm: ICON.warm1};
+const FLAG = {
+  pl: `<svg viewBox="0 0 24 16" class="flag" aria-hidden="true"><rect x=".6" y=".6" width="22.8" height="14.8" rx="2" fill="#fff" stroke="#00000022"/><path d="M1 8h22v5.4a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2z" fill="#D4213D"/></svg>`,
+  en: `<svg viewBox="0 0 24 16" class="flag" aria-hidden="true"><rect width="24" height="16" rx="2" fill="#012169"/><path d="M0 0l24 16M24 0L0 16" stroke="#fff" stroke-width="3.2"/><path d="M0 0l24 16M24 0L0 16" stroke="#C8102E" stroke-width="1.8"/><path d="M12 0v16M0 8h24" stroke="#fff" stroke-width="5.2"/><path d="M12 0v16M0 8h24" stroke="#C8102E" stroke-width="3"/></svg>`
+};
+// kafelki: jeden tap zamiast wpisywania liczby
+function tiles(act, opts, on, cls){
+  return `<div class="picks${cls ? ' ' + cls : ''}" role="group">${opts.map(o =>
+    `<button type="button" class="pick${o.cls ? ' ' + o.cls : ''}" data-act="${act}" data-v="${esc(o.v)}" aria-pressed="${on(o)}">${o.icon || ''}<span>${esc(o.label)}</span>${o.sub ? `<small>${esc(o.sub)}</small>` : ''}</button>`).join('')}</div>`;
+}
+const fieldset = (lab, body, hint) => `<div class="fieldset"><span class="label">${lab}</span>${body}${hint ? `<p class="small muted" style="margin:6px 0 0">${hint}</p>` : ''}</div>`;
+function slider(k, lab, min, max, step, val, unit){
+  return `<div class="fieldset"><label class="label" for="pr-${k}">${lab}</label><div class="slider">
+    <input id="pr-${k}" type="range" min="${min}" max="${max}" step="${step}" value="${esc(val)}" data-act="slide" data-k="${k}">
+    <output class="val" id="out-${k}" for="pr-${k}">${fmt(+val, step < 1 ? 1 : 0)} ${unit}</output></div></div>`;
+}
+
+const AGE_BANDS = [{v:22, label:'do 25', lo:0, hi:25}, {v:30, label:'26–35', lo:26, hi:35}, {v:40, label:'36–45', lo:36, hi:45}, {v:50, label:'46–55', lo:46, hi:55}, {v:62, label:'56+', lo:56, hi:200}];
+const BUILD_SHAPE = {slim:[4.4, 3.6], athletic:[6.8, 4.4], muscular:[8.4, 5.8], average:[6, 5.8], fuller:[6.4, 8.2], obese:[7.2, 9.8]};
+// ikona pokazuje kierunek, rozmiar — natężenie; dokładną wartość widać w podpisie
+const COLD_LEVELS = [{v:-2, label:'Bardzo marznę', icon:ICON.cold1, cls:'big'}, {v:-1, label:'Marznę', icon:ICON.cold1, cls:'small'},
+  {v:0, label:'Przeciętnie', icon:ICON.temp}, {v:1, label:'Odporny', icon:ICON.warm1, cls:'small'}, {v:2, label:'Bardzo odporny', icon:ICON.warm1, cls:'big'}];
+const EXP_BANDS = [{v:0, key:'beg', label:'początkujący', sub:'< 25'}, {v:25, key:'mid', label:'średnio zaawansowany', sub:'25–99'}, {v:100, key:'exp', label:'doświadczony', sub:'100–299'}, {v:300, key:'pro', label:'bardzo doświadczony', sub:'300+'}];
+
+const langTiles = () => fieldset(tr('Język'), tiles('lang-pick', [{v:'pl', label:'Polski', icon:FLAG.pl}, {v:'en', label:'English', icon:FLAG.en}], o => o.v === LANG, 'two'));
+const sexTiles = pr => fieldset(tr('Płeć'), tiles('pick-sex', [{v:'M', label:tr('Mężczyzna'), icon:ICON.male}, {v:'K', label:tr('Kobieta'), icon:ICON.female}], o => o.v === pr.sex, 'two'));
+const ageTiles = pr => fieldset(tr('Wiek'), tiles('pick-age', AGE_BANDS.map(a => ({v:a.v, label:tr(a.label)})), o => { const a = AGE_BANDS.find(x => x.v === o.v); return pr.age >= a.lo && pr.age <= a.hi; }));
+const buildTiles = pr => fieldset(tr('Budowa'), tiles('pick-build', Object.keys(BUILD_SHAPE).map(k => ({v:k, label:lbl().build[k], icon:bodyIcon(...BUILD_SHAPE[k])})), o => o.v === pr.build));
+const coldTiles = pr => fieldset(tr('Tolerancja zimna'), tiles('pick-cold', COLD_LEVELS.map(c => ({v:c.v, label:tr(c.label), sub:sgn(c.v, 0) + ' °C', icon:c.icon, cls:c.cls})), o => Math.round(+pr.coldTol || 0) === o.v),
+  tr('Model i tak poprawi to po kilku ocenach ciepła.'));
+function expTiles(){
+  const cur = L.exp.key;
+  return fieldset(tr('Doświadczenie'), tiles('pick-exp', EXP_BANDS.map((e, i) => ({v:e.v, label:tr(e.label), sub:e.sub + ' ' + tr('nurk.'), icon:barsIcon(i + 1)})), o => EXP_BANDS.find(x => x.v === o.v).key === cur, 'rows'),
+    tr('Łącznie {n} nurk. — poziom podnosi się sam, gdy dopiszesz nurkowania do dziennika.', {n: L.total}));
+}
+// wynik dla ciała: odświeżany bez przebudowy widoku, o stałej wysokości
+function bodyOut(full){
+  const pr = P().profile, ok = profileOk(pr), b = ok ? bodyBuoy(pr, 1.025) : null;
+  const row = (dt, dd) => `<dt>${dt}</dt><dd>${dd}</dd>`;
+  return `<dl class="kv fixed">${row(tr('Tłuszcz'), ok ? fmt(b.bf * 100) + ' %' : '—')}
+    ${full ? row(tr('Gęstość ciała'), ok ? fmt(b.dens, 3) + ' kg/l' : '—') + row(tr('Powierzchnia ciała'), ok ? fmt(bsa(pr), 2) + ' m²' : '—') : ''}
+    ${row(tr('Wyporność ciała w morzu, pół oddechu'), ok ? sgn(b.tissue + b.lungs) + ' kg' : '—')}</dl>`;
+}
+const bodyOutBox = full => `<div id="body-out" data-full="${full ? 1 : 0}" style="margin-top:14px">${bodyOut(full)}</div>`;
+function refreshBody(){
+  const el = document.getElementById('body-out');
+  if (el) el.innerHTML = bodyOut(el.dataset.full === '1');
 }
 
 // ---------- komponenty ----------
@@ -142,7 +208,9 @@ function distribution(p, items){
   return s + '.';
 }
 function thermalVerdict(m){
-  return m >= 1 ? `<span class="pill good">${tr('Wystarczy')}</span>` : m >= 0 ? `<span class="pill warn">${tr('Na granicy')}</span>` : `<span class="pill bad">${tr('Za zimno')}</span>`;
+  return m >= 1 ? `<span class="pill good">${ICON.ok}${tr('Wystarczy')}</span>`
+    : m >= 0 ? `<span class="pill warn">${ICON.edge}${tr('Na granicy')}</span>`
+    : `<span class="pill bad">${ICON.cold1}${tr('Za zimno')}</span>`;
 }
 function advisor(pl, curItems){
   const base = curItems.filter(i => !EXPO.includes(i.cat));
@@ -201,13 +269,19 @@ function viewCalc(){
   const delta = (+P().profile.coldTol || 0) + T.delta, tef = tEf(pl, delta), th = thermalOfSet(items, pl.depth), m = tef - th.comfort;
   const tb = tBreak(pl);
   const adv = advisor(pl, items), site = siteOf(pl.siteId), curExpo = items.filter(i => EXPO.includes(i.cat));
-  return `<div class="stack">
-  <section class="card"><h2>${tr('Balast')} <small>${tr('zakres 80%: {a}–{b} kg', {a: fmt(Math.max(0, p.lo)), b: fmt(p.hi)})}</small></h2>
+  const leadDetail = `<section class="card" id="lead-detail"><h2>${tr('Balast')} <small>${tr('zakres 80%: {a}–{b} kg', {a: fmt(Math.max(0, p.lo)), b: fmt(p.hi)})}</small></h2>
     <div class="small muted">${esc(siteName(site))} · ${L.n ? tr('nauka z {n} nurk. w dzienniku', {n: L.n}) : tr('bez nauki, tylko fizyka')} · ${tr('doświadczenie: {n} nurk. ({l})', {n: L.total, l: tr(L.exp.label)})}</div>
     ${scaleHtml(p)}
     ${iss.length ? `<div class="banner" style="margin-top:28px">${tr('Zestaw nie ma {x} — wynik jest niepełny.', {x: iss.join(tr(' ani '))})}</div>` : ''}
     <div class="note">${esc(distribution(p, items))} ${tr('Przy pierwszym nurkowaniu w tej konfiguracji zrób kontrolę na 5 m z rezerwą i pustą kamizelką.')}</div>
   </section>
+
+  <section class="card"><h2>${tr('Skąd ta liczba')} <small>${tr('kg wyporności na 5 m')}</small></h2>${barsHtml(p)}
+    <p class="small muted" style="margin:12px 0 0">${tr('Suma w wodzie {w} kg to {d} kg suchego ołowiu (ołów też wypiera wodę), zaokrąglone w górę do 0,5 kg.', {w: sgn(p.water), d: fmt(p.dry)})}</p></section>`;
+
+  return `<div class="stack">
+  <section class="card"><h2>${tr('Nurkowanie')}</h2>${planFields(pl, 'p-')}
+    <p class="small muted" style="margin:10px 0 0">${tr('Temperatury podpowiada akwen dla wybranego miesiąca; wpisz własne, jeśli znasz aktualne.')}</p></section>
 
   <section class="card"><h2>${tr('Ocieplenie')} <small>${tr('temperatura nurkowania {t} °C', {t: fmt(tb.t)})}</small></h2>
     <div class="therm-head"><div class="small">${tr('Twój zestaw daje Ci komfort od')} <b class="mono">${fmt(th.comfort - delta)} °C</b></div>${thermalVerdict(m)}</div>
@@ -224,17 +298,13 @@ function viewCalc(){
     </div>
   </section>
 
-  <section class="card"><h2>${tr('Nurkowanie')}</h2>${planFields(pl, 'p-')}
-    <p class="small muted" style="margin:10px 0 0">${tr('Temperatury podpowiada akwen dla wybranego miesiąca; wpisz własne, jeśli znasz aktualne.')}</p></section>
-
   <section class="card"><div class="therm-head" style="margin-bottom:10px"><h2 style="margin:0">${tr('Zestaw')}</h2>
     <button class="sm${ui.quick ? ' ghost' : ''}" data-act="quick-open" aria-expanded="${!!ui.quick}">${tr(ui.quick ? 'Zamknij' : '+ Dodaj sprzęt')}</button></div>
     ${ui.quick ? quickAdd() : ''}
     ${ui.editGear && P().wardrobe.some(w => w.uid === ui.editGear) ? `<div class="label" style="margin-top:4px">${tr('Dodane: {x}', {x: esc(nm(P().wardrobe.find(w => w.uid === ui.editGear)))})}</div>${paramEditor(P().wardrobe.find(w => w.uid === ui.editGear))}<div style="height:12px"></div>` : ''}
     ${chipsFor(pl.items, 'plan-toggle')}</section>
 
-  <section class="card"><h2>${tr('Skąd ta liczba')} <small>${tr('kg wyporności na 5 m')}</small></h2>${barsHtml(p)}
-    <p class="small muted" style="margin:12px 0 0">${tr('Suma w wodzie {w} kg to {d} kg suchego ołowiu (ołów też wypiera wodę), zaokrąglone w górę do 0,5 kg.', {w: sgn(p.water), d: fmt(p.dry)})}</p></section>
+  ${ui.explain ? leadDetail : ''}
 
   <button class="primary" data-act="log-from-plan">${tr('Po nurkowaniu: zapisz i oceń')}</button>
   </div>`;
@@ -261,7 +331,7 @@ function viewLog(){
 }
 function viewDraft(){
   const d = ui.draft, isNew = !P().dives.some(x => x.id === d.id);
-  const seg = (name, cls, opts, val) => `<div class="seg ${cls}" role="group">${opts.map(([v, l]) => `<button data-act="seg" data-name="${name}" data-v="${v}" aria-pressed="${val === v}">${tr(l)}</button>`).join('')}</div>`;
+  const seg = (name, cls, opts, val, icons) => `<div class="seg ${cls}" role="group">${opts.map(([v, l]) => `<button data-act="seg" data-name="${name}" data-v="${v}" aria-pressed="${val === v}">${icons && icons[v] || ''}${tr(l)}</button>`).join('')}</div>`;
   return `<div class="stack">
     <section class="card"><h2>${tr(isNew ? 'Nowe nurkowanie' : 'Edycja nurkowania')}</h2>${planFields(d, 'd-')}</section>
     <section class="card"><h2>${tr('Użyty zestaw')}</h2>${chipsFor(d.items, 'draft-toggle')}</section>
@@ -271,7 +341,7 @@ function viewDraft(){
       <div class="label" style="margin:12px 0 5px">${tr('Na 5 m, z rezerwą i pustą kamizelką było')}</div>
       ${seg('leadFb', 'lead', [['light','Za lekko'],['ok','OK'],['heavy','Za ciężko']], d.leadFb)}
     </section>
-    <section class="card"><h2>${tr('Komfort cieplny')}</h2>${seg('thermal', 'therm', [['cold','Zimno'],['cool','Chłodno'],['ok','OK'],['warm','Za ciepło']], d.thermal)}
+    <section class="card"><h2>${tr('Komfort cieplny')}</h2>${seg('thermal', 'therm', [['cold','Zimno'],['cool','Chłodno'],['ok','OK'],['warm','Za ciepło']], d.thermal, THERM_ICON)}
       <div class="f" style="margin-top:12px"><label for="d-note">${tr('Notatka')}</label><input id="d-note" type="text" data-f="note" value="${esc(d.note || '')}"></div></section>
     <div class="btnrow"><button class="primary" data-act="save-dive">${tr('Zapisz nurkowanie')}</button><button class="ghost" data-act="cancel-dive">${tr('Anuluj')}</button>
     ${isNew ? '' : `<button class="danger" data-act="del-dive">${tr('Usuń')}</button>`}</div></div>`;
@@ -338,27 +408,27 @@ function viewSites(){
   </div><div class="btnrow"><button data-act="add-site">${tr('Dodaj akwen')}</button></div></section></div>`;
 }
 
+const nameField = pr => `<div class="f"><label for="pr-name">${tr('Imię')}</label><input id="pr-name" type="text" data-pr="name" value="${esc(pr.name ?? '')}" placeholder="${tr('opcjonalnie')}"></div>`;
+const bfField = pr => `<div class="f"><label for="pr-bf">${tr('% tłuszczu (opcjonalnie)')}</label><input id="pr-bf" type="number" inputmode="decimal" data-pr="bf" value="${esc(pr.bf ?? '')}" placeholder="${tr('z wagi BIA')}"></div>`;
+
 function viewProfile(){
-  const pr = P().profile, b = bodyBuoy(pr, 1.025);
+  const pr = P().profile;
   const sd0 = Math.sqrt(L.cov[0][0]);
-  const fld = (k, lab, type = 'number', extra = '') => `<div class="f"><label for="pr-${k}">${tr(lab)}</label><input id="pr-${k}" type="${type}" data-pr="${k}" value="${esc(pr[k] ?? '')}" ${extra}></div>`;
   const learnedItems = L.feats.map((w, i) => ({w, v: L.theta[i + 1], sd: Math.sqrt(L.cov[i + 1][i + 1])})).filter(x => Math.abs(x.v) >= 0.05);
   return `<div class="stack">
   ${diversCard()}
-  <section class="card"><h2>${tr('Profil nurka')}</h2><div class="grid2">
-    <div class="f wide"><label for="pr-lang">${tr('Język')}</label><select id="pr-lang" data-act="lang-sel"><option value="pl"${LANG === 'pl' ? ' selected' : ''}>Polski</option><option value="en"${LANG === 'en' ? ' selected' : ''}>English</option></select></div>
-    ${fld('name', 'Imię', 'text')}
-    <div class="f"><label for="pr-sex">${tr('Płeć')}</label><select id="pr-sex" data-pr="sex"><option value="M"${pr.sex === 'M' ? ' selected' : ''}>${tr('Mężczyzna')}</option><option value="K"${pr.sex === 'K' ? ' selected' : ''}>${tr('Kobieta')}</option></select></div>
-    ${fld('age', 'Wiek (lata)')}${fld('height', 'Wzrost (cm)')}${fld('weight', 'Waga (kg)', 'number', 'step="0.5"')}
-    <div class="f"><label for="pr-build">${tr('Budowa')}</label><select id="pr-build" data-pr="build">${Object.entries(lbl().build).map(([v, l]) => `<option value="${v}"${pr.build === v ? ' selected' : ''}>${l}</option>`).join('')}</select></div>
-    ${fld('bf', '% tłuszczu (opcjonalnie)', 'number', `placeholder="${tr('z wagi BIA')}"`)}
-    ${fld('coldTol', 'Tolerancja zimna (°C)', 'number', 'step="0.5" min="-3" max="3"')}
-    ${fld('divesBefore', 'Nurkowania poza dziennikiem', 'number', 'min="0" inputmode="numeric"')}
-    <div class="f"><span class="label">${tr('Doświadczenie łącznie')}</span><div class="mono" style="padding:9px 0">${L.total} ${tr('nurk.')} · ${esc(tr(L.exp.label))}</div></div>
-  </div>
-  <dl class="kv" style="margin-top:14px"><dt>${tr(pr.bf ? 'Tłuszcz (podany)' : 'Tłuszcz (szacunek z BMI i budowy)')}</dt><dd>${fmt(b.bf * 100)} %</dd>
-    <dt>${tr('Gęstość ciała')}</dt><dd>${fmt(b.dens, 3)} kg/l</dd><dt>${tr('Powierzchnia ciała')}</dt><dd>${fmt(bsa(pr), 2)} m²</dd>
-    <dt>${tr('Wyporność ciała w morzu, pół oddechu')}</dt><dd>${sgn(b.tissue + b.lungs)} kg</dd></dl></section>
+  <section class="card"><h2>${tr('Profil nurka')}</h2>
+    ${langTiles()}
+    <div class="fieldset">${nameField(pr)}</div>
+    ${sexTiles(pr)}
+    ${ageTiles(pr)}
+    ${slider('height', tr('Wzrost'), 130, 210, 1, pr.height, 'cm')}
+    ${slider('weight', tr('Waga'), 35, 180, 0.5, pr.weight, 'kg')}
+    ${buildTiles(pr)}
+    <div class="fieldset">${bfField(pr)}</div>
+    ${coldTiles(pr)}
+    ${expTiles()}
+    ${bodyOutBox(true)}</section>
 
   <section class="card"><h2>${tr('Czego nauczył się model')}</h2>
     <dl class="kv"><dt>${tr('Nurkowania z oceną balastu')}</dt><dd>${L.n}</dd>
@@ -396,43 +466,33 @@ const wizNav = (back, next) => `<div class="btnrow"><button class="primary" data
 
 function viewWizard(){
   const pr = P().profile, step = ui.wiz;
-  const fld = (k, lab, type = 'number', extra = '') => `<div class="f"><label for="pr-${k}">${tr(lab)}</label><input id="pr-${k}" type="${type}" data-pr="${k}" value="${esc(pr[k] ?? '')}" ${extra}></div>`;
   if (step === 0) return `<div class="stack"><section class="card">
     <h2>${tr('Witaj')}</h2>
     <p style="margin:8px 0 0">${tr('Policzę, ile ołowiu zabrać i jaki zestaw ocieplenia założyć, a po każdym nurkowaniu nauczę się z Twojej oceny. Najpierw kilka pytań o Ciebie — bez nich wynik byłby zgadywaniem.')}</p>
     <p class="small muted" style="margin:8px 0 0">${tr('Dane zostają w tym telefonie: bez konta, bez serwera, bez wysyłania czegokolwiek.')}</p>
-    <div class="f" style="margin-top:14px"><label for="pr-lang">${tr('Język')}</label><select id="pr-lang" data-act="lang-sel"><option value="pl"${LANG === 'pl' ? ' selected' : ''}>Polski</option><option value="en"${LANG === 'en' ? ' selected' : ''}>English</option></select></div>
+    ${langTiles()}
     <div class="btnrow"><button class="primary" data-act="wiz-next">${tr('Wypełnij profil')}</button><button class="ghost" data-act="seed">${tr('Zobacz przykład')}</button><button class="ghost" data-act="wiz-skip">${tr('Pomiń')}</button></div>
   </section></div>`;
   if (step === 1) return `<div class="stack"><section class="card">
     ${wizHead(1, tr('Kim jesteś'), tr('Imię przyda się tylko wtedy, gdy z aplikacji korzysta więcej niż jedna osoba.'))}
-    <div class="grid2" style="margin-top:12px">
-      ${fld('name', 'Imię', 'text', `placeholder="${tr('opcjonalnie')}"`)}
-      <div class="f"><label for="pr-sex">${tr('Płeć')}</label><select id="pr-sex" data-pr="sex"><option value="M"${pr.sex === 'M' ? ' selected' : ''}>${tr('Mężczyzna')}</option><option value="K"${pr.sex === 'K' ? ' selected' : ''}>${tr('Kobieta')}</option></select></div>
-      ${fld('age', 'Wiek (lata)', 'number', 'min="8" max="99" inputmode="numeric"')}
-    </div>
+    <div class="fieldset">${nameField(pr)}</div>
+    ${sexTiles(pr)}
+    ${ageTiles(pr)}
     <p class="small muted" style="margin:10px 0 0">${tr('Płeć i wiek wchodzą do szacunku tkanki tłuszczowej i pojemności płuc — stąd wyporność ciała.')}</p>
     ${wizNav(true)}</section></div>`;
-  if (step === 2){
-    return `<div class="stack"><section class="card">
+  if (step === 2) return `<div class="stack"><section class="card">
     ${wizHead(2, tr('Twoje ciało'), tr('To najważniejsze liczby dla balastu: im więcej tkanki tłuszczowej, tym więcej ołowiu.'))}
-    <div class="grid2" style="margin-top:12px">
-      ${fld('height', 'Wzrost (cm)', 'number', 'min="100" max="250" inputmode="numeric"')}
-      ${fld('weight', 'Waga (kg)', 'number', 'step="0.5" min="25" max="300" inputmode="decimal"')}
-      <div class="f"><label for="pr-build">${tr('Budowa')}</label><select id="pr-build" data-pr="build">${Object.entries(lbl().build).map(([v, l]) => `<option value="${v}"${pr.build === v ? ' selected' : ''}>${l}</option>`).join('')}</select></div>
-      ${fld('bf', '% tłuszczu (opcjonalnie)', 'number', `placeholder="${tr('z wagi BIA')}"`)}
-    </div>
-    <div id="wiz-preview" style="margin-top:14px">${wizPreview()}</div>
+    ${slider('height', tr('Wzrost'), 130, 210, 1, pr.height, 'cm')}
+    ${slider('weight', tr('Waga'), 35, 180, 0.5, pr.weight, 'kg')}
+    ${buildTiles(pr)}
+    <div class="fieldset">${bfField(pr)}</div>
+    ${bodyOutBox(false)}
     <p class="small muted" style="margin:8px 0 0">${tr('Tłuszcz szacuję z BMI i budowy; własny % z wagi BIA będzie dokładniejszy.')}</p>
     ${wizNav(true)}</section></div>`;
-  }
   if (step === 3) return `<div class="stack"><section class="card">
     ${wizHead(3, tr('Doświadczenie i zimno'), tr('Początkujący nurkowie zwykle potrzebują trochę więcej ołowiu — model uwzględni to na starcie i poprawi po Twoich ocenach.'))}
-    <div class="grid2" style="margin-top:12px">
-      ${fld('divesBefore', 'Nurkowania poza dziennikiem', 'number', 'min="0" inputmode="numeric"')}
-      ${fld('coldTol', 'Tolerancja zimna (°C)', 'number', 'step="0.5" min="-3" max="3"')}
-    </div>
-    <p class="small muted" style="margin:10px 0 0">${tr('Tolerancja zimna: 0 to przeciętnie. Plus, jeśli marzniesz rzadziej niż inni, minus, jeśli częściej. Aplikacja i tak poprawi tę wartość po kilku ocenach.')}</p>
+    ${expTiles()}
+    ${coldTiles(pr)}
     ${wizNav(true)}</section></div>`;
   return `<div class="stack"><section class="card">
     ${wizHead(4, tr('Twój sprzęt'), tr('Ostatnia decyzja: od czego zacząć szafę. Jedno i drugie zmienisz później w zakładce Szafa.'))}
@@ -445,11 +505,6 @@ function viewWizard(){
         <div class="desc">${tr('Zostaje sam automat. Sprzęt dodasz z katalogu w zakładce Szafa.')}</div></div>
     </div>
     <div class="btnrow"><button class="ghost" data-act="wiz-back">${tr('Wstecz')}</button></div></section></div>`;
-}
-function wizPreview(){
-  const pr = P().profile, ok = profileOk(pr), b = ok ? bodyBuoy(pr, 1.025) : null;
-  return `<dl class="kv fixed"><dt>${tr('Tłuszcz')}</dt><dd>${ok ? fmt(b.bf * 100) + ' %' : '—'}</dd>
-    <dt>${tr('Wyporność ciała w morzu, pół oddechu')}</dt><dd>${ok ? sgn(b.tissue + b.lungs) + ' kg' : '—'}</dd></dl>`;
 }
 function wizGear(kind){
   const p = P();
@@ -492,7 +547,9 @@ function summaryHtml(){
   const order = ['wetsuit','over','hood','dry','under','bcd','wing','tank','fins'];
   const shown = items.filter(i => order.includes(i.cat)).sort((a, b) => order.indexOf(a.cat) - order.indexOf(b.cat));
   return `<div class="sb" role="status" aria-live="polite">
-    <div class="sb-lead"><div class="label">${tr('Ołów')}</div><div class="sb-big">${fmt(p.rec)}<small>kg</small></div><div class="range">${fmt(Math.max(0, p.lo))}–${fmt(p.hi)}</div></div>
+    <div class="sb-lead"><div class="sb-head"><span class="label">${tr('Ołów')}</span>
+        <button class="sb-q" data-act="explain" aria-expanded="${!!ui.explain}" aria-controls="lead-detail" title="${tr('Wyjaśnij')}" aria-label="${tr('Wyjaśnij')}">${ICON.ask}</button></div>
+      <div class="sb-big">${fmt(p.rec)}<small>kg</small></div><div class="range">${fmt(Math.max(0, p.lo))}–${fmt(p.hi)}</div></div>
     <div class="sb-set"><div class="label">${tr('Zestaw')}</div>
       <div class="sb-items">${shown.map(i => esc(short(i))).join(' · ') || tr('Nic nie wybrano')}</div>
       <div class="sb-therm"><span>${tr('woda')} <b class="mono">${fmt(tBreak(pl).t)}°</b> · ${tr('komfort od')} <b class="mono">${fmt(th.comfort - delta)}°</b></span>${thermalVerdict(tef - th.comfort)}</div>
@@ -524,6 +581,11 @@ function draftFromPlan(){
 function setLang(l){ LANG = l; S.lang = l; save(); render(); }
 $('#lang').addEventListener('click', () => setLang(LANG === 'pl' ? 'en' : 'pl'));
 $('#who').addEventListener('change', e => { if (e.target.id === 'who-sel') switchDiver(e.target.value); });
+$('#summary').addEventListener('click', e => {
+  if (!e.target.closest('[data-act="explain"]')) return;
+  ui.explain = !ui.explain; render();
+  if (ui.explain){ const el = document.getElementById('lead-detail'); if (el) el.scrollIntoView({behavior:'smooth', block:'start'}); }
+});
 document.querySelector('nav.tabs').addEventListener('click', e => {
   const b = e.target.closest('button[data-tab]'); if (!b) return;
   tab = b.dataset.tab; ui.editGear = ui.editSite = ui.quick = ui.siteQ = null; ui.confirmWipe = false; render(); window.scrollTo(0, 0);
@@ -537,6 +599,16 @@ view.addEventListener('mousedown', e => { const b = e.target.closest('[data-act=
 view.addEventListener('click', e => {
   const b = e.target.closest('[data-act]'); if (!b || b.tagName === 'INPUT' || b.tagName === 'SELECT') return;
   const a = b.dataset.act;
+  if (a === 'lang-pick') return setLang(b.dataset.v);
+  if (a.startsWith('pick-')){
+    const pr = P().profile, v = b.dataset.v;
+    if (a === 'pick-sex') pr.sex = v;
+    else if (a === 'pick-age') pr.age = +v;
+    else if (a === 'pick-build') pr.build = v;
+    else if (a === 'pick-cold') pr.coldTol = +v;
+    else if (a === 'pick-exp') pr.divesBefore = Math.max(0, +v - P().dives.length);   // poziom podnosi się sam wraz z dziennikiem
+    return commit();
+  }
   if (a === 'wiz-next'){
     if (ui.wiz === 2 && !profileOk(P().profile)){ toast(tr('Wpisz wiek, wzrost i wagę — bez nich nie policzę wyporności ciała.')); return; }
     ui.wiz = Math.min(WIZ_STEPS, ui.wiz + 1); render(); return window.scrollTo(0, 0); }
@@ -628,8 +700,16 @@ view.addEventListener('keydown', e => {
   else if (e.key === 'Enter'){ e.preventDefault(); if (list[ui.hl]) pickSite(ui.siteQ.pre, list[ui.hl].id); }
   else if (e.key === 'Escape'){ ui.siteQ = null; render(); t.blur(); }
 });
+const SLIDE_UNIT = {height:'cm', weight:'kg'};
 view.addEventListener('input', e => {
   const t = e.target;
+  if (t.dataset.act === 'slide'){
+    const k = t.dataset.k, v = +t.value;
+    P().profile[k] = v;
+    const out = document.getElementById('out-' + k);
+    if (out) out.textContent = fmt(v, k === 'weight' ? 1 : 0) + ' ' + SLIDE_UNIT[k];
+    return refreshBody();
+  }
   if (t.dataset.act === 'siteq'){ ui.siteQ = {pre: t.dataset.pre, q: t.value}; ui.hl = 0; return render(); }
   if (t.dataset.date){
     const d = t.value.replace(/\D/g, '').slice(0, 8);
@@ -642,8 +722,8 @@ view.addEventListener('input', e => {
 });
 view.addEventListener('change', e => {
   const t = e.target, v = t.value;
+  if (t.dataset.act === 'slide'){ save(); recompute(); return; }
   if (t.id === 'bk-file' && t.files[0]){ t.files[0].text().then(importText); return; }
-  if (t.dataset.act === 'lang-sel') return setLang(v);
   if (t.dataset.act === 'qc'){ ui.addCat = v; return render(); }
   if (t.dataset.act === 'qqc'){ ui.quick.cat = v; return render(); }
   if (t.dataset.act === 'siteq') return;
@@ -662,8 +742,8 @@ view.addEventListener('change', e => {
   }
   if (t.dataset.pr){
     const k = t.dataset.pr; P().profile[k] = ['name','sex','build'].includes(k) ? v : (k === 'bf' ? (v === '' ? '' : num(v)) : num(v));
-    if (wizardOn()){ save(); recompute(); const el = document.getElementById('wiz-preview'); if (el) el.innerHTML = wizPreview(); return; }
-    return commit();
+    save(); recompute(); refreshBody();
+    return;
   }
   if (t.dataset.w || t.dataset.p){
     const w = P().wardrobe.find(x => x.uid === ui.editGear); if (!w) return;

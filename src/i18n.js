@@ -1,6 +1,10 @@
 // ===== Język =====
 const EN = {
   // kreator profilu i nurkowie
+  'Wyjaśnij':'Explain','Wiek':'Age','Wzrost':'Height','Waga':'Weight','do 25':'under 25','Tolerancja zimna':'Cold tolerance','Doświadczenie':'Experience',
+  'Bardzo marznę':'I get cold fast','Marznę':'I get cold easily','Przeciętnie':'Average','Odporny':'Cold-resistant','Bardzo odporny':'Very cold-resistant',
+  'Model i tak poprawi to po kilku ocenach ciepła.':'The model corrects this anyway after a few warmth ratings.',
+  'Łącznie {n} nurk. — poziom podnosi się sam, gdy dopiszesz nurkowania do dziennika.':'{n} dives in total — the level moves up on its own as you log more dives.',
   'Nurek {n}':'Diver {n}','Krok {n} z {m}':'Step {n} of {m}','Wstecz':'Back','Dalej':'Next','Pomiń':'Skip','Na pewno?':'Sure?',
   'Witaj':'Welcome',
   'Policzę, ile ołowiu zabrać i jaki zestaw ocieplenia założyć, a po każdym nurkowaniu nauczę się z Twojej oceny. Najpierw kilka pytań o Ciebie — bez nich wynik byłby zgadywaniem.':'I work out how much lead to take and which exposure suit to wear, and after every dive I learn from your rating. First a few questions about you — without them the result would be guesswork.',
@@ -106,7 +110,7 @@ const LBL = {
       cover:{full:'Full', longjohn:'Long john', shorty:'Shorty', overhood:'Hooded overlayer', vest:'Vest', hood:'Hood', gloves:'Gloves', boots:'Boots'},
       water:{'1.029':'Red Sea · 40‰','1.028':'Mediterranean · 38‰','1.025':'Ocean · 35‰','1.005':'Baltic · 7‰','1':'Fresh water'}}
 };
-const SITE_EN = {redsea:'Red Sea (Marsa Alam, Dahab)', malta:'Malta, Gozo', croatia:'Croatia (Adriatic)', cyprus:'Cyprus', baltic:'Baltic Sea', deepspot:'Deepspot (pool)'};
+const SITE_EN = {redsea:'Red Sea (Marsa Alam, Dahab)', malta:'Malta, Gozo', croatia:'Croatia (Adriatic)', cyprus:'Cyprus', baltic:'Baltic Sea', piechcin:'Piechcin (quarry)', deepspot:'Deepspot (pool)'};
 // fragmenty nazw katalogowych i źródeł
 const FRAG_EN = [
   ['półsucha, kaptur','semi-dry, hood'],['półsucha','semi-dry'],['(dwuczęściowa)','(two-piece)'],['Kamizelka z kapturem','Hooded vest'],['z kapturem','with hood'],
