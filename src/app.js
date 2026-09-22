@@ -41,7 +41,10 @@ function siteName(s){
 const waterLabel = rho => lbl().water[String(rho)] || tr('gęstość {x}', {x: rho});
 const monthOf = date => Math.max(0, Math.min(11, (+String(date).slice(5, 7) || 1) - 1));
 function planCtx(pl){ return {rho: siteOf(pl.siteId).rho, depth: 5, reserve: pl.reserve ?? 50, year: +String(pl.date).slice(0, 4) || new Date().getFullYear()}; }
-function fillTemps(pl){ const s = siteOf(pl.siteId), m = monthOf(pl.date); pl.tSurf = s.ts[m]; pl.tBottom = s.tb[m]; }
+function fillTemps(pl){
+  if (pl.tMeasured) return;                    // wczytane z komputera — podpowiedź akwenu ich nie rusza
+  const s = siteOf(pl.siteId), m = monthOf(pl.date); pl.tSurf = s.ts[m]; pl.tBottom = s.tb[m];
+}
 const EXPO = ['wetsuit','over','hood','dry','under'];
 const SINGLE = {wetsuit:['wetsuit'], dry:['dry'], under:['under'], bcd:['bcd','wing'], wing:['bcd','wing'], tank:['tank'], fins:['fins']};
 const targetOf = pre => pre === 'd-' && ui.draft ? ui.draft : P().plan;
@@ -360,10 +363,13 @@ function viewLog(){
   const dives = P().dives.slice().sort((a, b) => a.date < b.date ? 1 : -1);
   return `<div class="stack">
     <button class="primary" data-act="new-dive">${tr('Dodaj nurkowanie')}</button>
+    <div class="btnrow" style="margin:0"><button class="sm" data-act="import-dive">${tr('Wczytaj z komputera')}</button>
+      <span class="small muted" style="align-self:center">${tr('plik .json z aplikacji Suunto')}</span></div>
+    <input id="dive-file" type="file" accept="application/json,.json" hidden>
     <section class="card"><h2>${tr('Dziennik')} <small>${dives.length} ${tr('nurk.')}</small></h2>
     ${dives.length ? `<div class="list">${dives.map(d => `<div class="li">
       <div class="main"><div class="t">${esc(siteName(siteOf(d.siteId)))}</div>
-      <div class="s mono">${esc(d.date)} · ${esc(d.depth)} m · ${esc(d.time)} min · ${esc(d.tBottom)}–${esc(d.tSurf)} °C</div>
+      <div class="s mono">${esc(d.date)} · ${fmt(+d.depth, +d.depth % 1 ? 1 : 0)} m · ${esc(d.time)} min · ${fmt(+d.tBottom, +d.tBottom % 1 ? 1 : 0)}–${fmt(+d.tSurf, +d.tSurf % 1 ? 1 : 0)} °C</div>
       <div class="s">${resolveItems(d.items, P()).filter(i => EXPO.includes(i.cat)).map(i => esc(nm(i))).join(' + ') || tr('bez ocieplenia')}</div>
       ${d.note ? `<div class="s"><i>${esc(d.note)}</i></div>` : ''}</div>
       <div class="r"><div class="mono">${d.lead != null && d.lead !== '' ? fmt(+d.lead) + ' kg' : '—'}</div>
@@ -378,7 +384,9 @@ function viewDraft(){
   const d = ui.draft, isNew = !P().dives.some(x => x.id === d.id);
   const seg = (name, cls, opts, val, icons) => `<div class="seg ${cls}" role="group">${opts.map(([v, l]) => `<button data-act="seg" data-name="${name}" data-v="${v}" aria-pressed="${val === v}">${icons && icons[v] || ''}${tr(l)}</button>`).join('')}</div>`;
   return `<div class="stack">
-    <section class="card"><h2>${tr(isNew ? 'Nowe nurkowanie' : 'Edycja nurkowania')}</h2>${planFields(d, 'd-')}</section>
+    <section class="card"><h2>${tr(isNew ? 'Nowe nurkowanie' : 'Edycja nurkowania')}</h2>${planFields(d, 'd-')}
+      ${d.gps ? `<p class="small muted" style="margin:10px 0 0">${tr('Komputer podał pozycję {lat} N {lon} E — akwen wybierz sam.', {lat: fmt(d.gps.lat, 4), lon: fmt(d.gps.lon, 4)})}</p>` : ''}
+      ${d.tMeasured ? `<p class="small muted" style="margin:6px 0 0">${tr('Temperatury zmierzone przez komputer — nie podmieniam ich podpowiedzią akwenu.')}</p>` : ''}</section>
     <section class="card"><h2>${tr('Balast')}</h2>
       <div class="grid2">${stepField('d-lead', tr('Ołów, który miałeś (kg)'), 'lead', d.lead ?? '', 0.5, 0, 40)}
       <div class="f"><label for="d-adj">${tr('O ile (kg)')}</label><select id="d-adj" data-f="leadAdj"${d.leadFb === 'ok' || !d.leadFb ? ' disabled' : ''}>${[0.5,1,1.5,2,2.5,3,4].map(v => `<option value="${v}"${+d.leadAdj === v ? ' selected' : ''}>${fmt(v)}</option>`).join('')}</select></div></div>
@@ -758,6 +766,7 @@ view.addEventListener('click', e => {
   if (a === 'del-site'){ S.sites = S.sites.filter(s => s.id !== b.dataset.id); ui.editSite = null; return commit(); }
   if (a === 'reset-learn'){ P().learnSince = today(); toast(tr('Nauka zaczyna się od dziś')); return commit(); }
   if (a === 'unreset-learn'){ delete P().learnSince; return commit(); }
+  if (a === 'import-dive'){ const f = $('#dive-file'); f.value = ''; f.click(); return; }
   if (a === 'export-file') return exportFile();
   if (a === 'import-file'){ const f = $('#bk-file'); f.value = ''; f.click(); return; }
   if (a === 'wipe'){ if (!ui.confirmWipe){ ui.confirmWipe = true; return render(); }
@@ -767,6 +776,25 @@ view.addEventListener('click', e => {
     toast(tr('Wyczyszczono. Zacznij od profilu i szafy.')); return commit(); }
   if (a === 'seed'){ S = seedState(); S.lang = LANG; P().onboarded = true; tab = 'calc'; ui.wiz = 0; ui.draft = null; toast(tr('Wczytano przykład')); return commit(); }
 });
+// Nurkowanie z pliku komputera: wypełniamy szkic tym, co wie komputer.
+// Ołów i ocena ciepła zostają puste — tego żaden komputer nie zapisuje, a to z nich uczy się model.
+const IMPORT_ERR = {notJson: 'To nie jest plik .json', notSuunto: 'Nie rozpoznaję tego pliku — oczekuję eksportu z aplikacji Suunto', notDive: 'Ten plik nie opisuje nurkowania'};
+function importDive(text){
+  const r = parseSuuntoJson(text);
+  if (!r.ok) return toast(tr(IMPORT_ERR[r.why] || 'Nie rozpoznaję tego pliku'));
+  const d = r.dive, draft = draftFromPlan();
+  draft.date = d.date; draft.depth = d.depth; draft.time = d.time;
+  if (d.tSurf != null){ draft.tSurf = d.tSurf; draft.tMeasured = true; }
+  if (d.tBottom != null){ draft.tBottom = d.tBottom; draft.tMeasured = true; }
+  if (d.gps) draft.gps = d.gps;
+  if (d.note) draft.note = d.note;
+  draft.nDay = P().dives.filter(x => x.date === d.date).length + 1;
+  const dup = P().dives.some(x => x.date === d.date && Math.abs((+x.depth || 0) - d.depth) < 0.6 && Math.abs((+x.time || 0) - d.time) < 3);
+  ui.draft = draft; tab = 'log'; ui.delDiver = null; render(); window.scrollTo(0, 0);
+  toast(dup ? tr('Wczytano, ale podobne nurkowanie już jest w dzienniku')
+    : tr('Wczytano: {d} m, {t} min, {a}–{b} °C. Dopisz ołów i ocenę.', {d: fmt(d.depth), t: d.time, a: fmt(d.tBottom ?? 0), b: fmt(d.tSurf ?? 0)}));
+}
+
 // kopia jako plik do pobrania — w PWA działa zwykły <a download>
 function exportFile(){
   const name = 'balast-ocieplenie-' + today() + '.json';
@@ -853,6 +881,7 @@ view.addEventListener('change', e => {
     t.value = val; setBodyValue(k, val, 'typed'); save(); recompute();
     return;
   }
+  if (t.id === 'dive-file'){ const f = t.files[0]; t.value = ''; if (f) f.text().then(importDive, () => toast(tr('Nie udało się odczytać pliku'))); return; }
   if (t.id === 'bk-file'){ const f = t.files[0]; t.value = ''; if (f) f.text().then(importText, () => toast(tr('Nie udało się odczytać pliku'))); return; }
   if (t.dataset.act === 'qc'){ ui.addCat = v; return render(); }
   if (t.dataset.act === 'qqc'){ ui.quick.cat = v; return render(); }
