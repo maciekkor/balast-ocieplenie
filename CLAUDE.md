@@ -29,6 +29,7 @@ Brak zależności npm. Wymagany Node ≥ 20.
 - **Bezpieczeństwo nurka:** zostaw komunikat o kontroli pływalności na 5 m; nie przedstawiaj szacunków jako pewnych.
 - **Klawiatura:** pole tekstowe na niskim ekranie włącza `body.kb` (chowa nawigację i pasek, przewija pole na górę). Nowe pola tekstowe testuj przy wysokości ~420 px.
 - **UI:** format daty `rrrr-mm-dd`; przecinek dziesiętny w PL; ołów w górę do 0,5 kg; układ działa na 390 px bez poziomego przewijania, w jasnym i ciemnym motywie; kolory tylko z tokenów CSS.
+- **Sprzęt spoza szafy:** uid `cat:<id>` w `plan.items` bierze pozycję prosto z katalogu (szybki wybór butli). Każde wyszukiwanie sprzętu po uid rób przez `itemOf(uid, P())`, nigdy przez `wardrobe.find`.
 - **Wiele profili:** dane aktywnego nurka bierz przez `P()` (nigdy `S.profile` itd.), a do modelu podawaj `dst()`. Akweny i język są wspólne.
 - **Kreator (`onboarded: false`)** renderuje się bez pełnego `render()` przy edycji pól i musi mieć stałą wysokość — inaczej przycisk „Dalej” ucieka spod palca między naciśnięciem a puszczeniem.
 - Po zmianach sprawdź w przeglądarce: pasek podsumowania przypięty, oba języki, formularz nurkowania, szafa, offline po instalacji.

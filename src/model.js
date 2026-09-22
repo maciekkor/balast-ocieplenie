@@ -88,7 +88,19 @@ function diveCtx(dv, st){
   const site = st.sites.find(s => s.id === dv.siteId) || {rho:1.025};
   return {rho: site.rho, depth: 5, reserve: dv.reserve ?? 50, year: +String(dv.date).slice(0, 4)};
 }
-function resolveItems(uids, st){ return uids.map(u => st.wardrobe.find(w => w.uid === u)).filter(Boolean); }
+// Pozycja wzięta prosto z katalogu, bez wpisywania do szafy: uid „cat:<id>”.
+// Służy do szybkiego wyboru standardowej butli na ekranie Oblicz — model liczy ją jak każdą inną,
+// ale nie jest cechą w nauce (nie ma historii nurkowań w tej konkretnej sztuce).
+const CAT_ITEMS = {};
+function catalogItem(id){
+  if (!CAT_ITEMS[id]){
+    const c = CATALOG.find(x => x.id === id); if (!c) return null;
+    CAT_ITEMS[id] = {uid: 'cat:' + id, catId: id, cat: c.cat, brand: c.brand, model: c.model, size: '', year: null, p: c.p, src: c.src, fromCatalog: true};
+  }
+  return CAT_ITEMS[id];
+}
+const itemOf = (uid, st) => st.wardrobe.find(w => w.uid === uid) || (String(uid).startsWith('cat:') ? catalogItem(String(uid).slice(4)) : null);
+function resolveItems(uids, st){ return uids.map(u => itemOf(u, st)).filter(Boolean); }
 
 // Stan pojedynczego nurka w formie, jakiej oczekuje model: profil, szafa, dziennik i akweny (wspólne).
 function diverState(S, id){
@@ -191,4 +203,4 @@ function learnThermal(st){
   return {delta: s / (w + 1.5), n: w, pts};
 }
 
-if (typeof module !== 'undefined') module.exports = {diverState, bsa, bodyBuoy, bodyFat, itemBuoy, physics, learnLead, predictLead, thermalOfSet, tEf, learnThermal, toDry, roundUpHalf, compress};
+if (typeof module !== 'undefined') module.exports = {diverState, catalogItem, itemOf, bsa, bodyBuoy, bodyFat, itemBuoy, physics, learnLead, predictLead, thermalOfSet, tEf, learnThermal, toDry, roundUpHalf, compress};
