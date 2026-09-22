@@ -168,6 +168,13 @@ function siteCombo(pl, pre){
       || `<li class="none">${tr('Brak akwenu zaczynającego się od „{q}”', {q: esc(q)})}</li>`}</ul>` : ''}
   </div>`;
 }
+// Pole liczbowe z przyciskami −/+ : po nurkowaniu wpisuje się je kciukiem, często na kołyszącej się łodzi.
+// Wpisanie z klawiatury dalej działa, przyciski tylko skracają drogę.
+function stepField(id, lab, f, val, step, min, max){
+  const bt = d => `<button type="button" data-act="step" data-t="${id}" data-d="${d}" aria-label="${d > 0 ? tr('więcej') : tr('mniej')}">${d > 0 ? '+' : '−'}</button>`;
+  return `<div class="f"><label for="${id}">${lab}</label><div class="step">${bt(-step)}
+    <input id="${id}" type="number" inputmode="decimal" data-f="${f}" value="${esc(val)}" step="${step}" min="${min}" max="${max}">${bt(step)}</div></div>`;
+}
 function planFields(pl, pre){
   return `<div class="grid2">
     ${siteCombo(pl, pre)}
@@ -175,12 +182,12 @@ function planFields(pl, pre){
       <input id="${pre}date" type="text" inputmode="numeric" maxlength="10" placeholder="${tr('rrrr-mm-dd')}" data-f="date" data-date="1" value="${esc(pl.date)}">
       <button type="button" class="calbtn" data-act="cal" data-pre="${pre}" aria-label="${tr('Kalendarz')}"><svg viewBox="0 0 24 24"><rect x="4" y="5" width="16" height="15" rx="2"/><path d="M4 10h16M9 3v4M15 3v4"/></svg></button>
       <input type="date" class="datepick" id="${pre}datepick" data-pick="${pre}" tabindex="-1" aria-hidden="true" value="${esc(validDate(pl.date) ? pl.date : '')}"></div></div>
-    <div class="f"><label for="${pre}depth">${tr('Głębokość maks. (m)')}</label><input id="${pre}depth" type="number" inputmode="decimal" data-f="depth" value="${esc(pl.depth)}"></div>
-    <div class="f"><label for="${pre}time">${tr('Czas (min)')}</label><input id="${pre}time" type="number" inputmode="numeric" data-f="time" value="${esc(pl.time)}"></div>
-    <div class="f"><label for="${pre}nday">${tr('Nurkowanie dnia nr')}</label><input id="${pre}nday" type="number" inputmode="numeric" data-f="nDay" value="${esc(pl.nDay)}"></div>
-    <div class="f"><label for="${pre}ts">${tr('Temp. powierzchnia (°C)')}</label><input id="${pre}ts" type="number" inputmode="decimal" data-f="tSurf" value="${esc(pl.tSurf)}"></div>
-    <div class="f"><label for="${pre}tb">${tr('Temp. na dnie (°C)')}</label><input id="${pre}tb" type="number" inputmode="decimal" data-f="tBottom" value="${esc(pl.tBottom)}"></div>
-    <div class="f"><label for="${pre}res">${tr('Rezerwa w butli (bar)')}</label><input id="${pre}res" type="number" inputmode="numeric" data-f="reserve" value="${esc(pl.reserve)}"></div>
+    ${stepField(pre + 'depth', tr('Głębokość maks. (m)'), 'depth', pl.depth, 1, 0, 120)}
+    ${stepField(pre + 'time', tr('Czas (min)'), 'time', pl.time, 5, 1, 400)}
+    ${stepField(pre + 'nday', tr('Nurkowanie dnia nr'), 'nDay', pl.nDay, 1, 1, 9)}
+    ${stepField(pre + 'ts', tr('Temp. powierzchnia (°C)'), 'tSurf', pl.tSurf, 1, -2, 40)}
+    ${stepField(pre + 'tb', tr('Temp. na dnie (°C)'), 'tBottom', pl.tBottom, 1, -2, 40)}
+    ${stepField(pre + 'res', tr('Rezerwa w butli (bar)'), 'reserve', pl.reserve, 10, 0, 300)}
   </div>`;
 }
 function compLabel(r){
@@ -285,13 +292,9 @@ function tankPicker(selected, act){
 }
 
 // ---------- widoki ----------
-function viewCalc(){
-  const pl = P().plan, items = resolveItems(pl.items, P()), ctx = planCtx(pl), iss = setIssues(items);
-  const p = predictLead(items, dst(), ctx, L);
-  const delta = (+P().profile.coldTol || 0) + T.delta, tef = tEf(pl, delta), th = thermalOfSet(items, pl.depth), m = tef - th.comfort;
-  const tb = tBreak(pl);
-  const adv = advisor(pl, items), site = siteOf(pl.siteId), curExpo = items.filter(i => EXPO.includes(i.cat));
-  const leadDetail = `<section class="card" id="lead-detail"><h2>${tr('Balast')} <small>${tr('zakres 80%: {a}–{b} kg', {a: fmt(Math.max(0, p.lo)), b: fmt(p.hi)})}</small></h2>
+function leadDetailHtml(pl, items, p){
+  const iss = setIssues(items), site = siteOf(pl.siteId);
+  return `<section class="card" id="lead-detail"><h2>${tr('Balast')} <small>${tr('zakres 80%: {a}–{b} kg', {a: fmt(Math.max(0, p.lo)), b: fmt(p.hi)})}</small></h2>
     <div class="small muted">${esc(siteName(site))} · ${L.n ? tr('nauka z {n} nurk. w dzienniku', {n: L.n}) : tr('bez nauki, tylko fizyka')} · ${tr('doświadczenie: {n} nurk. ({l})', {n: L.total, l: tr(L.exp.label)})}</div>
     ${scaleHtml(p)}
     ${iss.length ? `<div class="banner" style="margin-top:28px">${tr('Zestaw nie ma {x} — wynik jest niepełny.', {x: iss.join(tr(' ani '))})}</div>` : ''}
@@ -300,12 +303,11 @@ function viewCalc(){
 
   <section class="card"><h2>${tr('Skąd ta liczba')} <small>${tr('kg wyporności na 5 m')}</small></h2>${barsHtml(p)}
     <p class="small muted" style="margin:12px 0 0">${tr('Suma w wodzie {w} kg to {d} kg suchego ołowiu (ołów też wypiera wodę), zaokrąglone w górę do 0,5 kg.', {w: sgn(p.water), d: fmt(p.dry)})}</p></section>`;
-
-  return `<div class="stack">
-  <section class="card"><h2>${tr('Nurkowanie')}</h2>${planFields(pl, 'p-')}
-    <p class="small muted" style="margin:10px 0 0">${tr('Temperatury podpowiada akwen dla wybranego miesiąca; wpisz własne, jeśli znasz aktualne.')}</p></section>
-
-  <section class="card"><h2>${tr('Ocieplenie')} <small>${tr('temperatura nurkowania {t} °C', {t: fmt(tb.t)})}</small></h2>
+}
+function thermalCardHtml(pl, items){
+  const delta = (+P().profile.coldTol || 0) + T.delta, tef = tEf(pl, delta), th = thermalOfSet(items, pl.depth), m = tef - th.comfort;
+  const tb = tBreak(pl), adv = advisor(pl, items), curExpo = items.filter(i => EXPO.includes(i.cat));
+  return `<section class="card" id="thermal-card"><h2>${tr('Ocieplenie')} <small>${tr('temperatura nurkowania {t} °C', {t: fmt(tb.t)})}</small></h2>
     <div class="therm-head"><div class="small">${tr('Twój zestaw daje Ci komfort od')} <b class="mono">${fmt(th.comfort - delta)} °C</b></div>${thermalVerdict(m)}</div>
     <p class="small muted" style="margin:8px 0 0">${tr('Temperatura nurkowania = dno {b} °C × 75% + powierzchnia {s} °C × 25%', {b: fmt(pl.tBottom), s: fmt(pl.tSurf)})}${tb.long ? tr(' − {x} °C za długie nurkowanie', {x: fmt(tb.long)}) : ''}${tb.rep ? tr(' − {x} °C za kolejne nurkowanie dnia', {x: fmt(tb.rep)}) : ''}.
     ${tr('Komfort zestawu dla przeciętnego nurka: od {c} °C', {c: fmt(th.comfort)})}${Math.abs(delta) >= 0.1 ? tr('; Twoja tolerancja zimna {d} °C', {d: sgn(delta)}) : ''}.</p>
@@ -318,7 +320,27 @@ function viewCalc(){
       </div>`; }).join('') || `<p class="muted small">${tr('Dodaj piankę lub suchy skafander do szafy.')}</p>`}
       ${!adv.anyOk && adv.list.length ? `<p class="small muted">${tr('Brakuje cieplejszej warstwy: grubszej pianki, ocieplacza z kapturem albo suchego skafandra.')}</p>` : ''}
     </div>
-  </section>
+  </section>`;
+}
+// po zmianie liczby przyciskiem −/+ odświeżamy tylko to, co od niej zależy:
+// przebudowa całego widoku gubiłaby kolejne tapnięcia
+function refreshPlanDerived(){
+  if (tab !== 'calc' || wizardOn()) return;
+  const pl = P().plan, items = resolveItems(pl.items, P());
+  $('#summary').innerHTML = summaryHtml();
+  const tc = document.getElementById('thermal-box');
+  if (tc) tc.innerHTML = thermalCardHtml(pl, items);
+  const ld = document.getElementById('lead-box');
+  if (ld) ld.innerHTML = ui.explain ? leadDetailHtml(pl, items, predictLead(items, dst(), planCtx(pl), L)) : '';
+}
+function viewCalc(){
+  const pl = P().plan, items = resolveItems(pl.items, P()), ctx = planCtx(pl);
+  const p = predictLead(items, dst(), ctx, L);
+  return `<div class="stack">
+  <section class="card"><h2>${tr('Nurkowanie')}</h2>${planFields(pl, 'p-')}
+    <p class="small muted" style="margin:10px 0 0">${tr('Temperatury podpowiada akwen dla wybranego miesiąca; wpisz własne, jeśli znasz aktualne.')}</p></section>
+
+  <div id="thermal-box">${thermalCardHtml(pl, items)}</div>
 
   <section class="card"><div class="therm-head" style="margin-bottom:10px"><h2 style="margin:0">${tr('Zestaw')}</h2>
     <button class="sm${ui.quick ? ' ghost' : ''}" data-act="quick-open" aria-expanded="${!!ui.quick}">${tr(ui.quick ? 'Zamknij' : '+ Dodaj sprzęt')}</button></div>
@@ -327,7 +349,7 @@ function viewCalc(){
     ${chipsFor(pl.items, 'plan-toggle')}
     ${tankPicker(pl.items)}</section>
 
-  ${ui.explain ? leadDetail : ''}
+  <div id="lead-box">${ui.explain ? leadDetailHtml(pl, items, p) : ''}</div>
 
   <button class="primary" data-act="log-from-plan">${tr('Po nurkowaniu: zapisz i oceń')}</button>
   </div>`;
@@ -357,16 +379,16 @@ function viewDraft(){
   const seg = (name, cls, opts, val, icons) => `<div class="seg ${cls}" role="group">${opts.map(([v, l]) => `<button data-act="seg" data-name="${name}" data-v="${v}" aria-pressed="${val === v}">${icons && icons[v] || ''}${tr(l)}</button>`).join('')}</div>`;
   return `<div class="stack">
     <section class="card"><h2>${tr(isNew ? 'Nowe nurkowanie' : 'Edycja nurkowania')}</h2>${planFields(d, 'd-')}</section>
-    <section class="card"><h2>${tr('Użyty zestaw')}</h2>${chipsFor(d.items, 'draft-toggle')}
-      ${tankPicker(d.items, 'draft-toggle')}</section>
     <section class="card"><h2>${tr('Balast')}</h2>
-      <div class="grid2"><div class="f"><label for="d-lead">${tr('Ołów, który miałeś (kg)')}</label><input id="d-lead" type="number" step="0.5" inputmode="decimal" data-f="lead" value="${esc(d.lead ?? '')}"></div>
+      <div class="grid2">${stepField('d-lead', tr('Ołów, który miałeś (kg)'), 'lead', d.lead ?? '', 0.5, 0, 40)}
       <div class="f"><label for="d-adj">${tr('O ile (kg)')}</label><select id="d-adj" data-f="leadAdj"${d.leadFb === 'ok' || !d.leadFb ? ' disabled' : ''}>${[0.5,1,1.5,2,2.5,3,4].map(v => `<option value="${v}"${+d.leadAdj === v ? ' selected' : ''}>${fmt(v)}</option>`).join('')}</select></div></div>
       <div class="label" style="margin:12px 0 5px">${tr('Na 5 m, z rezerwą i pustą kamizelką było')}</div>
       ${seg('leadFb', 'lead', [['light','Za lekko'],['ok','OK'],['heavy','Za ciężko']], d.leadFb)}
     </section>
     <section class="card"><h2>${tr('Komfort cieplny')}</h2>${seg('thermal', 'therm', [['cold','Zimno'],['cool','Chłodno'],['ok','OK'],['warm','Za ciepło']], d.thermal, THERM_ICON)}
       <div class="f" style="margin-top:12px"><label for="d-note">${tr('Notatka')}</label><input id="d-note" type="text" data-f="note" value="${esc(d.note || '')}"></div></section>
+    <section class="card"><h2>${tr('Użyty zestaw')}</h2>${chipsFor(d.items, 'draft-toggle')}
+      ${tankPicker(d.items, 'draft-toggle')}</section>
     <div class="btnrow"><button class="primary" data-act="save-dive">${tr('Zapisz nurkowanie')}</button><button class="ghost" data-act="cancel-dive">${tr('Anuluj')}</button>
     ${isNew ? '' : `<button class="danger" data-act="del-dive">${tr('Usuń')}</button>`}</div></div>`;
 }
@@ -650,12 +672,22 @@ view.addEventListener('mousedown', e => { const b = e.target.closest('[data-act=
 // Kalendarz na pointerdown i z preventDefault: dotknięcie ikony po wpisaniu daty powodowało blur → change →
 // przebudowę widoku, więc klik lądował w pustce. Zamiast tego sami zapisujemy to, co w polu, i otwieramy wybór daty.
 view.addEventListener('pointerdown', e => {
-  const b = e.target.closest('[data-act="cal"]'); if (!b) return;
-  e.preventDefault();
+  const b = e.target.closest('[data-act="cal"],[data-act="step"]'); if (!b) return;
+  e.preventDefault();                                   // bez blur → bez przebudowy widoku w trakcie dotknięcia
   const ae = document.activeElement;
-  if (ae && ae.dataset && ae.dataset.f) applyPlanField(ae, false);
-  openDatePicker(b.dataset.pre);
+  if (ae && ae.dataset && ae.dataset.f && ae !== document.getElementById(b.dataset.t)) applyPlanField(ae, false);
+  if (b.dataset.act === 'cal') return openDatePicker(b.dataset.pre);
+  stepValue(b);
 });
+function stepValue(b){
+  const el = document.getElementById(b.dataset.t); if (!el) return;
+  const min = el.min === '' ? -Infinity : +el.min, max = el.max === '' ? Infinity : +el.max;
+  const base = num(el.value) ?? (num(el.min) ?? 0), step = +b.dataset.d;
+  const v = Math.round(Math.min(max, Math.max(min, base + step)) * 10) / 10;
+  if (v === num(el.value)) return;
+  el.value = v;
+  applyPlanField(el, true);
+}
 function openDatePicker(pre){
   const pk = document.getElementById(pre + 'datepick'); if (!pk) return;
   try { pk.showPicker(); }
@@ -752,10 +784,14 @@ function applyPlanField(t, redraw){
   const tg = targetOf(t.id.startsWith('d-') ? 'd-' : 'p-'), k = t.dataset.f, v = t.value;
   if (k === 'date'){
     if (!validDate(v)){ if (redraw){ toast(tr('Data w formacie rrrr-mm-dd')); render(); } return; }
-    tg.date = v; fillTemps(tg);
-  } else tg[k] = k === 'note' ? v : num(v);
-  if (!redraw){ if (tg === P().plan){ save(); recompute(); } return; }
-  return tg === P().plan ? commit() : render();
+    tg.date = v; fillTemps(tg);                       // zmiana daty podmienia temperatury w polach → pełny render
+    if (!redraw) return;
+    return tg === P().plan ? commit() : render();
+  }
+  tg[k] = k === 'note' ? v : num(v);
+  // Liczby zmieniają tylko wyniki pochodne, więc odświeżamy je punktowo. Przebudowa całego widoku
+  // gubiła pierwsze tapnięcie w dowolny przycisk po wpisaniu wartości (blur → change → nowy DOM).
+  if (tg === P().plan){ save(); recompute(); refreshPlanDerived(); }
 }
 function importText(txt){
   let o = null;

@@ -9,7 +9,7 @@ const EN = {
   'Przeglądarka nie pozwala zapisywać danych — zmiany znikną po zamknięciu. Zapisz kopię do pliku.':'This browser will not store data — changes disappear when you close it. Save a backup to a file.',
   'Kopia to jeden plik {x} z profilami, szafą, dziennikiem i akwenami. Wczytanie kopii zastępuje wszystkie dane w tej przeglądarce.':'The backup is a single {x} file with profiles, gear, log and dive sites. Loading a backup replaces all data in this browser.',
   // kreator profilu i nurkowie
-  'Wyjaśnij':'Explain','Wiek':'Age','Wzrost':'Height','Waga':'Weight','do 25':'under 25','Tolerancja zimna':'Cold tolerance','Doświadczenie':'Experience',
+  'Wyjaśnij':'Explain','więcej':'more','mniej':'less','Wiek':'Age','Wzrost':'Height','Waga':'Weight','do 25':'under 25','Tolerancja zimna':'Cold tolerance','Doświadczenie':'Experience',
   'Bardzo marznę':'I get cold fast','Marznę':'I get cold easily','Przeciętnie':'Average','Odporny':'Cold-resistant','Bardzo odporny':'Very cold-resistant',
   'Model i tak poprawi to po kilku ocenach ciepła.':'The model corrects this anyway after a few warmth ratings.',
   'Łącznie {n} nurk. — poziom podnosi się sam, gdy dopiszesz nurkowania do dziennika.':'{n} dives in total — the level moves up on its own as you log more dives.',

@@ -139,12 +139,18 @@ L_suchy = L_woda / (1 − ρ_w / 11,34)     → zaokrąglenie w górę do 0,5 kg
 Edycja profilu **nie przebudowuje widoku**: suwak i pola tekstowe zapisują stan i odświeżają wyłącznie `#body-out` (`refreshBody()`), a ten ma stałą wysokość (`.kv.fixed`). Inaczej przycisk „Dalej" uciekał spod palca — `blur → change → render()` podmieniał DOM między naciśnięciem a puszczeniem i kliknięcie przepadało.
 
 1. **Oblicz:** przypięty pasek (ołów + zakres, przycisk **wyjaśnij** `?`, skrót zestawu, woda, komfort, werdykt) — nie przewija się. Karty w kolejności: **Nurkowanie** (akwen z wyszukiwaniem po pierwszych literach, data rrrr-mm-dd z ikoną kalendarza otwierającą natywny wybór daty — obsługiwaną na `pointerdown` z `preventDefault()`, żeby dotknięcie po wpisaniu daty nie przepadło przez przebudowę widoku, głębokość, czas, nr nurkowania, temperatury, rezerwa); **Ocieplenie** (rozbicie temperatury, doradca); **Zestaw** (chipy + szybkie dodawanie: kupiony/wypożyczony, katalog, pozycja ogólna, edytor) wraz z rzędem **standardowych butli** wybieranych jednym tapnięciem, bez wpisywania czegokolwiek do szafy. Skąd bierze się liczba ołowiu — karty **Balast** (skala z przedziałem, rozkład ołowiu, przypomnienie o kontroli na 5 m) i **Skąd ta liczba** (wykres rozbieżny składników) — pokazuje dopiero przycisk `?` w pasku (`ui.explain`), który po rozwinięciu przewija do nich. Na końcu przycisk „Po nurkowaniu”.
-2. **Dziennik:** lista (najnowsze pierwsze) i formularz nurkowania z oceną balastu i ciepła.
+2. **Dziennik:** lista (najnowsze pierwsze) i formularz nurkowania w kolejności wpisywania po wyjściu z wody: **dane nurkowania** (to, co pokazuje komputer), **balast** z oceną, **komfort cieplny** z notatką, a na końcu **użyty zestaw** — sprzęt zwykle nie zmienia się między nurkowaniami, więc nie zasłania tego, co trzeba poprawić.
 3. **Szafa:** mój sprzęt z wyporności na 5 m w morzu i nauczoną korektą; edytor parametrów; katalog z wyszukiwaniem.
 4. **Akweny:** presety i własne; gęstość wody i 12 miesięcy temperatur.
 5. **Profil:** te same kafelki i suwaki co w kreatorze (język z flagami, płeć, wiek w 5 zakresach, wzrost i waga suwakami, budowa jako sylwetki, tolerancja zimna w 5 stopniach z wartością w °C, doświadczenie w 4 poziomach), karta **Nurkowie** (lista z liczbą nurkowań i sprzętu, przełączanie, dodanie nurka przez kreator, usunięcie z potwierdzeniem — ostatniego nurka nie da się usunąć), język, dane ciała, tolerancja zimna, nurkowania poza dziennikiem, czego nauczył się model, reset nauki, kopia zapasowa (zapis i odczyt pliku `.json`, bez pokazywania danych na ekranie), czyszczenie, wczytanie przykładu.
 
 Przełącznik nurków siedzi w nagłówku (`#who`) i pojawia się dopiero przy co najmniej dwóch profilach; przy jednym nagłówek pokazuje licznik nurkowań jak dotąd.
+
+### Liczby wpisywane kciukiem
+
+Głębokość, czas, numer nurkowania dnia, obie temperatury, rezerwa i ołów w dzienniku to pola z przyciskami **−/+** (`stepField()`, klasa `.step`) z krokiem dobranym do wielkości: 1 m, 5 min, 1 °C, 10 bar, 0,5 kg. Wpisanie z klawiatury numerycznej działa jak wcześniej.
+
+Przyciski działają na `pointerdown` z `preventDefault()`, a **zmiana liczby nie przebudowuje widoku** — odświeżane są tylko wyniki pochodne (`refreshPlanDerived()`: pasek podsumowania, karta Ocieplenie w `#thermal-box`, szczegóły balastu w `#lead-box`). Pełny `render()` zostaje tylko dla zmiany daty i akwenu, bo te podmieniają wartości w polach temperatur. Dzięki temu pierwsze tapnięcie w dowolny przycisk po wpisaniu wartości nie przepada (wcześniej `blur → change → render()` podmieniał DOM między naciśnięciem a puszczeniem palca).
 
 ### Pisanie przy otwartej klawiaturze
 
@@ -167,7 +173,7 @@ Tokeny w `:root` (jasny) i nadpisanie dla ciemnego (`prefers-color-scheme` oraz 
 | # | Zadanie | Uwagi |
 | --- | --- | --- |
 | B1 | Pomiary wyporności płetw, butów i kamizelek | nazwy i grubości zweryfikowane (sekcja 4); brakujących wartości producenci nie publikują — potrzebny własny pomiar w wodzie |
-| B2 | Import logów z komputera nurkowego (UDDF, FIT Garmin/Suunto, eksport Subsurface) | parsowanie lokalne; wypełnia głębokość, czas, temperatury |
+| B2 | Import logów: UDDF z pliku, na Androidzie przez cel udostępniania (`share_target`) | opcja dla wąskiej grupy — dane są lokalne, więc import musi odbyć się na telefonie, a tam eksport z aplikacji producenta jest niewygodny; komputery i tak nie zapisują ołowiu ani oceny ciepła. FIT (Garmin, Suunto Ocean) dopiero na konkretne zgłoszenie |
 | B4 | Model suchego skafandra zależny od ilości gazu i ocieplacza | obecnie stała `g` |
 | B6 | Testy e2e (Playwright) | pasek, wyszukiwanie akwenu, data, EN, offline |
 | B7 | Usunąć nieużywane klucze tłumaczeń (`odczuw.`, `odczuwalnie {t} °C`, `Twój zestaw daje komfort od`) | porządki; klucze po schowkowej kopii zapasowej już usunięte |
