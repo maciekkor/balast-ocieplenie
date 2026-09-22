@@ -99,16 +99,16 @@ function slider(k, lab, min, max, step, val, unit){
 
 const AGE_BANDS = [{v:22, label:'do 25', lo:0, hi:25}, {v:30, label:'26–35', lo:26, hi:35}, {v:40, label:'36–45', lo:36, hi:45}, {v:50, label:'46–55', lo:46, hi:55}, {v:62, label:'56+', lo:56, hi:200}];
 const BUILD_SHAPE = {slim:[4.4, 3.6], athletic:[6.8, 4.4], muscular:[8.4, 5.8], average:[6, 5.8], fuller:[6.4, 8.2], obese:[7.2, 9.8]};
-// ikona pokazuje kierunek, rozmiar — natężenie; dokładną wartość widać w podpisie
-const COLD_LEVELS = [{v:-2, label:'Bardzo marznę', icon:ICON.cold1, cls:'big'}, {v:-1, label:'Marznę', icon:ICON.cold1, cls:'small'},
-  {v:0, label:'Przeciętnie', icon:ICON.temp}, {v:1, label:'Odporny', icon:ICON.warm1, cls:'small'}, {v:2, label:'Bardzo odporny', icon:ICON.warm1, cls:'big'}];
+// ikona niesie kierunek, podpis i wartość w °C — natężenie; rozmiar ikon jednakowy, inaczej kafelki się rozjeżdżają
+const COLD_LEVELS = [{v:-2, label:'Bardzo marznę', icon:ICON.cold1}, {v:-1, label:'Marznę', icon:ICON.cold1},
+  {v:0, label:'Przeciętnie', icon:ICON.temp}, {v:1, label:'Odporny', icon:ICON.warm1}, {v:2, label:'Bardzo odporny', icon:ICON.warm1}];
 const EXP_BANDS = [{v:0, key:'beg', label:'początkujący', sub:'< 25'}, {v:25, key:'mid', label:'średnio zaawansowany', sub:'25–99'}, {v:100, key:'exp', label:'doświadczony', sub:'100–299'}, {v:300, key:'pro', label:'bardzo doświadczony', sub:'300+'}];
 
 const langTiles = () => fieldset(tr('Język'), tiles('lang-pick', [{v:'pl', label:'Polski', icon:FLAG.pl}, {v:'en', label:'English', icon:FLAG.en}], o => o.v === LANG, 'two'));
 const sexTiles = pr => fieldset(tr('Płeć'), tiles('pick-sex', [{v:'M', label:tr('Mężczyzna'), icon:ICON.male}, {v:'K', label:tr('Kobieta'), icon:ICON.female}], o => o.v === pr.sex, 'two'));
-const ageTiles = pr => fieldset(tr('Wiek'), tiles('pick-age', AGE_BANDS.map(a => ({v:a.v, label:tr(a.label)})), o => { const a = AGE_BANDS.find(x => x.v === o.v); return pr.age >= a.lo && pr.age <= a.hi; }));
+const ageTiles = pr => fieldset(tr('Wiek'), tiles('pick-age', AGE_BANDS.map(a => ({v:a.v, label:tr(a.label)})), o => { const a = AGE_BANDS.find(x => x.v === o.v); return pr.age >= a.lo && pr.age <= a.hi; }, 'compact'));
 const buildTiles = pr => fieldset(tr('Budowa'), tiles('pick-build', Object.keys(BUILD_SHAPE).map(k => ({v:k, label:lbl().build[k], icon:bodyIcon(...BUILD_SHAPE[k])})), o => o.v === pr.build));
-const coldTiles = pr => fieldset(tr('Tolerancja zimna'), tiles('pick-cold', COLD_LEVELS.map(c => ({v:c.v, label:tr(c.label), sub:sgn(c.v, 0) + ' °C', icon:c.icon, cls:c.cls})), o => Math.round(+pr.coldTol || 0) === o.v),
+const coldTiles = pr => fieldset(tr('Tolerancja zimna'), tiles('pick-cold', COLD_LEVELS.map(c => ({v:c.v, label:tr(c.label), sub:sgn(c.v, 0) + ' °C', icon:c.icon})), o => Math.round(+pr.coldTol || 0) === o.v, 'rows'),
   tr('Model i tak poprawi to po kilku ocenach ciepła.'));
 function expTiles(){
   const cur = L.exp.key;
