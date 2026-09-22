@@ -36,7 +36,7 @@ const CATALOG = [
   {id:'gen-shorty-3', cat:'wetsuit', brand:'Ogólne', model:'Shorty 3 mm', p:{t:3, cover:'shorty'}, sizes:SZ.one, src:'szacunek'},
   {id:'gen-longjohn-5', cat:'wetsuit', brand:'Ogólne', model:'Long john 5 mm', p:{t:5, cover:'longjohn'}, sizes:SZ.one, src:'szacunek'},
   // --- Ocieplacze mokre ---
-  {id:'mares-flexacore', cat:'over', brand:'Mares', model:'Flexa Core 3/4 z kapturem', p:{t:3, cover:'overhood', hood:true}, sizes:SZ.mares, src:'szacunek (grubość do sprawdzenia)'},
+  {id:'mares-flexacore', cat:'over', brand:'Mares', model:'Flexa Core 3/4 z kapturem', p:{t:3, cover:'overhood', hood:true}, sizes:SZ.mares, src:'producent (głównie 3 mm, wstawki 4 mm, kaptur)'},
   {id:'gen-vest-hood-3', cat:'over', brand:'Ogólne', model:'Kamizelka z kapturem 3 mm', p:{t:3, cover:'vest', hood:true}, sizes:SZ.one, src:'szacunek'},
   {id:'gen-vest-hood-5', cat:'over', brand:'Ogólne', model:'Kamizelka z kapturem 5 mm', p:{t:5, cover:'vest', hood:true}, sizes:SZ.one, src:'szacunek'},
   {id:'gen-shorty-over-2', cat:'over', brand:'Ogólne', model:'Shorty ocieplacz 2 mm', p:{t:2, cover:'shorty'}, sizes:SZ.one, src:'szacunek'},
@@ -138,9 +138,9 @@ const CATALOG = [
   {id:'al-outlaw', cat:'bcd', brand:'Aqualung', model:'Outlaw', p:{b:0.6}, sizes:SZ.scubapro, src:'szacunek'},
   // ===== Tusa =====
   {id:'tusa-liberator', cat:'bcd', brand:'Tusa', model:'Liberator Sigma II', p:{b:1.0}, sizes:SZ.scubapro, src:'szacunek'},
-  {id:'tusa-libero', cat:'bcd', brand:'Tusa', model:'Libero II', p:{b:0.9}, sizes:SZ.scubapro, src:'szacunek'},
-  {id:'tusa-boots-5', cat:'boots', brand:'Tusa', model:'Buty z zamkiem 5 mm', p:{t:5, cover:'boots', mass:900}, sizes:['36','38','40','42','44','46'], src:'grubość: producent; masa: szacunek'},
-  {id:'tusa-boots-3', cat:'boots', brand:'Tusa', model:'Buty 3 mm', p:{t:3, cover:'boots', mass:650}, sizes:['36','38','40','42','44','46'], src:'grubość: producent; masa: szacunek'},
+  {id:'tusa-libero', cat:'bcd', brand:'Tusa', model:'Crestline', p:{b:0.9}, sizes:SZ.scubapro, src:'szacunek'},
+  {id:'tusa-boots-5', cat:'boots', brand:'Tusa', model:'Buty Imprex 5 mm (z zamkiem)', p:{t:5, cover:'boots', mass:900}, sizes:['36','38','40','42','44','46'], src:'grubość: producent; masa: szacunek'},
+  {id:'tusa-boots-3', cat:'boots', brand:'Tusa', model:'Buty Imprex Slipper 3 mm', p:{t:3, cover:'boots', mass:650}, sizes:['36','38','40','42','44','46'], src:'grubość: producent; masa: szacunek'},
   {id:'tusa-gloves-3', cat:'gloves', brand:'Tusa', model:'Rękawice 3 mm', p:{t:3, cover:'gloves'}, sizes:SZ.scubapro, src:'szacunek'},
   // ===== Scubatech =====
   {id:'st-proterm2-77', cat:'wetsuit', brand:'Scubatech', model:'Proterm II 7 mm', p:{t:7, cover:'full'}, sizes:SZ.scubapro, src:'producent (grubość)'},
@@ -172,7 +172,7 @@ const CATALOG = [
   {id:'fin-cressi-reaction', cat:'fins', brand:'Cressi', model:'Reaction EBS', p:{b:-0.1, mass:1400, mat:'polipropylen'}, sizes:['XS','S','M','L','XL'], src:'szacunek z masy i materiału'},
   {id:'fin-tusa-solla', cat:'fins', brand:'Tusa', model:'Solla', p:{b:0.0, mass:1300, mat:'polimer'}, sizes:['XS','S','M','L','XL'], src:'szacunek z masy i materiału'},
   {id:'fin-tusa-hyflex', cat:'fins', brand:'Tusa', model:'Hyflex Switch', p:{b:0.0, mass:1400, mat:'polimer'}, sizes:['XS','S','M','L','XL'], src:'szacunek z masy i materiału'},
-  {id:'fin-tusa-xpert', cat:'fins', brand:'Tusa', model:'X-Pert Zoom', p:{b:-0.1, mass:1500, mat:'polimer'}, sizes:['XS','S','M','L','XL'], src:'szacunek z masy i materiału'},
+  {id:'fin-tusa-xpert', cat:'fins', brand:'Tusa', model:'X-Pert Zoom Z3', p:{b:-0.1, mass:1500, mat:'polimer'}, sizes:['XS','S','M','L','XL'], src:'szacunek z masy i materiału'},
   {id:'fin-al-storm', cat:'fins', brand:'Aqualung', model:'Storm', p:{b:-0.3, mass:1800, mat:'termoguma'}, sizes:['XS','S','M','L','XL'], src:'szacunek z masy i materiału'},
   {id:'fin-al-phase', cat:'fins', brand:'Aqualung', model:'Phase', p:{b:0.0, mass:1300, mat:'polimer'}, sizes:['XS','S','M','L','XL'], src:'szacunek z masy i materiału'},
   {id:'fin-al-hotshot', cat:'fins', brand:'Aqualung', model:'Hotshot', p:{b:0.1, mass:1100, mat:'polimer'}, sizes:['XS','S','M','L','XL'], src:'szacunek z masy i materiału'},

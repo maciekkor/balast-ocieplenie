@@ -190,6 +190,13 @@ nav.tabs button[aria-current="page"]{color:var(--accent)}
 .editor{margin-top:10px;padding:12px;border:1px dashed var(--teal);border-radius:8px;background:var(--sunk)}
 .editor input,.editor select{background:var(--surface)}
 .search{display:flex;gap:8px}
+/* pisanie przy otwartej klawiaturze: oddajemy polu cały ekran */
+body.kb{padding-bottom:16px}
+body.kb nav.tabs{display:none}
+body.kb .pin{position:static;margin-bottom:10px;padding-bottom:0;border-bottom:0}
+body.kb .top{padding-block:6px 4px}
+body.kb #summary{display:none}
+body.kb .combo-list{max-height:min(260px,40vh)}
 @media (max-width:420px){ .big{font-size:72px} .grid3{grid-template-columns:repeat(2,minmax(0,1fr))} }
 @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
 </style>

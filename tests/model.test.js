@@ -14,6 +14,18 @@ test('katalog: unikalne id, znane kategorie, wymagane pola', () => {
   }
 });
 
+test('katalog: uczciwe źródła i brak duplikatów nazw', () => {
+  // „producent (grubość)” wolno deklarować tylko wtedy, gdy grubość jest częścią oznaczenia modelu
+  const overclaimed = A.CATALOG.filter(c => /producent/.test(c.src) && /grubość/.test(c.src) && !/\d\s*mm|\d[./]\d/.test(c.model));
+  // uwaga: tablice z katalogu żyją w kontekście vm, więc porównujemy długości, nie obiekty
+  assert.equal(overclaimed.length, 0, 'źródło „producent (grubość)” bez grubości w nazwie modelu: ' + overclaimed.map(c => c.id).join(', '));
+  const names = A.CATALOG.map(c => c.brand + ' ' + c.model);
+  const dups = names.filter((n, i) => names.indexOf(n) !== i);
+  assert.equal(dups.length, 0, 'dwie pozycje o tej samej nazwie: ' + dups.join(', '));
+  // wartości nie od producenta muszą się do tego przyznawać
+  for (const c of A.CATALOG) assert.ok(/producent|szacunek|wpisz|wypiera/.test(c.src), c.id + ': nieczytelne źródło „' + c.src + '”');
+});
+
 test('komfort pianek zgodny z tabelami sklepów (±1 °C)', () => {
   const at = (ids, d) => A.thermalOfSet(ids.map(id => A.fromCat(id)), d).comfort;
   assert.ok(Math.abs(at(['mares-reef-3'], 20) - 22) < 1);
