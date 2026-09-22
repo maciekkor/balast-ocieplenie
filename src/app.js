@@ -1,6 +1,6 @@
 // ===== Aplikacja =====
 const KEY = 'balast-ocieplenie.v1';
-let S, L, T, memOnly = false, tab = 'calc', ui = {draft:null, editGear:null, editSite:null, addQ:'', addCat:'', confirmWipe:false, quick:null, siteQ:null, hl:0, wiz:0, delDiver:null, explain:false};
+let S, L, T, memOnly = false, tab = 'calc', ui = {draft:null, editGear:null, editSite:null, addQ:'', addCat:'', confirmWipe:false, quick:null, siteQ:null, hl:0, wiz:0, delDiver:null, explain:false, planInfo:false};
 const $ = s => document.querySelector(s);
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const fmt = (x, d = 1) => { const s = (Math.round(x * Math.pow(10, d)) / Math.pow(10, d)).toFixed(d); return LANG === 'en' ? s : s.replace('.', ','); };
@@ -345,9 +345,11 @@ function viewCalc(){
   const pl = P().plan, items = resolveItems(pl.items, P()), ctx = planCtx(pl);
   const p = predictLead(items, dst(), ctx, L);
   return `<div class="stack">
-  <section class="card"><h2>${tr('Planowane nurkowanie')}</h2>${planFields(pl, 'p-')}
-    <p class="small muted" style="margin:10px 0 0">${tr('Temperaturę dna podpowiada akwen dla wybranego miesiąca; wpisz własną, jeśli znasz aktualną.')}
-    ${tr('Komfort liczę ostrożnie — jak dla {n}. nurkowania w ciągu dnia i {t} min pod wodą, przy rezerwie {r} bar. Czas, kolejność i temperaturę powierzchni poprawisz przy zapisie w dzienniku.', {n: pl.nDay, t: pl.time, r: pl.reserve})}</p></section>
+  <section class="card"><div class="card-head"><h2>${tr('Planowane nurkowanie')}</h2>
+      <button class="sb-q" data-act="plan-info" aria-expanded="${!!ui.planInfo}" title="${tr('Założenia')}" aria-label="${tr('Założenia')}">${ICON.ask}</button></div>
+    ${planFields(pl, 'p-')}
+    ${ui.planInfo ? `<p class="small muted" style="margin:10px 0 0">${tr('Temperaturę dna podpowiada akwen dla wybranego miesiąca; wpisz własną, jeśli znasz aktualną.')}
+      ${tr('Komfort liczę ostrożnie — jak dla {n}. nurkowania w ciągu dnia i {t} min pod wodą, przy rezerwie {r} bar. Czas, kolejność i temperaturę powierzchni poprawisz przy zapisie w dzienniku.', {n: pl.nDay, t: pl.time, r: pl.reserve})}</p>` : ''}</section>
 
   <button class="primary" data-act="log-from-plan">${tr('Po nurkowaniu: zapisz i oceń')}</button>
 
@@ -690,11 +692,12 @@ view.addEventListener('mousedown', e => { const b = e.target.closest('[data-act=
 // Kalendarz na pointerdown i z preventDefault: dotknięcie ikony po wpisaniu daty powodowało blur → change →
 // przebudowę widoku, więc klik lądował w pustce. Zamiast tego sami zapisujemy to, co w polu, i otwieramy wybór daty.
 view.addEventListener('pointerdown', e => {
-  const b = e.target.closest('[data-act="cal"],[data-act="step"]'); if (!b) return;
+  const b = e.target.closest('[data-act="cal"],[data-act="step"],[data-act="plan-info"]'); if (!b) return;
   e.preventDefault();                                   // bez blur → bez przebudowy widoku w trakcie dotknięcia
   const ae = document.activeElement;
   if (ae && ae.dataset && ae.dataset.f && ae !== document.getElementById(b.dataset.t)) applyPlanField(ae, false);
   if (b.dataset.act === 'cal') return openDatePicker(b.dataset.pre);
+  if (b.dataset.act === 'plan-info'){ ui.planInfo = !ui.planInfo; return render(); }
   stepValue(b);
 });
 function stepValue(b){
