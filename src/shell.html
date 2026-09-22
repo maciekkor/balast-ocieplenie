@@ -195,6 +195,12 @@ nav.tabs button[aria-current="page"]{color:var(--accent)}
 .editor{margin-top:10px;padding:12px;border:1px dashed var(--teal);border-radius:8px;background:var(--sunk)}
 .editor input,.editor select{background:var(--surface)}
 .search{display:flex;gap:8px}
+/* pole liczbowe z przyciskami −/+ : duże cele dla kciuka po nurkowaniu */
+.step{display:flex;align-items:stretch;gap:6px}
+.step button{flex:0 0 42px;padding:0;font:600 22px var(--f-body);line-height:1;background:var(--sunk);border:1px solid var(--line);border-radius:8px;color:var(--ink)}
+.step button:active{background:var(--teal-soft);border-color:var(--teal)}
+.step input{flex:1;min-width:0;text-align:center;font-variant-numeric:tabular-nums;-moz-appearance:textfield;appearance:textfield}
+.step input::-webkit-outer-spin-button,.step input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
 /* pisanie przy otwartej klawiaturze: oddajemy polu cały ekran */
 body.kb{padding-bottom:16px}
 body.kb nav.tabs{display:none}
