@@ -1,0 +1,39 @@
+# CLAUDE.md — Balast i Ocieplenie
+
+Aplikacja PWA dla nurków: kalkulator balastu i doradca ocieplenia, który uczy się z ocen po nurkowaniach. Pełna specyfikacja: **`docs/SPEC.md`** — przeczytaj ją przed zmianą logiki i aktualizuj ją razem z kodem.
+
+## Komendy
+
+```bash
+npm test          # testy (node:test) — muszą przechodzić przed commitem
+npm run build     # składa src/ → dist/ (index.html, sw.js, manifest, ikony)
+npm run serve     # build + lokalny serwer na http://localhost:8080
+```
+
+Brak zależności npm. Wymagany Node ≥ 20.
+
+## Struktura
+
+- `src/shell.html` — CSS i szkielet; `src/data.js` katalog i akweny; `src/model.js` fizyka i nauka (czyste funkcje, bez DOM); `src/seed.js` dane startowe; `src/i18n.js` tłumaczenia; `src/app.js` stan, widoki, zdarzenia; `src/sw.template.js` service worker.
+- `public/` — pliki statyczne kopiowane do `dist/`.
+- `dist/` — wynik buildu, **nie commituj** (jest w `.gitignore`); publikuje go GitHub Actions (`.github/workflows/pages.yml`).
+
+## Zasady
+
+- **Dane tylko lokalnie** (`localStorage`, klucz `balast-ocieplenie.v1`). Żadnych backendów, analityki, zewnętrznych API. Jedyne zasoby z sieci to czcionki Google.
+- **Bez frameworków i bibliotek w runtime.** Widoki to template stringi w `app.js`; każdy tekst użytkownika przechodzi przez `esc()`.
+- **Zmiana schematu `S` = migracja w `load()`** (i w razie potrzeby podbicie `S.v`). Użytkownicy mają dane w telefonach — nie wolno ich zgubić.
+- **i18n:** każdy nowy tekst UI piszesz po polsku w `tr('…')` i dodajesz tłumaczenie do `EN` w `src/i18n.js`. Test wykryje brakujące. Nazwy kategorii, miesięcy itp. są w `LBL`; fragmenty nazw katalogowych w `FRAG_EN`.
+- **Katalog:** nowa pozycja w `CATALOG` musi mieć unikalne `id`, `cat` z `CAT_ORDER`, `sizes` i uczciwe `src` („producent (…)” tylko gdy wartość naprawdę pochodzi od producenta, w innym razie „szacunek…”). Nie zmieniaj `id` istniejących pozycji — odwołują się do nich dane użytkowników (`catId`).
+- **Model:** zmiana wzoru lub stałej → test z konkretną liczbą w `tests/model.test.js` + opis w `docs/SPEC.md` (sekcje 5–6). Punkt kontrolny balastu to zawsze 5 m, rezerwa, pusta kamizelka.
+- **Bezpieczeństwo nurka:** zostaw komunikat o kontroli pływalności na 5 m; nie przedstawiaj szacunków jako pewnych.
+- **UI:** format daty `rrrr-mm-dd`; przecinek dziesiętny w PL; ołów w górę do 0,5 kg; układ działa na 390 px bez poziomego przewijania, w jasnym i ciemnym motywie; kolory tylko z tokenów CSS.
+- Po zmianach sprawdź w przeglądarce: pasek podsumowania przypięty, oba języki, formularz nurkowania, szafa, offline po instalacji.
+
+## Wdrożenie
+
+Push na `main` → workflow uruchamia testy, build i publikuje `dist/` na GitHub Pages (Settings → Pages → Source: **GitHub Actions**). Service worker dostaje nową wersję z hasha buildu, więc telefony pobiorą aktualizację przy następnym otwarciu.
+
+## Backlog
+
+Lista w `docs/SPEC.md`, sekcja 10. Bierz zadania po kolei, chyba że użytkownik wskaże inne.
