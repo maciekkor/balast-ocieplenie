@@ -1,5 +1,25 @@
 // ===== Język =====
 const EN = {
+  // kreator profilu i nurkowie
+  'Nurek {n}':'Diver {n}','Krok {n} z {m}':'Step {n} of {m}','Wstecz':'Back','Dalej':'Next','Pomiń':'Skip','Na pewno?':'Sure?',
+  'Witaj':'Welcome',
+  'Policzę, ile ołowiu zabrać i jaki zestaw ocieplenia założyć, a po każdym nurkowaniu nauczę się z Twojej oceny. Najpierw kilka pytań o Ciebie — bez nich wynik byłby zgadywaniem.':'I work out how much lead to take and which exposure suit to wear, and after every dive I learn from your rating. First a few questions about you — without them the result would be guesswork.',
+  'Dane zostają w tym telefonie: bez konta, bez serwera, bez wysyłania czegokolwiek.':'Your data stays on this phone: no account, no server, nothing sent anywhere.',
+  'Wypełnij profil':'Fill in my profile','Zobacz przykład':'See an example',
+  'Kim jesteś':'About you','Imię przyda się tylko wtedy, gdy z aplikacji korzysta więcej niż jedna osoba.':'A name only matters if more than one person uses the app.','opcjonalnie':'optional',
+  'Płeć i wiek wchodzą do szacunku tkanki tłuszczowej i pojemności płuc — stąd wyporność ciała.':'Sex and age feed the body-fat and lung-volume estimates, and those give your body buoyancy.',
+  'Twoje ciało':'Your body','To najważniejsze liczby dla balastu: im więcej tkanki tłuszczowej, tym więcej ołowiu.':'These numbers matter most for weighting: more body fat means more lead.',
+  'Tłuszcz':'Body fat','Tłuszcz szacuję z BMI i budowy; własny % z wagi BIA będzie dokładniejszy.':'I estimate body fat from BMI and build; your own % from a BIA scale is more accurate.',
+  'Doświadczenie i zimno':'Experience and cold','Początkujący nurkowie zwykle potrzebują trochę więcej ołowiu — model uwzględni to na starcie i poprawi po Twoich ocenach.':'Beginners usually need a little more lead — the model starts from that and corrects it from your ratings.',
+  'Tolerancja zimna: 0 to przeciętnie. Plus, jeśli marzniesz rzadziej niż inni, minus, jeśli częściej. Aplikacja i tak poprawi tę wartość po kilku ocenach.':'Cold tolerance: 0 is average. Positive if you get cold less often than others, negative if more often. The app refines it after a few ratings anyway.',
+  'Twój sprzęt':'Your gear','Ostatnia decyzja: od czego zacząć szafę. Jedno i drugie zmienisz później w zakładce Szafa.':'Last choice: what your gear list starts with. Either way you can change it later in Gear.',
+  'Przykładowy zestaw':'Example kit','Weź przykład':'Use the example','Pianka 3 mm, kamizelka, butla 12 l, płetwy i automat — podmienisz na swoje.':'A 3 mm wetsuit, BCD, 12 l cylinder, fins and a regulator — swap them for your own.',
+  'Pusta szafa':'Empty gear list','Zacznę od zera':'Start from scratch','Zostaje sam automat. Sprzęt dodasz z katalogu w zakładce Szafa.':'Only the regulator stays. Add your gear from the catalogue in the Gear tab.',
+  'Wpisz wiek, wzrost i wagę — bez nich nie policzę wyporności ciała.':'Enter age, height and weight — without them I cannot work out body buoyancy.',
+  'Gotowe. Wszystko zmienisz w Profilu i Szafie.':'Done. You can change everything in Profile and Gear.',
+  'Nurkowie':'Divers','{n} na tym telefonie':'{n} on this phone','aktywny':'active','{n} nurk. w dzienniku':'{n} dives logged','{n} w szafie':'{n} gear items','profil niedokończony':'profile unfinished',
+  'Przełącz':'Switch','Dodaj nurka':'Add diver','Nurek usunięty':'Diver deleted',
+  'Każdy nurek ma własny profil, szafę, dziennik i naukę modelu. Akweny i język są wspólne.':'Each diver has their own profile, gear, log and learned corrections. Sites and language are shared.',
   // nawigacja i nagłówek
   'Oblicz':'Calculate','Dziennik':'Log','Szafa':'Gear','Akweny':'Sites','Profil':'Profile','Nurek':'Diver','nurk.':'dives',
   // wspólne

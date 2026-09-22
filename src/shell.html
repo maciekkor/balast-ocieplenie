@@ -63,6 +63,11 @@ h1,h2,h3{font-family:var(--f-display);font-weight:600;letter-spacing:.01em;margi
 .sb-warn{font-size:12px;color:var(--bad);font-weight:600}
 .top h1 span{color:var(--accent)}
 .top .who{font-size:13px;color:var(--muted);text-align:right;white-space:nowrap}
+.top .whosel{font:600 13px var(--f-body);padding:4px 24px 4px 8px;width:auto;max-width:40vw;border-radius:6px;background:var(--sunk);text-overflow:ellipsis}
+.wiz-top{display:flex;align-items:center;gap:10px;margin-bottom:8px}
+.wiz-bar{flex:1;height:4px;border-radius:2px;background:var(--sunk);overflow:hidden}
+.wiz-bar i{display:block;height:100%;background:var(--teal)}
+.opt .desc{font-size:13px;color:var(--muted)}
 .stack{display:flex;flex-direction:column;gap:14px}
 .card{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:16px}
 .card h2{font-size:20px;text-transform:uppercase;letter-spacing:.05em;margin-bottom:10px}
@@ -144,6 +149,7 @@ button.sm{padding:5px 10px;font-size:13px}
 .therm-head{display:flex;gap:10px;flex-wrap:wrap;align-items:center;justify-content:space-between}
 .kv{display:grid;grid-template-columns:auto 1fr;gap:4px 12px;font-size:14px}
 .kv dt{color:var(--muted)} .kv dd{margin:0;font-family:var(--f-mono);text-align:right}
+.kv.fixed{grid-template-columns:minmax(0,1fr) 5.5em}  /* kreator: stała szerokość wartości, żeby podgląd nie zmieniał wysokości pod palcem */
 details summary{cursor:pointer;font-weight:600;color:var(--teal);padding-block:4px}
 .banner{font-size:14px;padding:10px 12px;border-radius:8px;background:var(--warn-soft);color:var(--ink);border:1px solid var(--warn)}
 .toast{position:fixed;left:50%;bottom:calc(88px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--ground);padding:9px 16px;border-radius:8px;font-weight:600;font-size:14px;z-index:30;width:max-content;max-width:calc(100% - 32px);text-align:center}
