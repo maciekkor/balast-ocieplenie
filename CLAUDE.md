@@ -14,7 +14,7 @@ Brak zależności npm. Wymagany Node ≥ 20.
 
 ## Struktura
 
-- `src/shell.html` — CSS i szkielet; `src/data.js` katalog i akweny; `src/model.js` fizyka i nauka (czyste funkcje, bez DOM); `src/seed.js` dane startowe; `src/i18n.js` tłumaczenia; `src/app.js` stan, widoki, zdarzenia; `src/sw.template.js` service worker.
+- `src/shell.html` — CSS i szkielet; `src/data.js` katalog i akweny; `src/model.js` fizyka i nauka (czyste funkcje, bez DOM); `src/seed.js` dane startowe i migracja; `src/i18n.js` tłumaczenia; `src/app.js` stan, widoki, zdarzenia; `src/sw.template.js` service worker.
 - `public/` — pliki statyczne kopiowane do `dist/`.
 - `dist/` — wynik buildu, **nie commituj** (jest w `.gitignore`); publikuje go GitHub Actions (`.github/workflows/pages.yml`).
 
@@ -22,12 +22,14 @@ Brak zależności npm. Wymagany Node ≥ 20.
 
 - **Dane tylko lokalnie** (`localStorage`, klucz `balast-ocieplenie.v1`). Żadnych backendów, analityki, zewnętrznych API. Jedyne zasoby z sieci to czcionki Google.
 - **Bez frameworków i bibliotek w runtime.** Widoki to template stringi w `app.js`; każdy tekst użytkownika przechodzi przez `esc()`.
-- **Zmiana schematu `S` = migracja w `load()`** (i w razie potrzeby podbicie `S.v`). Użytkownicy mają dane w telefonach — nie wolno ich zgubić.
+- **Zmiana schematu `S` = migracja w `migrate()`** (`src/seed.js`; wołana przy starcie i przy imporcie kopii, więc stare kopie zapasowe też się wczytują) i w razie potrzeby podbicie `S.v`. Użytkownicy mają dane w telefonach — nie wolno ich zgubić.
 - **i18n:** każdy nowy tekst UI piszesz po polsku w `tr('…')` i dodajesz tłumaczenie do `EN` w `src/i18n.js`. Test wykryje brakujące. Nazwy kategorii, miesięcy itp. są w `LBL`; fragmenty nazw katalogowych w `FRAG_EN`.
 - **Katalog:** nowa pozycja w `CATALOG` musi mieć unikalne `id`, `cat` z `CAT_ORDER`, `sizes` i uczciwe `src` („producent (…)” tylko gdy wartość naprawdę pochodzi od producenta, w innym razie „szacunek…”). Nie zmieniaj `id` istniejących pozycji — odwołują się do nich dane użytkowników (`catId`).
 - **Model:** zmiana wzoru lub stałej → test z konkretną liczbą w `tests/model.test.js` + opis w `docs/SPEC.md` (sekcje 5–6). Punkt kontrolny balastu to zawsze 5 m, rezerwa, pusta kamizelka.
 - **Bezpieczeństwo nurka:** zostaw komunikat o kontroli pływalności na 5 m; nie przedstawiaj szacunków jako pewnych.
 - **UI:** format daty `rrrr-mm-dd`; przecinek dziesiętny w PL; ołów w górę do 0,5 kg; układ działa na 390 px bez poziomego przewijania, w jasnym i ciemnym motywie; kolory tylko z tokenów CSS.
+- **Wiele profili:** dane aktywnego nurka bierz przez `P()` (nigdy `S.profile` itd.), a do modelu podawaj `dst()`. Akweny i język są wspólne.
+- **Kreator (`onboarded: false`)** renderuje się bez pełnego `render()` przy edycji pól i musi mieć stałą wysokość — inaczej przycisk „Dalej” ucieka spod palca między naciśnięciem a puszczeniem.
 - Po zmianach sprawdź w przeglądarce: pasek podsumowania przypięty, oba języki, formularz nurkowania, szafa, offline po instalacji.
 
 ## Wdrożenie

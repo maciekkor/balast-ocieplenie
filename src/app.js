@@ -1,6 +1,6 @@
 // ===== Aplikacja =====
 const KEY = 'balast-ocieplenie.v1';
-let S, L, T, memOnly = false, tab = 'calc', ui = {draft:null, editGear:null, editSite:null, addQ:'', addCat:'', confirmWipe:false, quick:null, siteQ:null, hl:0};
+let S, L, T, memOnly = false, tab = 'calc', ui = {draft:null, editGear:null, editSite:null, addQ:'', addCat:'', confirmWipe:false, quick:null, siteQ:null, hl:0, wiz:0, delDiver:null, explain:false};
 const $ = s => document.querySelector(s);
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const fmt = (x, d = 1) => { const s = (Math.round(x * Math.pow(10, d)) / Math.pow(10, d)).toFixed(d); return LANG === 'en' ? s : s.replace('.', ','); };
@@ -13,17 +13,22 @@ const nm = it => frag(itemName(it));
 const norm = s => String(s).toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/ł/g, 'l');
 function validDate(s){ if (!/^\d{4}-\d{2}-\d{2}$/.test(s)) return false; const d = new Date(s + 'T12:00:00'); return !isNaN(d) && d.toISOString().slice(0, 10) === s; }
 
+// Aktywny nurek. S.profiles[] trzyma profil, szafę, dziennik, plan i naukę każdego z nich;
+// akweny (S.sites) i język są wspólne dla całej aplikacji.
+const P = () => S.profiles.find(p => p.id === S.activeId) || S.profiles[0];
+const dst = () => diverState(S);
+const diverLabel = (p, i) => (p.profile.name || '').trim() || tr('Nurek {n}', {n: i + 1});
+const wizardOn = () => !P().onboarded;
+
 function load(){
-  try { const raw = localStorage.getItem(KEY); S = raw ? JSON.parse(raw) : seedState(); }
-  catch(e){ S = seedState(); memOnly = true; }
-  if (!S || S.v !== 1) S = seedState();
-  if (S.profile.divesBefore == null) S.profile.divesBefore = Math.max(0, (+S.profile.dives || 0) - S.dives.length);
-  S.wardrobe.forEach(w => { if (w.rental == null && /wypożycz/i.test(w.model)) w.rental = true; });
-  S.wardrobe.forEach(w => { if (w.catId && /^misc-fins/.test(w.catId)) w.cat = 'fins'; });
+  let raw = null;
+  try { raw = localStorage.getItem(KEY); } catch(e){ memOnly = true; }
+  try { S = migrate(raw ? JSON.parse(raw) : seedState()) || seedState(); }
+  catch(e){ S = seedState(); }
   LANG = S.lang === 'en' ? 'en' : 'pl';
 }
 function save(){ try { localStorage.setItem(KEY, JSON.stringify(S)); memOnly = false; } catch(e){ memOnly = true; } }
-function learnState(){ return Object.assign({}, S, {dives: S.dives.filter(d => !S.learnSince || d.date >= S.learnSince)}); }
+function learnState(){ const d = dst(); return d.learnSince ? Object.assign({}, d, {dives: d.dives.filter(x => x.date >= d.learnSince)}) : d; }
 function recompute(){ const ls = learnState(); L = learnLead(ls); T = learnThermal(ls); }
 function commit(){ save(); recompute(); render(); }
 function toast(msg){ const t = document.createElement('div'); t.className = 'toast'; t.setAttribute('role','status'); t.textContent = msg; document.body.appendChild(t); setTimeout(() => t.remove(), 2600); }
@@ -39,13 +44,13 @@ function planCtx(pl){ return {rho: siteOf(pl.siteId).rho, depth: 5, reserve: pl.
 function fillTemps(pl){ const s = siteOf(pl.siteId), m = monthOf(pl.date); pl.tSurf = s.ts[m]; pl.tBottom = s.tb[m]; }
 const EXPO = ['wetsuit','over','hood','dry','under'];
 const SINGLE = {wetsuit:['wetsuit'], dry:['dry'], under:['under'], bcd:['bcd','wing'], wing:['bcd','wing'], tank:['tank'], fins:['fins']};
-const targetOf = pre => pre === 'd-' && ui.draft ? ui.draft : S.plan;
+const targetOf = pre => pre === 'd-' && ui.draft ? ui.draft : P().plan;
 
 function toggleItem(list, uid){
-  const it = S.wardrobe.find(w => w.uid === uid); if (!it) return list;
+  const it = P().wardrobe.find(w => w.uid === uid); if (!it) return list;
   if (list.includes(uid)) return list.filter(u => u !== uid);
   let out = list.slice();
-  const drop = cats => { out = out.filter(u => { const w = S.wardrobe.find(x => x.uid === u); return w && !cats.includes(w.cat); }); };
+  const drop = cats => { out = out.filter(u => { const w = P().wardrobe.find(x => x.uid === u); return w && !cats.includes(w.cat); }); };
   if (SINGLE[it.cat]) drop(SINGLE[it.cat]);
   if (it.cat === 'dry' || it.cat === 'under') drop(['wetsuit','over']);
   if (it.cat === 'wetsuit' || it.cat === 'over') drop(['dry','under']);
@@ -58,9 +63,75 @@ function setIssues(items){
   return iss;
 }
 
+// ---------- ikony i kafelki wyboru (mniej wpisywania, więcej klikania) ----------
+const SVG = (inner, vb) => `<svg viewBox="${vb || '0 0 24 24'}" aria-hidden="true">${inner}</svg>`;
+// sylwetka: barki i talia w jednostkach SVG — różnica między budowami jest widoczna na kafelku
+const bodyIcon = (sh, wa) => SVG(`<circle cx="12" cy="4.8" r="2.7"/><path d="M${12 - sh} 9.8q0-1.2 ${sh} -1.2t${sh} 1.2l${wa - sh} 10.4q0 1.3 -${wa} 1.3t-${wa} -1.3z"/>`);
+const barsIcon = n => SVG([0, 1, 2, 3].map(i => `<rect x="${3 + i * 5}" y="${18 - i * 4}" width="3.6" height="${3 + i * 4}" rx="1"${i < n ? ' fill="currentColor"' : ''}/>`).join(''));
+const snowIcon = `<path d="M12 3v18M4.5 7.5l15 9M19.5 7.5l-15 9"/><path d="M12 6.5 9.8 5M12 6.5l2.2-1.5M12 17.5l-2.2 1.5M12 17.5l2.2 1.5"/>`;
+const flameIcon = `<path d="M12 3c.5 3 2 3.8 3.3 5.4A6 6 0 1 1 6 12.4c0-1.4.5-2.6 1.4-3.6.2 1.6.9 2.4 1.9 2.6C8.6 8 10.3 5.3 12 3z"/>`;
+const ICON = {
+  male: SVG('<circle cx="10" cy="14.2" r="5.2"/><path d="M14.2 10 20 4.2M15 4h5v5"/>'),
+  female: SVG('<circle cx="12" cy="9" r="5.2"/><path d="M12 14.2v7M9 18.2h6"/>'),
+  cold1: SVG(snowIcon),
+  temp: SVG('<path d="M14 14.9V5.5a2 2 0 1 0-4 0v9.4a4 4 0 1 0 4 0z"/><path d="M12 8.5v5.5"/>'),
+  warm1: SVG(flameIcon),
+  ok: SVG('<path d="M4.5 12.5 9.5 17.5 19.5 6.5"/>'),
+  edge: SVG('<path d="M3 15c2.2 0 2.2-3 4.5-3S9.7 15 12 15s2.2-3 4.5-3 2.2 3 4.5 3"/><path d="M12 3.5v3M12 19v2"/>'),
+  ask: SVG('<circle cx="12" cy="12" r="9"/><path d="M9.3 9.3a2.8 2.8 0 1 1 3.4 3.3c-.5.2-.7.6-.7 1.1v.6"/><path d="M12 17.4v.2"/>')
+};
+const THERM_ICON = {cold: ICON.cold1, cool: ICON.temp, ok: ICON.ok, warm: ICON.warm1};
+const FLAG = {
+  pl: `<svg viewBox="0 0 24 16" class="flag" aria-hidden="true"><rect x=".6" y=".6" width="22.8" height="14.8" rx="2" fill="#fff" stroke="#00000022"/><path d="M1 8h22v5.4a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2z" fill="#D4213D"/></svg>`,
+  en: `<svg viewBox="0 0 24 16" class="flag" aria-hidden="true"><rect width="24" height="16" rx="2" fill="#012169"/><path d="M0 0l24 16M24 0L0 16" stroke="#fff" stroke-width="3.2"/><path d="M0 0l24 16M24 0L0 16" stroke="#C8102E" stroke-width="1.8"/><path d="M12 0v16M0 8h24" stroke="#fff" stroke-width="5.2"/><path d="M12 0v16M0 8h24" stroke="#C8102E" stroke-width="3"/></svg>`
+};
+// kafelki: jeden tap zamiast wpisywania liczby
+function tiles(act, opts, on, cls){
+  return `<div class="picks${cls ? ' ' + cls : ''}" role="group">${opts.map(o =>
+    `<button type="button" class="pick${o.cls ? ' ' + o.cls : ''}" data-act="${act}" data-v="${esc(o.v)}" aria-pressed="${on(o)}">${o.icon || ''}<span>${esc(o.label)}</span>${o.sub ? `<small>${esc(o.sub)}</small>` : ''}</button>`).join('')}</div>`;
+}
+const fieldset = (lab, body, hint) => `<div class="fieldset"><span class="label">${lab}</span>${body}${hint ? `<p class="small muted" style="margin:6px 0 0">${hint}</p>` : ''}</div>`;
+function slider(k, lab, min, max, step, val, unit){
+  return `<div class="fieldset"><label class="label" for="pr-${k}">${lab}</label><div class="slider">
+    <input id="pr-${k}" type="range" min="${min}" max="${max}" step="${step}" value="${esc(val)}" data-act="slide" data-k="${k}">
+    <output class="val" id="out-${k}" for="pr-${k}">${fmt(+val, step < 1 ? 1 : 0)} ${unit}</output></div></div>`;
+}
+
+const AGE_BANDS = [{v:22, label:'do 25', lo:0, hi:25}, {v:30, label:'26–35', lo:26, hi:35}, {v:40, label:'36–45', lo:36, hi:45}, {v:50, label:'46–55', lo:46, hi:55}, {v:62, label:'56+', lo:56, hi:200}];
+const BUILD_SHAPE = {slim:[4.4, 3.6], athletic:[6.8, 4.4], muscular:[8.4, 5.8], average:[6, 5.8], fuller:[6.4, 8.2], obese:[7.2, 9.8]};
+// ikona pokazuje kierunek, rozmiar — natężenie; dokładną wartość widać w podpisie
+const COLD_LEVELS = [{v:-2, label:'Bardzo marznę', icon:ICON.cold1, cls:'big'}, {v:-1, label:'Marznę', icon:ICON.cold1, cls:'small'},
+  {v:0, label:'Przeciętnie', icon:ICON.temp}, {v:1, label:'Odporny', icon:ICON.warm1, cls:'small'}, {v:2, label:'Bardzo odporny', icon:ICON.warm1, cls:'big'}];
+const EXP_BANDS = [{v:0, key:'beg', label:'początkujący', sub:'< 25'}, {v:25, key:'mid', label:'średnio zaawansowany', sub:'25–99'}, {v:100, key:'exp', label:'doświadczony', sub:'100–299'}, {v:300, key:'pro', label:'bardzo doświadczony', sub:'300+'}];
+
+const langTiles = () => fieldset(tr('Język'), tiles('lang-pick', [{v:'pl', label:'Polski', icon:FLAG.pl}, {v:'en', label:'English', icon:FLAG.en}], o => o.v === LANG, 'two'));
+const sexTiles = pr => fieldset(tr('Płeć'), tiles('pick-sex', [{v:'M', label:tr('Mężczyzna'), icon:ICON.male}, {v:'K', label:tr('Kobieta'), icon:ICON.female}], o => o.v === pr.sex, 'two'));
+const ageTiles = pr => fieldset(tr('Wiek'), tiles('pick-age', AGE_BANDS.map(a => ({v:a.v, label:tr(a.label)})), o => { const a = AGE_BANDS.find(x => x.v === o.v); return pr.age >= a.lo && pr.age <= a.hi; }));
+const buildTiles = pr => fieldset(tr('Budowa'), tiles('pick-build', Object.keys(BUILD_SHAPE).map(k => ({v:k, label:lbl().build[k], icon:bodyIcon(...BUILD_SHAPE[k])})), o => o.v === pr.build));
+const coldTiles = pr => fieldset(tr('Tolerancja zimna'), tiles('pick-cold', COLD_LEVELS.map(c => ({v:c.v, label:tr(c.label), sub:sgn(c.v, 0) + ' °C', icon:c.icon, cls:c.cls})), o => Math.round(+pr.coldTol || 0) === o.v),
+  tr('Model i tak poprawi to po kilku ocenach ciepła.'));
+function expTiles(){
+  const cur = L.exp.key;
+  return fieldset(tr('Doświadczenie'), tiles('pick-exp', EXP_BANDS.map((e, i) => ({v:e.v, label:tr(e.label), sub:e.sub + ' ' + tr('nurk.'), icon:barsIcon(i + 1)})), o => EXP_BANDS.find(x => x.v === o.v).key === cur, 'rows'),
+    tr('Łącznie {n} nurk. — poziom podnosi się sam, gdy dopiszesz nurkowania do dziennika.', {n: L.total}));
+}
+// wynik dla ciała: odświeżany bez przebudowy widoku, o stałej wysokości
+function bodyOut(full){
+  const pr = P().profile, ok = profileOk(pr), b = ok ? bodyBuoy(pr, 1.025) : null;
+  const row = (dt, dd) => `<dt>${dt}</dt><dd>${dd}</dd>`;
+  return `<dl class="kv fixed">${row(tr('Tłuszcz'), ok ? fmt(b.bf * 100) + ' %' : '—')}
+    ${full ? row(tr('Gęstość ciała'), ok ? fmt(b.dens, 3) + ' kg/l' : '—') + row(tr('Powierzchnia ciała'), ok ? fmt(bsa(pr), 2) + ' m²' : '—') : ''}
+    ${row(tr('Wyporność ciała w morzu, pół oddechu'), ok ? sgn(b.tissue + b.lungs) + ' kg' : '—')}</dl>`;
+}
+const bodyOutBox = full => `<div id="body-out" data-full="${full ? 1 : 0}" style="margin-top:14px">${bodyOut(full)}</div>`;
+function refreshBody(){
+  const el = document.getElementById('body-out');
+  if (el) el.innerHTML = bodyOut(el.dataset.full === '1');
+}
+
 // ---------- komponenty ----------
 function chipsFor(selected, act){
-  const groups = CAT_ORDER.map(c => ({c, items: S.wardrobe.filter(w => w.cat === c)})).filter(g => g.items.length);
+  const groups = CAT_ORDER.map(c => ({c, items: P().wardrobe.filter(w => w.cat === c)})).filter(g => g.items.length);
   if (!groups.length) return `<p class="muted small">${tr('Szafa jest pusta. Dodaj sprzęt w zakładce Szafa.')}</p>`;
   return groups.map(g => `<div class="group"><div class="label">${catLabel(g.c)}</div><div class="chips">${
     g.items.map(w => `<button class="chip" data-act="${act}" data-uid="${esc(w.uid)}" aria-pressed="${selected.includes(w.uid)}">${esc(nm(w))}${w.size ? ' · ' + esc(w.size) : ''}</button>`).join('')
@@ -107,7 +178,7 @@ function compLabel(r){
   if (r.key === 'lungs') return tr('Płuca, pół oddechu');
   if (r.key === 'exp') return tr('Doświadczenie ({n} nurk.)', {n: L.total});
   if (r.key === 'theta0') return tr('Korekta osobista (nauka)');
-  const uid = r.key.startsWith('th-') ? r.key.slice(3) : r.key, w = S.wardrobe.find(x => x.uid === uid);
+  const uid = r.key.startsWith('th-') ? r.key.slice(3) : r.key, w = P().wardrobe.find(x => x.uid === uid);
   const name = w ? nm(w) : r.label;
   return r.key.startsWith('th-') ? tr('Korekta: {x}', {x: name}) : name;
 }
@@ -137,11 +208,13 @@ function distribution(p, items){
   return s + '.';
 }
 function thermalVerdict(m){
-  return m >= 1 ? `<span class="pill good">${tr('Wystarczy')}</span>` : m >= 0 ? `<span class="pill warn">${tr('Na granicy')}</span>` : `<span class="pill bad">${tr('Za zimno')}</span>`;
+  return m >= 1 ? `<span class="pill good">${ICON.ok}${tr('Wystarczy')}</span>`
+    : m >= 0 ? `<span class="pill warn">${ICON.edge}${tr('Na granicy')}</span>`
+    : `<span class="pill bad">${ICON.cold1}${tr('Za zimno')}</span>`;
 }
 function advisor(pl, curItems){
   const base = curItems.filter(i => !EXPO.includes(i.cat));
-  const own = S.wardrobe.filter(w => !w.rental), of = c => own.filter(w => w.cat === c);
+  const own = P().wardrobe.filter(w => !w.rental), of = c => own.filter(w => w.cat === c);
   const W = of('wetsuit'), O = of('over'), H = of('hood'), D = of('dry'), U = of('under');
   const combos = [];
   for (const w of W) for (const o of [null, ...O]) for (const h of [null, ...H]){
@@ -150,10 +223,10 @@ function advisor(pl, curItems){
   }
   for (const o of O) if (!W.length) combos.push([o]);
   for (const d of D) for (const u of [null, ...U]) combos.push([d, u].filter(Boolean));
-  const delta = (+S.profile.coldTol || 0) + T.delta, tef = tEf(pl, delta), ctx = planCtx(pl);  // porównanie: tWater + delta vs komfort ⇔ tWater vs komfort − delta
+  const delta = (+P().profile.coldTol || 0) + T.delta, tef = tEf(pl, delta), ctx = planCtx(pl);  // porównanie: tWater + delta vs komfort ⇔ tWater vs komfort − delta
   const res = combos.map(c => {
     const th = thermalOfSet(c, pl.depth), items = base.concat(c);
-    return {c, th, m: tef - th.comfort, lead: predictLead(items, S, ctx, L).rec};
+    return {c, th, m: tef - th.comfort, lead: predictLead(items, dst(), ctx, L).rec};
   });
   const ok = res.filter(r => r.m >= 1).sort((a, b) => b.th.comfort - a.th.comfort || a.lead - b.lead);
   const no = res.filter(r => r.m < 1).sort((a, b) => b.m - a.m);
@@ -181,7 +254,7 @@ function quickItem(w){
   const rental = ui.quick && ui.quick.kind === 'rental';
   if (rental){ w.rental = true; w.year = null; w.model += ' ' + tr('(wypożyczony)'); }
   else w.year = new Date().getFullYear();
-  S.wardrobe.push(w); S.plan.items = toggleItem(S.plan.items, w.uid);
+  P().wardrobe.push(w); P().plan.items = toggleItem(P().plan.items, w.uid);
   ui.editGear = w.uid; ui.quick = null;
   toast(tr(rental ? 'Dodano wypożyczony sprzęt i włączono do zestawu' : 'Dodano do szafy i do zestawu'));
   commit();
@@ -191,18 +264,24 @@ const sameSet = (a, b) => a.length === b.length && a.every(x => b.some(y => y.ui
 
 // ---------- widoki ----------
 function viewCalc(){
-  const pl = S.plan, items = resolveItems(pl.items, S), ctx = planCtx(pl), iss = setIssues(items);
-  const p = predictLead(items, S, ctx, L);
-  const delta = (+S.profile.coldTol || 0) + T.delta, tef = tEf(pl, delta), th = thermalOfSet(items, pl.depth), m = tef - th.comfort;
+  const pl = P().plan, items = resolveItems(pl.items, P()), ctx = planCtx(pl), iss = setIssues(items);
+  const p = predictLead(items, dst(), ctx, L);
+  const delta = (+P().profile.coldTol || 0) + T.delta, tef = tEf(pl, delta), th = thermalOfSet(items, pl.depth), m = tef - th.comfort;
   const tb = tBreak(pl);
   const adv = advisor(pl, items), site = siteOf(pl.siteId), curExpo = items.filter(i => EXPO.includes(i.cat));
-  return `<div class="stack">
-  <section class="card"><h2>${tr('Balast')} <small>${tr('zakres 80%: {a}–{b} kg', {a: fmt(Math.max(0, p.lo)), b: fmt(p.hi)})}</small></h2>
+  const leadDetail = `<section class="card" id="lead-detail"><h2>${tr('Balast')} <small>${tr('zakres 80%: {a}–{b} kg', {a: fmt(Math.max(0, p.lo)), b: fmt(p.hi)})}</small></h2>
     <div class="small muted">${esc(siteName(site))} · ${L.n ? tr('nauka z {n} nurk. w dzienniku', {n: L.n}) : tr('bez nauki, tylko fizyka')} · ${tr('doświadczenie: {n} nurk. ({l})', {n: L.total, l: tr(L.exp.label)})}</div>
     ${scaleHtml(p)}
     ${iss.length ? `<div class="banner" style="margin-top:28px">${tr('Zestaw nie ma {x} — wynik jest niepełny.', {x: iss.join(tr(' ani '))})}</div>` : ''}
     <div class="note">${esc(distribution(p, items))} ${tr('Przy pierwszym nurkowaniu w tej konfiguracji zrób kontrolę na 5 m z rezerwą i pustą kamizelką.')}</div>
   </section>
+
+  <section class="card"><h2>${tr('Skąd ta liczba')} <small>${tr('kg wyporności na 5 m')}</small></h2>${barsHtml(p)}
+    <p class="small muted" style="margin:12px 0 0">${tr('Suma w wodzie {w} kg to {d} kg suchego ołowiu (ołów też wypiera wodę), zaokrąglone w górę do 0,5 kg.', {w: sgn(p.water), d: fmt(p.dry)})}</p></section>`;
+
+  return `<div class="stack">
+  <section class="card"><h2>${tr('Nurkowanie')}</h2>${planFields(pl, 'p-')}
+    <p class="small muted" style="margin:10px 0 0">${tr('Temperatury podpowiada akwen dla wybranego miesiąca; wpisz własne, jeśli znasz aktualne.')}</p></section>
 
   <section class="card"><h2>${tr('Ocieplenie')} <small>${tr('temperatura nurkowania {t} °C', {t: fmt(tb.t)})}</small></h2>
     <div class="therm-head"><div class="small">${tr('Twój zestaw daje Ci komfort od')} <b class="mono">${fmt(th.comfort - delta)} °C</b></div>${thermalVerdict(m)}</div>
@@ -219,17 +298,13 @@ function viewCalc(){
     </div>
   </section>
 
-  <section class="card"><h2>${tr('Nurkowanie')}</h2>${planFields(pl, 'p-')}
-    <p class="small muted" style="margin:10px 0 0">${tr('Temperatury podpowiada akwen dla wybranego miesiąca; wpisz własne, jeśli znasz aktualne.')}</p></section>
-
   <section class="card"><div class="therm-head" style="margin-bottom:10px"><h2 style="margin:0">${tr('Zestaw')}</h2>
     <button class="sm${ui.quick ? ' ghost' : ''}" data-act="quick-open" aria-expanded="${!!ui.quick}">${tr(ui.quick ? 'Zamknij' : '+ Dodaj sprzęt')}</button></div>
     ${ui.quick ? quickAdd() : ''}
-    ${ui.editGear && S.wardrobe.some(w => w.uid === ui.editGear) ? `<div class="label" style="margin-top:4px">${tr('Dodane: {x}', {x: esc(nm(S.wardrobe.find(w => w.uid === ui.editGear)))})}</div>${paramEditor(S.wardrobe.find(w => w.uid === ui.editGear))}<div style="height:12px"></div>` : ''}
+    ${ui.editGear && P().wardrobe.some(w => w.uid === ui.editGear) ? `<div class="label" style="margin-top:4px">${tr('Dodane: {x}', {x: esc(nm(P().wardrobe.find(w => w.uid === ui.editGear)))})}</div>${paramEditor(P().wardrobe.find(w => w.uid === ui.editGear))}<div style="height:12px"></div>` : ''}
     ${chipsFor(pl.items, 'plan-toggle')}</section>
 
-  <section class="card"><h2>${tr('Skąd ta liczba')} <small>${tr('kg wyporności na 5 m')}</small></h2>${barsHtml(p)}
-    <p class="small muted" style="margin:12px 0 0">${tr('Suma w wodzie {w} kg to {d} kg suchego ołowiu (ołów też wypiera wodę), zaokrąglone w górę do 0,5 kg.', {w: sgn(p.water), d: fmt(p.dry)})}</p></section>
+  ${ui.explain ? leadDetail : ''}
 
   <button class="primary" data-act="log-from-plan">${tr('Po nurkowaniu: zapisz i oceń')}</button>
   </div>`;
@@ -237,14 +312,14 @@ function viewCalc(){
 
 function viewLog(){
   if (ui.draft) return viewDraft();
-  const dives = S.dives.slice().sort((a, b) => a.date < b.date ? 1 : -1);
+  const dives = P().dives.slice().sort((a, b) => a.date < b.date ? 1 : -1);
   return `<div class="stack">
     <button class="primary" data-act="new-dive">${tr('Dodaj nurkowanie')}</button>
     <section class="card"><h2>${tr('Dziennik')} <small>${dives.length} ${tr('nurk.')}</small></h2>
     ${dives.length ? `<div class="list">${dives.map(d => `<div class="li">
       <div class="main"><div class="t">${esc(siteName(siteOf(d.siteId)))}</div>
       <div class="s mono">${esc(d.date)} · ${esc(d.depth)} m · ${esc(d.time)} min · ${esc(d.tBottom)}–${esc(d.tSurf)} °C</div>
-      <div class="s">${resolveItems(d.items, S).filter(i => EXPO.includes(i.cat)).map(i => esc(nm(i))).join(' + ') || tr('bez ocieplenia')}</div>
+      <div class="s">${resolveItems(d.items, P()).filter(i => EXPO.includes(i.cat)).map(i => esc(nm(i))).join(' + ') || tr('bez ocieplenia')}</div>
       ${d.note ? `<div class="s"><i>${esc(d.note)}</i></div>` : ''}</div>
       <div class="r"><div class="mono">${d.lead != null && d.lead !== '' ? fmt(+d.lead) + ' kg' : '—'}</div>
       <div style="margin-top:4px;display:flex;gap:4px;justify-content:flex-end;flex-wrap:wrap">
@@ -255,8 +330,8 @@ function viewLog(){
     </section></div>`;
 }
 function viewDraft(){
-  const d = ui.draft, isNew = !S.dives.some(x => x.id === d.id);
-  const seg = (name, cls, opts, val) => `<div class="seg ${cls}" role="group">${opts.map(([v, l]) => `<button data-act="seg" data-name="${name}" data-v="${v}" aria-pressed="${val === v}">${tr(l)}</button>`).join('')}</div>`;
+  const d = ui.draft, isNew = !P().dives.some(x => x.id === d.id);
+  const seg = (name, cls, opts, val, icons) => `<div class="seg ${cls}" role="group">${opts.map(([v, l]) => `<button data-act="seg" data-name="${name}" data-v="${v}" aria-pressed="${val === v}">${icons && icons[v] || ''}${tr(l)}</button>`).join('')}</div>`;
   return `<div class="stack">
     <section class="card"><h2>${tr(isNew ? 'Nowe nurkowanie' : 'Edycja nurkowania')}</h2>${planFields(d, 'd-')}</section>
     <section class="card"><h2>${tr('Użyty zestaw')}</h2>${chipsFor(d.items, 'draft-toggle')}</section>
@@ -266,7 +341,7 @@ function viewDraft(){
       <div class="label" style="margin:12px 0 5px">${tr('Na 5 m, z rezerwą i pustą kamizelką było')}</div>
       ${seg('leadFb', 'lead', [['light','Za lekko'],['ok','OK'],['heavy','Za ciężko']], d.leadFb)}
     </section>
-    <section class="card"><h2>${tr('Komfort cieplny')}</h2>${seg('thermal', 'therm', [['cold','Zimno'],['cool','Chłodno'],['ok','OK'],['warm','Za ciepło']], d.thermal)}
+    <section class="card"><h2>${tr('Komfort cieplny')}</h2>${seg('thermal', 'therm', [['cold','Zimno'],['cool','Chłodno'],['ok','OK'],['warm','Za ciepło']], d.thermal, THERM_ICON)}
       <div class="f" style="margin-top:12px"><label for="d-note">${tr('Notatka')}</label><input id="d-note" type="text" data-f="note" value="${esc(d.note || '')}"></div></section>
     <div class="btnrow"><button class="primary" data-act="save-dive">${tr('Zapisz nurkowanie')}</button><button class="ghost" data-act="cancel-dive">${tr('Anuluj')}</button>
     ${isNew ? '' : `<button class="danger" data-act="del-dive">${tr('Usuń')}</button>`}</div></div>`;
@@ -296,7 +371,7 @@ function paramEditor(w){
 }
 function viewGear(){
   const ctx = {rho:1.025, depth:5, reserve:50, year:new Date().getFullYear()};
-  const groups = CAT_ORDER.map(c => ({c, items: S.wardrobe.filter(w => w.cat === c)})).filter(g => g.items.length);
+  const groups = CAT_ORDER.map(c => ({c, items: P().wardrobe.filter(w => w.cat === c)})).filter(g => g.items.length);
   const q = ui.addQ.trim().toLowerCase();
   const found = CATALOG.filter(c => (!ui.addCat || c.cat === ui.addCat) && (!q || (c.brand + ' ' + c.model + ' ' + frag(c.model)).toLowerCase().includes(q)));
   return `<div class="stack">
@@ -305,7 +380,7 @@ function viewGear(){
       const k = L.idx[w.uid], th = k ? L.theta[k] : 0;
       return `<div class="li"><div class="main"><div class="t">${esc(nm(w))}</div>
         <div class="s">${[w.rental && tr('wypożyczony'), w.size && tr('rozm. {x}', {x: w.size}), w.year && tr('z {x}', {x: w.year}), Math.abs(th) >= 0.05 && tr('nauczona korekta {x} kg', {x: sgn(th)})].filter(Boolean).map(esc).join(' · ')}</div></div>
-        <div class="r"><div class="mono">${sgn(itemBuoy(w, S.profile, ctx))} kg</div><button class="sm ghost" data-act="edit-gear" data-uid="${esc(w.uid)}">${tr('Edytuj')}</button></div></div>
+        <div class="r"><div class="mono">${sgn(itemBuoy(w, P().profile, ctx))} kg</div><button class="sm ghost" data-act="edit-gear" data-uid="${esc(w.uid)}">${tr('Edytuj')}</button></div></div>
         ${ui.editGear === w.uid ? paramEditor(w) : ''}`;
     }).join('')}</div></div>`).join('') || `<p class="muted">${tr('Szafa jest pusta.')}</p>`}
     </section>
@@ -329,30 +404,31 @@ function viewSites(){
         <div class="f wide"><label for="s-rho">${tr('Woda')}</label><select id="s-rho" data-s="rho">${WATER_TYPES.map(w => `<option value="${w.rho}"${w.rho === s.rho ? ' selected' : ''}>${esc(waterLabel(w.rho))}</option>`).join('')}</select></div>
         <div class="f wide"><label for="s-ts">${tr('Powierzchnia, sty→gru (°C)')}</label><input id="s-ts" type="text" data-s="ts" value="${esc(s.ts.join('; '))}"></div>
         <div class="f wide"><label for="s-tb">${tr('Dno, sty→gru (°C)')}</label><input id="s-tb" type="text" data-s="tb" value="${esc(s.tb.join('; '))}"></div></div>
-        <div class="btnrow"><button class="primary sm" data-act="close-site">${tr('Gotowe')}</button>${S.dives.some(d => d.siteId === s.id) || S.plan.siteId === s.id ? '' : `<button class="danger sm" data-act="del-site" data-id="${esc(s.id)}">${tr('Usuń')}</button>`}</div></div>` : ''}`).join('')}
+        <div class="btnrow"><button class="primary sm" data-act="close-site">${tr('Gotowe')}</button>${P().dives.some(d => d.siteId === s.id) || P().plan.siteId === s.id ? '' : `<button class="danger sm" data-act="del-site" data-id="${esc(s.id)}">${tr('Usuń')}</button>`}</div></div>` : ''}`).join('')}
   </div><div class="btnrow"><button data-act="add-site">${tr('Dodaj akwen')}</button></div></section></div>`;
 }
 
+const nameField = pr => `<div class="f"><label for="pr-name">${tr('Imię')}</label><input id="pr-name" type="text" data-pr="name" value="${esc(pr.name ?? '')}" placeholder="${tr('opcjonalnie')}"></div>`;
+const bfField = pr => `<div class="f"><label for="pr-bf">${tr('% tłuszczu (opcjonalnie)')}</label><input id="pr-bf" type="number" inputmode="decimal" data-pr="bf" value="${esc(pr.bf ?? '')}" placeholder="${tr('z wagi BIA')}"></div>`;
+
 function viewProfile(){
-  const pr = S.profile, b = bodyBuoy(pr, 1.025);
+  const pr = P().profile;
   const sd0 = Math.sqrt(L.cov[0][0]);
-  const fld = (k, lab, type = 'number', extra = '') => `<div class="f"><label for="pr-${k}">${tr(lab)}</label><input id="pr-${k}" type="${type}" data-pr="${k}" value="${esc(pr[k] ?? '')}" ${extra}></div>`;
   const learnedItems = L.feats.map((w, i) => ({w, v: L.theta[i + 1], sd: Math.sqrt(L.cov[i + 1][i + 1])})).filter(x => Math.abs(x.v) >= 0.05);
   return `<div class="stack">
-  <section class="card"><h2>${tr('Profil nurka')}</h2><div class="grid2">
-    <div class="f wide"><label for="pr-lang">${tr('Język')}</label><select id="pr-lang" data-act="lang-sel"><option value="pl"${LANG === 'pl' ? ' selected' : ''}>Polski</option><option value="en"${LANG === 'en' ? ' selected' : ''}>English</option></select></div>
-    ${fld('name', 'Imię', 'text')}
-    <div class="f"><label for="pr-sex">${tr('Płeć')}</label><select id="pr-sex" data-pr="sex"><option value="M"${pr.sex === 'M' ? ' selected' : ''}>${tr('Mężczyzna')}</option><option value="K"${pr.sex === 'K' ? ' selected' : ''}>${tr('Kobieta')}</option></select></div>
-    ${fld('age', 'Wiek (lata)')}${fld('height', 'Wzrost (cm)')}${fld('weight', 'Waga (kg)', 'number', 'step="0.5"')}
-    <div class="f"><label for="pr-build">${tr('Budowa')}</label><select id="pr-build" data-pr="build">${Object.entries(lbl().build).map(([v, l]) => `<option value="${v}"${pr.build === v ? ' selected' : ''}>${l}</option>`).join('')}</select></div>
-    ${fld('bf', '% tłuszczu (opcjonalnie)', 'number', `placeholder="${tr('z wagi BIA')}"`)}
-    ${fld('coldTol', 'Tolerancja zimna (°C)', 'number', 'step="0.5" min="-3" max="3"')}
-    ${fld('divesBefore', 'Nurkowania poza dziennikiem', 'number', 'min="0" inputmode="numeric"')}
-    <div class="f"><span class="label">${tr('Doświadczenie łącznie')}</span><div class="mono" style="padding:9px 0">${L.total} ${tr('nurk.')} · ${esc(tr(L.exp.label))}</div></div>
-  </div>
-  <dl class="kv" style="margin-top:14px"><dt>${tr(pr.bf ? 'Tłuszcz (podany)' : 'Tłuszcz (szacunek z BMI i budowy)')}</dt><dd>${fmt(b.bf * 100)} %</dd>
-    <dt>${tr('Gęstość ciała')}</dt><dd>${fmt(b.dens, 3)} kg/l</dd><dt>${tr('Powierzchnia ciała')}</dt><dd>${fmt(bsa(pr), 2)} m²</dd>
-    <dt>${tr('Wyporność ciała w morzu, pół oddechu')}</dt><dd>${sgn(b.tissue + b.lungs)} kg</dd></dl></section>
+  ${diversCard()}
+  <section class="card"><h2>${tr('Profil nurka')}</h2>
+    ${langTiles()}
+    <div class="fieldset">${nameField(pr)}</div>
+    ${sexTiles(pr)}
+    ${ageTiles(pr)}
+    ${slider('height', tr('Wzrost'), 130, 210, 1, pr.height, 'cm')}
+    ${slider('weight', tr('Waga'), 35, 180, 0.5, pr.weight, 'kg')}
+    ${buildTiles(pr)}
+    <div class="fieldset">${bfField(pr)}</div>
+    ${coldTiles(pr)}
+    ${expTiles()}
+    ${bodyOutBox(true)}</section>
 
   <section class="card"><h2>${tr('Czego nauczył się model')}</h2>
     <dl class="kv"><dt>${tr('Nurkowania z oceną balastu')}</dt><dd>${L.n}</dd>
@@ -361,8 +437,8 @@ function viewProfile(){
     <dt>${tr('Tolerancja zimna z ocen ({n} inf.)', {n: T.n})}</dt><dd>${sgn(T.delta)} °C</dd>
     ${learnedItems.map(x => `<dt>${esc(nm(x.w))}</dt><dd>${sgn(x.v)} ± ${fmt(x.sd)} kg</dd>`).join('')}</dl>
     <p class="small muted" style="margin:10px 0 0">${tr('Korekty to różnica między fizyką a tym, co naprawdę działało w wodzie. Starsze nurkowania ważą mniej (połowa wagi po 30 nurkowaniach).')}</p>
-    <div class="btnrow"><button class="sm" data-act="reset-learn">${tr('Ucz od dziś od nowa')}</button>${S.learnSince ? `<button class="sm ghost" data-act="unreset-learn">${tr('Przywróć całą historię')}</button>` : ''}</div>
-    ${S.learnSince ? `<p class="small muted">${tr('Nauka liczy nurkowania od {d}.', {d: esc(S.learnSince)})}</p>` : ''}
+    <div class="btnrow"><button class="sm" data-act="reset-learn">${tr('Ucz od dziś od nowa')}</button>${P().learnSince ? `<button class="sm ghost" data-act="unreset-learn">${tr('Przywróć całą historię')}</button>` : ''}</div>
+    ${P().learnSince ? `<p class="small muted">${tr('Nauka liczy nurkowania od {d}.', {d: esc(P().learnSince)})}</p>` : ''}
   </section>
 
   <section class="card"><h2>${tr('Kopia zapasowa')} <small>${tr('dane są tylko w tej przeglądarce')}</small></h2>
@@ -375,14 +451,105 @@ function viewProfile(){
   </section></div>`;
 }
 
+// ---------- kreator profilu (dane domyślne: pierwsze uruchomienie, wyczyszczenie danych, nowy nurek) ----------
+const WIZ_STEPS = 4;
+const profileOk = pr => pr.age > 0 && pr.age < 120 && pr.height >= 100 && pr.height <= 250 && pr.weight >= 25 && pr.weight <= 300;
+
+function wizHead(n, title, lead){
+  return `<div class="wiz-top"><span class="label">${tr('Krok {n} z {m}', {n, m: WIZ_STEPS})}</span>
+    <div class="wiz-bar" role="progressbar" aria-valuemin="1" aria-valuemax="${WIZ_STEPS}" aria-valuenow="${n}"><i style="width:${(n / WIZ_STEPS * 100).toFixed(0)}%"></i></div></div>
+    <h2>${title}</h2>${lead ? `<p class="small muted" style="margin:6px 0 0">${lead}</p>` : ''}`;
+}
+const wizNav = (back, next) => `<div class="btnrow"><button class="primary" data-act="wiz-next">${tr(next || 'Dalej')}</button>
+  ${back ? `<button class="ghost" data-act="wiz-back">${tr('Wstecz')}</button>` : ''}
+  <button class="ghost" data-act="wiz-skip">${tr('Pomiń')}</button></div>`;
+
+function viewWizard(){
+  const pr = P().profile, step = ui.wiz;
+  if (step === 0) return `<div class="stack"><section class="card">
+    <h2>${tr('Witaj')}</h2>
+    <p style="margin:8px 0 0">${tr('Policzę, ile ołowiu zabrać i jaki zestaw ocieplenia założyć, a po każdym nurkowaniu nauczę się z Twojej oceny. Najpierw kilka pytań o Ciebie — bez nich wynik byłby zgadywaniem.')}</p>
+    <p class="small muted" style="margin:8px 0 0">${tr('Dane zostają w tym telefonie: bez konta, bez serwera, bez wysyłania czegokolwiek.')}</p>
+    ${langTiles()}
+    <div class="btnrow"><button class="primary" data-act="wiz-next">${tr('Wypełnij profil')}</button><button class="ghost" data-act="seed">${tr('Zobacz przykład')}</button><button class="ghost" data-act="wiz-skip">${tr('Pomiń')}</button></div>
+  </section></div>`;
+  if (step === 1) return `<div class="stack"><section class="card">
+    ${wizHead(1, tr('Kim jesteś'), tr('Imię przyda się tylko wtedy, gdy z aplikacji korzysta więcej niż jedna osoba.'))}
+    <div class="fieldset">${nameField(pr)}</div>
+    ${sexTiles(pr)}
+    ${ageTiles(pr)}
+    <p class="small muted" style="margin:10px 0 0">${tr('Płeć i wiek wchodzą do szacunku tkanki tłuszczowej i pojemności płuc — stąd wyporność ciała.')}</p>
+    ${wizNav(true)}</section></div>`;
+  if (step === 2) return `<div class="stack"><section class="card">
+    ${wizHead(2, tr('Twoje ciało'), tr('To najważniejsze liczby dla balastu: im więcej tkanki tłuszczowej, tym więcej ołowiu.'))}
+    ${slider('height', tr('Wzrost'), 130, 210, 1, pr.height, 'cm')}
+    ${slider('weight', tr('Waga'), 35, 180, 0.5, pr.weight, 'kg')}
+    ${buildTiles(pr)}
+    <div class="fieldset">${bfField(pr)}</div>
+    ${bodyOutBox(false)}
+    <p class="small muted" style="margin:8px 0 0">${tr('Tłuszcz szacuję z BMI i budowy; własny % z wagi BIA będzie dokładniejszy.')}</p>
+    ${wizNav(true)}</section></div>`;
+  if (step === 3) return `<div class="stack"><section class="card">
+    ${wizHead(3, tr('Doświadczenie i zimno'), tr('Początkujący nurkowie zwykle potrzebują trochę więcej ołowiu — model uwzględni to na starcie i poprawi po Twoich ocenach.'))}
+    ${expTiles()}
+    ${coldTiles(pr)}
+    ${wizNav(true)}</section></div>`;
+  return `<div class="stack"><section class="card">
+    ${wizHead(4, tr('Twój sprzęt'), tr('Ostatnia decyzja: od czego zacząć szafę. Jedno i drugie zmienisz później w zakładce Szafa.'))}
+    <div class="stack" style="margin-top:12px;gap:8px">
+      <div class="opt"><div class="items">${tr('Przykładowy zestaw')}</div>
+        <button class="sm primary" data-act="wiz-gear" data-v="sample">${tr('Weź przykład')}</button>
+        <div class="desc">${tr('Pianka 3 mm, kamizelka, butla 12 l, płetwy i automat — podmienisz na swoje.')}</div></div>
+      <div class="opt"><div class="items">${tr('Pusta szafa')}</div>
+        <button class="sm" data-act="wiz-gear" data-v="empty">${tr('Zacznę od zera')}</button>
+        <div class="desc">${tr('Zostaje sam automat. Sprzęt dodasz z katalogu w zakładce Szafa.')}</div></div>
+    </div>
+    <div class="btnrow"><button class="ghost" data-act="wiz-back">${tr('Wstecz')}</button></div></section></div>`;
+}
+function wizGear(kind){
+  const p = P();
+  if (kind === 'sample'){ const s = seedDiver(); p.wardrobe = s.wardrobe; p.plan.items = s.plan.items.slice(); }
+  else { p.wardrobe = [fromCat('misc-reg')]; p.plan.items = ['misc-reg-1']; }
+  finishWizard();
+}
+function finishWizard(){ P().onboarded = true; ui.wiz = 0; tab = 'calc'; toast(tr('Gotowe. Wszystko zmienisz w Profilu i Szafie.')); commit(); window.scrollTo(0, 0); }
+
+// ---------- nurkowie ----------
+function switchDiver(id){
+  if (!S.profiles.some(x => x.id === id)) return;
+  S.activeId = id; ui.draft = null; ui.editGear = ui.editSite = ui.quick = ui.siteQ = null;
+  ui.confirmWipe = false; ui.delDiver = null; ui.wiz = 0;
+  commit(); window.scrollTo(0, 0);
+}
+function diversCard(){
+  return `<section class="card"><h2>${tr('Nurkowie')} <small>${tr('{n} na tym telefonie', {n: S.profiles.length})}</small></h2>
+    <div class="list">${S.profiles.map((p, i) => {
+      const act = p.id === S.activeId;
+      return `<div class="li"><div class="main"><div class="t">${esc(diverLabel(p, i))}${act ? ' · ' + tr('aktywny') : ''}</div>
+        <div class="s">${tr('{n} nurk. w dzienniku', {n: p.dives.length})} · ${tr('{n} w szafie', {n: p.wardrobe.length})}${p.onboarded ? '' : ' · ' + tr('profil niedokończony')}</div></div>
+        <div class="r">${act ? '' : `<button class="sm" data-act="diver-switch" data-id="${esc(p.id)}">${tr('Przełącz')}</button>`}
+        ${S.profiles.length > 1 ? `<button class="sm danger" style="margin-top:6px" data-act="diver-del" data-id="${esc(p.id)}">${tr(ui.delDiver === p.id ? 'Na pewno?' : 'Usuń')}</button>` : ''}</div></div>`;
+    }).join('')}</div>
+    <div class="btnrow"><button class="sm" data-act="diver-add">${tr('Dodaj nurka')}</button></div>
+    <p class="small muted" style="margin:8px 0 0">${tr('Każdy nurek ma własny profil, szafę, dziennik i naukę modelu. Akweny i język są wspólne.')}</p></section>`;
+}
+function whoHtml(){
+  if (wizardOn()) return '';
+  if (S.profiles.length < 2) return `<span class="mono">${L.total}</span> ${tr('nurk.')}`;
+  return `<select id="who-sel" class="whosel" aria-label="${tr('Nurek')}">${
+    S.profiles.map((p, i) => `<option value="${esc(p.id)}"${p.id === S.activeId ? ' selected' : ''}>${esc(diverLabel(p, i))}</option>`).join('')}</select>`;
+}
+
 function summaryHtml(){
-  const pl = S.plan, items = resolveItems(pl.items, S), ctx = planCtx(pl), iss = setIssues(items);
-  const p = predictLead(items, S, ctx, L), delta = (+S.profile.coldTol || 0) + T.delta, tef = tEf(pl, delta), th = thermalOfSet(items, pl.depth);
+  const pl = P().plan, items = resolveItems(pl.items, P()), ctx = planCtx(pl), iss = setIssues(items);
+  const p = predictLead(items, dst(), ctx, L), delta = (+P().profile.coldTol || 0) + T.delta, tef = tEf(pl, delta), th = thermalOfSet(items, pl.depth);
   const short = it => it.cat === 'tank' ? (it.p.mat === 'alu' ? 'Alu ' : tr('Stal') + ' ') + fmt(it.p.vol, it.p.vol % 1 ? 1 : 0) + ' l' : nm(it).replace(/ \((wypożyczon[ay]|własny|rented|own)\)/, '');
   const order = ['wetsuit','over','hood','dry','under','bcd','wing','tank','fins'];
   const shown = items.filter(i => order.includes(i.cat)).sort((a, b) => order.indexOf(a.cat) - order.indexOf(b.cat));
   return `<div class="sb" role="status" aria-live="polite">
-    <div class="sb-lead"><div class="label">${tr('Ołów')}</div><div class="sb-big">${fmt(p.rec)}<small>kg</small></div><div class="range">${fmt(Math.max(0, p.lo))}–${fmt(p.hi)}</div></div>
+    <div class="sb-lead"><div class="sb-head"><span class="label">${tr('Ołów')}</span>
+        <button class="sb-q" data-act="explain" aria-expanded="${!!ui.explain}" aria-controls="lead-detail" title="${tr('Wyjaśnij')}" aria-label="${tr('Wyjaśnij')}">${ICON.ask}</button></div>
+      <div class="sb-big">${fmt(p.rec)}<small>kg</small></div><div class="range">${fmt(Math.max(0, p.lo))}–${fmt(p.hi)}</div></div>
     <div class="sb-set"><div class="label">${tr('Zestaw')}</div>
       <div class="sb-items">${shown.map(i => esc(short(i))).join(' · ') || tr('Nic nie wybrano')}</div>
       <div class="sb-therm"><span>${tr('woda')} <b class="mono">${fmt(tBreak(pl).t)}°</b> · ${tr('komfort od')} <b class="mono">${fmt(th.comfort - delta)}°</b></span>${thermalVerdict(tef - th.comfort)}</div>
@@ -395,10 +562,12 @@ function render(){
   document.querySelectorAll('[data-t]').forEach(e => e.textContent = tr(e.dataset.t));
   $('#lang').textContent = LANG === 'pl' ? 'EN' : 'PL';
   $('#lang').setAttribute('aria-label', LANG === 'pl' ? 'Switch to English' : 'Przełącz na polski');
-  $('#summary').innerHTML = tab === 'calc' ? summaryHtml() : '';
+  const wiz = wizardOn();
+  $('#summary').innerHTML = !wiz && tab === 'calc' ? summaryHtml() : '';
+  document.querySelector('nav.tabs').hidden = wiz;
   document.querySelectorAll('nav.tabs button').forEach(b => b.dataset.tab === tab ? b.setAttribute('aria-current', 'page') : b.removeAttribute('aria-current'));
-  $('#who').innerHTML = `<span class="mono">${L.total}</span> ${tr('nurk.')}`; $('#who').title = S.profile.name || '';
-  const f = {calc:viewCalc, log:viewLog, gear:viewGear, sites:viewSites, profile:viewProfile}[tab];
+  $('#who').innerHTML = whoHtml(); $('#who').title = P().profile.name || '';
+  const f = wiz ? viewWizard : {calc:viewCalc, log:viewLog, gear:viewGear, sites:viewSites, profile:viewProfile}[tab];
   view.innerHTML = f();
   if (fid){ const el = document.getElementById(fid); if (el){ el.focus({preventScroll:true}); if (sel) try { el.setSelectionRange(sel[0], sel[1]); } catch(_){} } }
 }
@@ -406,11 +575,17 @@ function render(){
 // ---------- zdarzenia ----------
 const view = document.getElementById('view');
 function draftFromPlan(){
-  const p = predictLead(resolveItems(S.plan.items, S), S, planCtx(S.plan), L);
-  return Object.assign(JSON.parse(JSON.stringify(S.plan)), {id: newId('d'), lead: p.rec, leadFb: null, leadAdj: 1, thermal: null, note: '', date: S.plan.date || today()});
+  const p = predictLead(resolveItems(P().plan.items, P()), dst(), planCtx(P().plan), L);
+  return Object.assign(JSON.parse(JSON.stringify(P().plan)), {id: newId('d'), lead: p.rec, leadFb: null, leadAdj: 1, thermal: null, note: '', date: P().plan.date || today()});
 }
 function setLang(l){ LANG = l; S.lang = l; save(); render(); }
 $('#lang').addEventListener('click', () => setLang(LANG === 'pl' ? 'en' : 'pl'));
+$('#who').addEventListener('change', e => { if (e.target.id === 'who-sel') switchDiver(e.target.value); });
+$('#summary').addEventListener('click', e => {
+  if (!e.target.closest('[data-act="explain"]')) return;
+  ui.explain = !ui.explain; render();
+  if (ui.explain){ const el = document.getElementById('lead-detail'); if (el) el.scrollIntoView({behavior:'smooth', block:'start'}); }
+});
 document.querySelector('nav.tabs').addEventListener('click', e => {
   const b = e.target.closest('button[data-tab]'); if (!b) return;
   tab = b.dataset.tab; ui.editGear = ui.editSite = ui.quick = ui.siteQ = null; ui.confirmWipe = false; render(); window.scrollTo(0, 0);
@@ -418,29 +593,55 @@ document.querySelector('nav.tabs').addEventListener('click', e => {
 function pickSite(pre, id){
   const tg = targetOf(pre); tg.siteId = id; fillTemps(tg); ui.siteQ = null;
   const el = document.getElementById(pre + 'site'); if (el) el.blur();
-  return tg === S.plan ? commit() : render();
+  return tg === P().plan ? commit() : render();
 }
 view.addEventListener('mousedown', e => { const b = e.target.closest('[data-act="site-pick"]'); if (b){ e.preventDefault(); pickSite(b.dataset.pre, b.dataset.id); } });
 view.addEventListener('click', e => {
   const b = e.target.closest('[data-act]'); if (!b || b.tagName === 'INPUT' || b.tagName === 'SELECT') return;
   const a = b.dataset.act;
+  if (a === 'lang-pick') return setLang(b.dataset.v);
+  if (a.startsWith('pick-')){
+    const pr = P().profile, v = b.dataset.v;
+    if (a === 'pick-sex') pr.sex = v;
+    else if (a === 'pick-age') pr.age = +v;
+    else if (a === 'pick-build') pr.build = v;
+    else if (a === 'pick-cold') pr.coldTol = +v;
+    else if (a === 'pick-exp') pr.divesBefore = Math.max(0, +v - P().dives.length);   // poziom podnosi się sam wraz z dziennikiem
+    return commit();
+  }
+  if (a === 'wiz-next'){
+    if (ui.wiz === 2 && !profileOk(P().profile)){ toast(tr('Wpisz wiek, wzrost i wagę — bez nich nie policzę wyporności ciała.')); return; }
+    ui.wiz = Math.min(WIZ_STEPS, ui.wiz + 1); render(); return window.scrollTo(0, 0); }
+  if (a === 'wiz-back'){ ui.wiz = Math.max(0, ui.wiz - 1); render(); return window.scrollTo(0, 0); }
+  if (a === 'wiz-skip') return finishWizard();
+  if (a === 'wiz-gear') return wizGear(b.dataset.v);
+  if (a === 'diver-switch') return switchDiver(b.dataset.id);
+  if (a === 'diver-add'){ const d = emptyDiver(); S.profiles.push(d); S.activeId = d.id; fillTemps(d.plan); ui.wiz = 1; ui.delDiver = null; ui.draft = null; commit(); return window.scrollTo(0, 0); }
+  if (a === 'diver-del'){
+    const id = b.dataset.id;
+    if (ui.delDiver !== id){ ui.delDiver = id; return render(); }
+    ui.delDiver = null;
+    if (S.profiles.length < 2) return;
+    S.profiles = S.profiles.filter(x => x.id !== id);
+    if (S.activeId === id){ S.activeId = S.profiles[0].id; ui.draft = null; ui.editGear = null; }
+    toast(tr('Nurek usunięty')); return commit(); }
   if (a === 'site-pick') return pickSite(b.dataset.pre, b.dataset.id);
   if (a === 'cal'){ const pk = document.getElementById(b.dataset.pre + 'datepick'); try { pk.showPicker(); } catch(_){ pk.focus(); pk.click(); } return; }
-  if (a === 'plan-toggle'){ S.plan.items = toggleItem(S.plan.items, b.dataset.uid); return commit(); }
+  if (a === 'plan-toggle'){ P().plan.items = toggleItem(P().plan.items, b.dataset.uid); return commit(); }
   if (a === 'draft-toggle'){ ui.draft.items = toggleItem(ui.draft.items, b.dataset.uid); return render(); }
-  if (a === 'use-combo'){ const base = S.plan.items.filter(u => { const w = S.wardrobe.find(x => x.uid === u); return w && !EXPO.includes(w.cat); }); S.plan.items = base.concat(b.dataset.uids.split(',')); toast(tr('Zestaw podmieniony')); return commit(); }
+  if (a === 'use-combo'){ const base = P().plan.items.filter(u => { const w = P().wardrobe.find(x => x.uid === u); return w && !EXPO.includes(w.cat); }); P().plan.items = base.concat(b.dataset.uids.split(',')); toast(tr('Zestaw podmieniony')); return commit(); }
   if (a === 'log-from-plan'){ ui.draft = draftFromPlan(); tab = 'log'; render(); return window.scrollTo(0, 0); }
   if (a === 'new-dive'){ ui.draft = draftFromPlan(); return render(); }
-  if (a === 'edit-dive'){ ui.draft = JSON.parse(JSON.stringify(S.dives.find(d => d.id === b.dataset.id))); render(); return window.scrollTo(0, 0); }
+  if (a === 'edit-dive'){ ui.draft = JSON.parse(JSON.stringify(P().dives.find(d => d.id === b.dataset.id))); render(); return window.scrollTo(0, 0); }
   if (a === 'seg'){ ui.draft[b.dataset.name] = ui.draft[b.dataset.name] === b.dataset.v ? null : b.dataset.v; return render(); }
   if (a === 'cancel-dive'){ ui.draft = null; return render(); }
-  if (a === 'del-dive'){ S.dives = S.dives.filter(d => d.id !== ui.draft.id); ui.draft = null; toast(tr('Nurkowanie usunięte')); return commit(); }
+  if (a === 'del-dive'){ P().dives = P().dives.filter(d => d.id !== ui.draft.id); ui.draft = null; toast(tr('Nurkowanie usunięte')); return commit(); }
   if (a === 'save-dive'){
     const d = ui.draft;
     if (!validDate(d.date)){ toast(tr('Data w formacie rrrr-mm-dd')); return; }
     if (d.leadFb && (d.lead == null || d.lead === '')){ toast(tr('Wpisz, ile ołowiu miałeś')); return; }
     const before = L.theta[0];
-    S.dives = S.dives.filter(x => x.id !== d.id).concat([d]); ui.draft = null; save(); recompute(); render();
+    P().dives = P().dives.filter(x => x.id !== d.id).concat([d]); ui.draft = null; save(); recompute(); render();
     return toast(d.leadFb ? tr('Zapisano. Korekta osobista: {a} → {b} kg', {a: sgn(before), b: sgn(L.theta[0])}) : tr('Zapisano'));
   }
   if (a === 'edit-gear'){ ui.editGear = ui.editGear === b.dataset.uid ? null : b.dataset.uid; return render(); }
@@ -449,29 +650,35 @@ view.addEventListener('click', e => {
   if (a === 'quick-kind'){ ui.quick.kind = b.dataset.v; return render(); }
   if (a === 'quick-add'){ return quickItem(fromCat(b.dataset.id, {uid: newId(b.dataset.id)})); }
   if (a === 'quick-own'){ const cat = $('#qq-own').value; return quickItem({uid: newId('own'), catId: null, cat, brand: 'Własne', model: catOne(cat), size: '', year: null, p: JSON.parse(JSON.stringify(OWN_DEFAULTS[cat])), src: 'wpis własny'}); }
-  if (a === 'del-gear'){ const u = b.dataset.uid; S.wardrobe = S.wardrobe.filter(w => w.uid !== u); S.plan.items = S.plan.items.filter(x => x !== u); ui.editGear = null; toast(tr('Usunięto z szafy')); return commit(); }
-  if (a === 'add-cat'){ const w = fromCat(b.dataset.id, {uid: newId(b.dataset.id), year: new Date().getFullYear()}); S.wardrobe.push(w); ui.editGear = w.uid; toast(tr('Dodano — ustaw rozmiar')); return commit(); }
+  if (a === 'del-gear'){ const u = b.dataset.uid; P().wardrobe = P().wardrobe.filter(w => w.uid !== u); P().plan.items = P().plan.items.filter(x => x !== u); ui.editGear = null; toast(tr('Usunięto z szafy')); return commit(); }
+  if (a === 'add-cat'){ const w = fromCat(b.dataset.id, {uid: newId(b.dataset.id), year: new Date().getFullYear()}); P().wardrobe.push(w); ui.editGear = w.uid; toast(tr('Dodano — ustaw rozmiar')); return commit(); }
   if (a === 'add-custom'){
     const cat = $('#custom-cat').value;
     const w = {uid: newId('own'), catId: null, cat, brand: 'Własne', model: catOne(cat) + ' ' + tr('(własny)'), size: '', year: new Date().getFullYear(), p: JSON.parse(JSON.stringify(OWN_DEFAULTS[cat])), src: 'wpis własny'};
-    S.wardrobe.push(w); ui.editGear = w.uid; return commit();
+    P().wardrobe.push(w); ui.editGear = w.uid; return commit();
   }
   if (a === 'edit-site'){ ui.editSite = ui.editSite === b.dataset.id ? null : b.dataset.id; return render(); }
   if (a === 'close-site'){ ui.editSite = null; return commit(); }
   if (a === 'add-site'){ const s = {id: newId('site'), name: tr('Nowy akwen'), rho: 1.000, ts: [4,4,5,8,13,18,21,21,17,12,7,4], tb: [4,4,4,5,6,7,8,8,8,7,6,4]}; S.sites.push(s); ui.editSite = s.id; return commit(); }
   if (a === 'del-site'){ S.sites = S.sites.filter(s => s.id !== b.dataset.id); ui.editSite = null; return commit(); }
-  if (a === 'reset-learn'){ S.learnSince = today(); toast(tr('Nauka zaczyna się od dziś')); return commit(); }
-  if (a === 'unreset-learn'){ delete S.learnSince; return commit(); }
+  if (a === 'reset-learn'){ P().learnSince = today(); toast(tr('Nauka zaczyna się od dziś')); return commit(); }
+  if (a === 'unreset-learn'){ delete P().learnSince; return commit(); }
   if (a === 'copy'){ const t = $('#bk-out'); t.select(); (navigator.clipboard ? navigator.clipboard.writeText(t.value) : Promise.reject()).then(() => toast(tr('Skopiowano')), () => { try { document.execCommand('copy'); toast(tr('Skopiowano')); } catch(_){ toast(tr('Zaznaczono — skopiuj ręcznie')); } }); return; }
   if (a === 'import'){ return importText($('#bk-in').value); }
   if (a === 'wipe'){ if (!ui.confirmWipe){ ui.confirmWipe = true; return render(); }
-    ui.confirmWipe = false; S = {v:1, lang: LANG, profile:{name:'', sex:'M', age:40, height:178, weight:80, build:'average', bf:'', coldTol:0, divesBefore:0}, wardrobe:[fromCat('misc-reg')], sites: SITE_PRESETS.map(s => Object.assign({preset:true}, JSON.parse(JSON.stringify(s)))), dives:[], plan:{siteId:'redsea', date: today(), depth:18, time:50, tSurf:26, tBottom:25, nDay:1, reserve:50, items:['misc-reg-1']}};
-    fillTemps(S.plan); tab = 'profile'; toast(tr('Wyczyszczono. Zacznij od profilu i szafy.')); return commit(); }
-  if (a === 'seed'){ S = seedState(); S.lang = LANG; toast(tr('Wczytano przykład')); return commit(); }
+    ui.confirmWipe = false; const d = emptyDiver();
+    S = {v:1, lang: LANG, sites: seedSites(), profiles:[d], activeId: d.id};
+    fillTemps(d.plan); tab = 'calc'; ui.wiz = 0; ui.delDiver = null; ui.draft = null;
+    toast(tr('Wyczyszczono. Zacznij od profilu i szafy.')); return commit(); }
+  if (a === 'seed'){ S = seedState(); S.lang = LANG; P().onboarded = true; tab = 'calc'; ui.wiz = 0; ui.draft = null; toast(tr('Wczytano przykład')); return commit(); }
 });
 function importText(txt){
-  try { const o = JSON.parse(txt); if (o.v !== 1 || !o.profile || !o.wardrobe) throw 0; S = o; LANG = S.lang === 'en' ? 'en' : 'pl'; toast(tr('Wczytano kopię')); commit(); }
-  catch(_){ toast(tr('To nie jest kopia z tej aplikacji — sprawdź, czy wkleiłeś całość')); }
+  let o = null;
+  try { o = migrate(JSON.parse(txt)); } catch(_){}
+  if (!o) return toast(tr('To nie jest kopia z tej aplikacji — sprawdź, czy wkleiłeś całość'));
+  S = o; LANG = S.lang === 'en' ? 'en' : 'pl';
+  tab = 'calc'; ui.wiz = 0; ui.draft = null; ui.editGear = null; ui.delDiver = null;
+  toast(tr('Wczytano kopię')); commit();
 }
 view.addEventListener('focusin', e => {
   const t = e.target;
@@ -493,8 +700,16 @@ view.addEventListener('keydown', e => {
   else if (e.key === 'Enter'){ e.preventDefault(); if (list[ui.hl]) pickSite(ui.siteQ.pre, list[ui.hl].id); }
   else if (e.key === 'Escape'){ ui.siteQ = null; render(); t.blur(); }
 });
+const SLIDE_UNIT = {height:'cm', weight:'kg'};
 view.addEventListener('input', e => {
   const t = e.target;
+  if (t.dataset.act === 'slide'){
+    const k = t.dataset.k, v = +t.value;
+    P().profile[k] = v;
+    const out = document.getElementById('out-' + k);
+    if (out) out.textContent = fmt(v, k === 'weight' ? 1 : 0) + ' ' + SLIDE_UNIT[k];
+    return refreshBody();
+  }
   if (t.dataset.act === 'siteq'){ ui.siteQ = {pre: t.dataset.pre, q: t.value}; ui.hl = 0; return render(); }
   if (t.dataset.date){
     const d = t.value.replace(/\D/g, '').slice(0, 8);
@@ -507,15 +722,15 @@ view.addEventListener('input', e => {
 });
 view.addEventListener('change', e => {
   const t = e.target, v = t.value;
+  if (t.dataset.act === 'slide'){ save(); recompute(); return; }
   if (t.id === 'bk-file' && t.files[0]){ t.files[0].text().then(importText); return; }
-  if (t.dataset.act === 'lang-sel') return setLang(v);
   if (t.dataset.act === 'qc'){ ui.addCat = v; return render(); }
   if (t.dataset.act === 'qqc'){ ui.quick.cat = v; return render(); }
   if (t.dataset.act === 'siteq') return;
   if (t.dataset.pick){
     if (!v) return;
     const tg = targetOf(t.dataset.pick); tg.date = v; fillTemps(tg);
-    return tg === S.plan ? commit() : render();
+    return tg === P().plan ? commit() : render();
   }
   if (t.dataset.f){
     const tg = targetOf(t.id.startsWith('d-') ? 'd-' : 'p-'), k = t.dataset.f;
@@ -523,11 +738,15 @@ view.addEventListener('change', e => {
       if (!validDate(v)){ toast(tr('Data w formacie rrrr-mm-dd')); return render(); }
       tg.date = v; fillTemps(tg);
     } else tg[k] = k === 'note' ? v : num(v);
-    return tg === S.plan ? commit() : render();
+    return tg === P().plan ? commit() : render();
   }
-  if (t.dataset.pr){ const k = t.dataset.pr; S.profile[k] = ['name','sex','build'].includes(k) ? v : (k === 'bf' ? (v === '' ? '' : num(v)) : num(v)); return commit(); }
+  if (t.dataset.pr){
+    const k = t.dataset.pr; P().profile[k] = ['name','sex','build'].includes(k) ? v : (k === 'bf' ? (v === '' ? '' : num(v)) : num(v));
+    save(); recompute(); refreshBody();
+    return;
+  }
   if (t.dataset.w || t.dataset.p){
-    const w = S.wardrobe.find(x => x.uid === ui.editGear); if (!w) return;
+    const w = P().wardrobe.find(x => x.uid === ui.editGear); if (!w) return;
     if (t.dataset.w) w[t.dataset.w] = t.dataset.w === 'year' ? num(v) : t.dataset.w === 'rental' ? v === '1' : v;
     else { const k = t.dataset.p; w.p[k] = t.dataset.bool ? v === '1' : ['cover','shell','plate','mat'].includes(k) ? v : num(v); if (k === 'plate') delete w.p.b; }
     if (w.catId && !w.src.includes('zmienione')) w.src += '; zmienione przez Ciebie';

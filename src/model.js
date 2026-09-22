@@ -90,6 +90,12 @@ function diveCtx(dv, st){
 }
 function resolveItems(uids, st){ return uids.map(u => st.wardrobe.find(w => w.uid === u)).filter(Boolean); }
 
+// Stan pojedynczego nurka w formie, jakiej oczekuje model: profil, szafa, dziennik i akweny (wspólne).
+function diverState(S, id){
+  const p = S.profiles.find(x => x.id === (id == null ? S.activeId : id)) || S.profiles[0];
+  return {id: p.id, profile: p.profile, wardrobe: p.wardrobe, dives: p.dives, plan: p.plan, sites: S.sites, learnSince: p.learnSince};
+}
+
 // ===== nauka balastu: regresja grzbietowa z priorytetami =====
 function learnLead(st){
   const feats = st.wardrobe.filter(w => w.cat !== 'misc');
@@ -185,4 +191,4 @@ function learnThermal(st){
   return {delta: s / (w + 1.5), n: w, pts};
 }
 
-if (typeof module !== 'undefined') module.exports = {bsa, bodyBuoy, bodyFat, itemBuoy, physics, learnLead, predictLead, thermalOfSet, tEf, learnThermal, toDry, roundUpHalf, compress};
+if (typeof module !== 'undefined') module.exports = {diverState, bsa, bodyBuoy, bodyFat, itemBuoy, physics, learnLead, predictLead, thermalOfSet, tEf, learnThermal, toDry, roundUpHalf, compress};
