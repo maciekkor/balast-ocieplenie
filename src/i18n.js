@@ -4,6 +4,9 @@ const EN = {
   'Butla standardowa':'Standard cylinder','bez dodawania do szafy':'without adding it to your gear',
   'Wybrana jest Twoja butla z szafy — tapnięcie standardowej ją zastąpi.':'Your own cylinder is selected — tapping a standard one replaces it.',
   // wczytanie nurkowania z komputera
+  'Planowane nurkowanie':'Planned dive','bez oceny balastu':'no weighting rating',
+  'Nurkowania bez ołowiu i oceny balastu nie uczą modelu — otwórz je przyciskiem Edytuj i uzupełnij.':'Dives without lead and a weighting rating teach the model nothing — open them with Edit and fill them in.',
+  'Wczytane z komputera. Komputer nie zapisuje ołowiu ani ciepła — wybierz sprzęt, wpisz ołów z oceną i zaznacz komfort, wtedy to nurkowanie nauczy model.':'Loaded from the dive computer. It records neither lead nor warmth — pick the gear, enter the lead with a rating and mark the comfort, and this dive will teach the model.',
   'Wczytaj z komputera':'Load from dive computer','plik .json z aplikacji Suunto':'.json file from the Suunto app',
   'To nie jest plik .json':'That is not a .json file','Nie rozpoznaję tego pliku — oczekuję eksportu z aplikacji Suunto':'I do not recognise this file — I expect an export from the Suunto app',
   'Ten plik nie opisuje nurkowania':'This file is not a dive','Nie rozpoznaję tego pliku':'I do not recognise this file',

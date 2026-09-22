@@ -54,7 +54,8 @@ S = {
                   rental?: bool, p: {/*parametry wg kategorii, kopia z katalogu, edytowalna*/}, src /*źródło wartości*/ } ],
     dives: [ { id, date, siteId, depth, time, tSurf, tBottom, nDay, reserve, items: [uid],
                lead /*kg*/|null, leadFb: 'light'|'ok'|'heavy'|null, leadAdj /*kg*/, thermal: 'cold'|'cool'|'ok'|'warm'|null, note,
-               tMeasured?: bool /*temperatury z komputera — podpowiedź akwenu ich nie nadpisuje*/, gps?: {lat, lon} } ],
+               tMeasured?: bool /*temperatury z komputera — podpowiedź akwenu ich nie nadpisuje*/, gps?: {lat, lon},
+               imported?: bool /*wczytane z pliku komputera*/ } ],
     plan: { siteId, date, depth, time, tSurf, tBottom, nDay, reserve, items: [uid] }
   } ]
 }
@@ -140,7 +141,7 @@ L_suchy = L_woda / (1 − ρ_w / 11,34)     → zaokrąglenie w górę do 0,5 kg
 
 Edycja profilu **nie przebudowuje widoku**: suwak i pola tekstowe zapisują stan i odświeżają wyłącznie `#body-out` (`refreshBody()`), a ten ma stałą wysokość (`.kv.fixed`). Inaczej przycisk „Dalej" uciekał spod palca — `blur → change → render()` podmieniał DOM między naciśnięciem a puszczeniem i kliknięcie przepadało.
 
-1. **Oblicz:** przypięty pasek (ołów + zakres, przycisk **wyjaśnij** `?`, skrót zestawu, woda, komfort, werdykt) — nie przewija się. Karty w kolejności: **Nurkowanie** (akwen z wyszukiwaniem po pierwszych literach, data rrrr-mm-dd z ikoną kalendarza otwierającą natywny wybór daty — obsługiwaną na `pointerdown` z `preventDefault()`, żeby dotknięcie po wpisaniu daty nie przepadło przez przebudowę widoku, głębokość, czas, nr nurkowania, temperatury, rezerwa); **Ocieplenie** (rozbicie temperatury, doradca); **Zestaw** (chipy + szybkie dodawanie: kupiony/wypożyczony, katalog, pozycja ogólna, edytor) wraz z rzędem **standardowych butli** wybieranych jednym tapnięciem, bez wpisywania czegokolwiek do szafy. Skąd bierze się liczba ołowiu — karty **Balast** (skala z przedziałem, rozkład ołowiu, przypomnienie o kontroli na 5 m) i **Skąd ta liczba** (wykres rozbieżny składników) — pokazuje dopiero przycisk `?` w pasku (`ui.explain`), który po rozwinięciu przewija do nich. Na końcu przycisk „Po nurkowaniu”.
+1. **Oblicz:** przypięty pasek (ołów + zakres, przycisk **wyjaśnij** `?`, skrót zestawu, woda, komfort, werdykt) — nie przewija się. Karty w kolejności: **Planowane nurkowanie** (akwen z wyszukiwaniem po pierwszych literach, data rrrr-mm-dd z ikoną kalendarza otwierającą natywny wybór daty — obsługiwaną na `pointerdown` z `preventDefault()`, żeby dotknięcie po wpisaniu daty nie przepadło przez przebudowę widoku, głębokość, czas, nr nurkowania, temperatury, rezerwa); zaraz pod nią przycisk zapisu po nurkowaniu, bo to następny krok po tej samej karcie; dalej **Ocieplenie** (rozbicie temperatury, doradca) i **Zestaw** (chipy + szybkie dodawanie: kupiony/wypożyczony, katalog, pozycja ogólna, edytor) wraz z rzędem **standardowych butli** wybieranych jednym tapnięciem, bez wpisywania czegokolwiek do szafy. Skąd bierze się liczba ołowiu — karty **Balast** (skala z przedziałem, rozkład ołowiu, przypomnienie o kontroli na 5 m) i **Skąd ta liczba** (wykres rozbieżny składników) — pokazuje dopiero przycisk `?` w pasku (`ui.explain`), który po rozwinięciu przewija do nich. 
 2. **Dziennik:** lista (najnowsze pierwsze) i formularz nurkowania w kolejności wpisywania po wyjściu z wody: **dane nurkowania** (to, co pokazuje komputer), **balast** z oceną, **komfort cieplny** z notatką, a na końcu **użyty zestaw** — sprzęt zwykle nie zmienia się między nurkowaniami, więc nie zasłania tego, co trzeba poprawić.
 3. **Szafa:** mój sprzęt z wyporności na 5 m w morzu i nauczoną korektą; edytor parametrów; katalog z wyszukiwaniem.
 4. **Akweny:** presety i własne; gęstość wody i 12 miesięcy temperatur.
@@ -156,6 +157,8 @@ Dwie rzeczy, których nie widać bez prawdziwego pliku:
 
 - **nazwy w `Header.Temperature` bywają zamienione** — `Max` potrafi być chłodniejsze niż `Min` — więc nie ufamy nazwom, tylko bierzemy skrajne wartości (najcieplej = powierzchnia, najzimniej = dno), najchętniej z próbek;
 - **`Latitude`/`Longitude` są w radianach**, nie w stopniach.
+
+Szkic z importu dostaje `imported`, przez co formularz otwiera się z banerem mówiącym wprost, czego modelowi brakuje: sprzętu, ołowiu z oceną i komfortu cieplnego. W dzienniku nurkowanie bez ołowiu albo bez oceny balastu ma plakietkę „bez oceny balastu", a nad listą jest przypomnienie, że takie wpisy nie uczą modelu — uzupełnia się je przyciskiem Edytuj.
 
 Temperatury z komputera oznaczamy `tMeasured`, dzięki czemu zmiana akwenu albo daty ich nie nadpisze. Numer nurkowania dnia liczymy z dziennika, a podobne nurkowanie (ta sama data, głębokość ±0,6 m, czas ±3 min) daje ostrzeżenie zamiast cichego duplikatu. **Ołów i ocena ciepła zostają puste** — komputer ich nie zapisuje, a to z nich uczy się model. Pozycję GPS pokazujemy jako podpowiedź; akwen użytkownik wybiera sam.
 
