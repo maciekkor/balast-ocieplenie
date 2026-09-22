@@ -575,6 +575,29 @@ function render(){
   if (fid){ const el = document.getElementById(fid); if (el){ el.focus({preventScroll:true}); if (sel) try { el.setSelectionRange(sel[0], sel[1]); } catch(_){} } }
 }
 
+// ---------- klawiatura na telefonie ----------
+// Gdy klawiatura zasłania ekran, przypięty pasek i dolna nawigacja zjadają resztę miejsca.
+// Na czas pisania chowamy jedno i drugie i przewijamy pole na górę, żeby było widać wpis i listę podpowiedzi.
+const TYPE_FIELDS = ['text','number','search','email','tel','url','password'];
+const isTypingField = el => !!el && (el.tagName === 'TEXTAREA' || (el.tagName === 'INPUT' && TYPE_FIELDS.includes(el.type)));
+function kbCheck(){
+  const vv = window.visualViewport;
+  const h = vv ? vv.height : window.innerHeight;
+  const shrank = vv ? window.innerHeight - vv.height > 140 : false;   // iOS: zmienia się tylko widoczny obszar
+  const on = isTypingField(document.activeElement) && (shrank || h < 600);   // Android: kurczy się całe okno
+  if (on !== document.body.classList.contains('kb')) document.body.classList.toggle('kb', on);
+  return on;
+}
+function kbFocus(el){
+  if (!kbCheck() || !el) return;
+  const box = el.closest('.f') || el;
+  box.scrollIntoView({block: 'start', behavior: 'smooth'});
+}
+document.addEventListener('focusin', e => { const t = e.target; setTimeout(() => kbFocus(t), 260); });
+document.addEventListener('focusout', () => setTimeout(kbCheck, 60));
+if (window.visualViewport){ visualViewport.addEventListener('resize', kbCheck); visualViewport.addEventListener('scroll', kbCheck); }
+window.addEventListener('resize', kbCheck);
+
 // ---------- zdarzenia ----------
 const view = document.getElementById('view');
 function draftFromPlan(){
@@ -713,7 +736,12 @@ view.addEventListener('keydown', e => {
   if (e.key === 'ArrowDown'){ e.preventDefault(); ui.hl = Math.min(list.length - 1, ui.hl + 1); render(); }
   else if (e.key === 'ArrowUp'){ e.preventDefault(); ui.hl = Math.max(0, ui.hl - 1); render(); }
   else if (e.key === 'Enter'){ e.preventDefault(); if (list[ui.hl]) pickSite(ui.siteQ.pre, list[ui.hl].id); }
-  else if (e.key === 'Escape'){ ui.siteQ = null; render(); t.blur(); }
+  else if (e.key === 'Escape'){
+    // render() podmienia pole i przywraca na nie fokus, więc blur trzeba wywołać na nowym elemencie,
+    // inaczej focusin natychmiast otwiera listę z powrotem
+    const id = t.id; ui.siteQ = null; render();
+    const el = document.getElementById(id); if (el) el.blur();
+  }
 });
 const SLIDE_UNIT = {height:'cm', weight:'kg'};
 view.addEventListener('input', e => {

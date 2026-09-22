@@ -27,6 +27,7 @@ Brak zależności npm. Wymagany Node ≥ 20.
 - **Katalog:** nowa pozycja w `CATALOG` musi mieć unikalne `id`, `cat` z `CAT_ORDER`, `sizes` i uczciwe `src` („producent (…)” tylko gdy wartość naprawdę pochodzi od producenta, w innym razie „szacunek…”). Nie zmieniaj `id` istniejących pozycji — odwołują się do nich dane użytkowników (`catId`).
 - **Model:** zmiana wzoru lub stałej → test z konkretną liczbą w `tests/model.test.js` + opis w `docs/SPEC.md` (sekcje 5–6). Punkt kontrolny balastu to zawsze 5 m, rezerwa, pusta kamizelka.
 - **Bezpieczeństwo nurka:** zostaw komunikat o kontroli pływalności na 5 m; nie przedstawiaj szacunków jako pewnych.
+- **Klawiatura:** pole tekstowe na niskim ekranie włącza `body.kb` (chowa nawigację i pasek, przewija pole na górę). Nowe pola tekstowe testuj przy wysokości ~420 px.
 - **UI:** format daty `rrrr-mm-dd`; przecinek dziesiętny w PL; ołów w górę do 0,5 kg; układ działa na 390 px bez poziomego przewijania, w jasnym i ciemnym motywie; kolory tylko z tokenów CSS.
 - **Wiele profili:** dane aktywnego nurka bierz przez `P()` (nigdy `S.profile` itd.), a do modelu podawaj `dst()`. Akweny i język są wspólne.
 - **Kreator (`onboarded: false`)** renderuje się bez pełnego `render()` przy edycji pól i musi mieć stałą wysokość — inaczej przycisk „Dalej” ucieka spod palca między naciśnięciem a puszczeniem.

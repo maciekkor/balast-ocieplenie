@@ -144,6 +144,10 @@ Edycja profilu **nie przebudowuje widoku**: suwak i pola tekstowe zapisują stan
 
 Przełącznik nurków siedzi w nagłówku (`#who`) i pojawia się dopiero przy co najmniej dwóch profilach; przy jednym nagłówek pokazuje licznik nurkowań jak dotąd.
 
+### Pisanie przy otwartej klawiaturze
+
+Na telefonie klawiatura zabiera ponad połowę ekranu, a przypięty pasek i dolna nawigacja zjadały resztę — nie było widać ani wpisywanego tekstu, ani listy podpowiedzi akwenu. Gdy fokus wchodzi w pole tekstowe **i** widoczny obszar jest niski (`visualViewport` skurczył się o ponad 140 px, jak na iOS, albo wysokość okna spadła poniżej 600 px, jak na Androidzie), `body` dostaje klasę `kb`: znika dolna nawigacja i pasek podsumowania, nagłówek przestaje być przypięty, a pole przewija się na górę ekranu. Lista podpowiedzi jest ograniczona do `min(260px, 40vh)`, żeby mieściła się nad klawiaturą. Po wyjściu z pola wszystko wraca. Na desktopie klasa nigdy się nie włącza.
+
 ## 8. Wygląd
 
 Komponenty wyboru: `.picks` (siatka kafelków, wariant `.two` na dwie kolumny i `.rows` na pozycje pełnowierszowe), `.pick` (ikona SVG + podpis + wartość), `.slider` (suwak z odczytem). Ikony rysują `ICON`, `bodyIcon()` i `barsIcon()` w `app.js` — kontur `currentColor`, 24 × 24, bez zewnętrznych plików. Werdykty cieplne i oceny w dzienniku mają symbole: ✓ wystarczy, fala na granicy, płatek śniegu zimno, termometr chłodno, płomień za ciepło.
