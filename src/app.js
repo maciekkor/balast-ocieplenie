@@ -340,8 +340,10 @@ function viewCalc(){
   const pl = P().plan, items = resolveItems(pl.items, P()), ctx = planCtx(pl);
   const p = predictLead(items, dst(), ctx, L);
   return `<div class="stack">
-  <section class="card"><h2>${tr('Nurkowanie')}</h2>${planFields(pl, 'p-')}
+  <section class="card"><h2>${tr('Planowane nurkowanie')}</h2>${planFields(pl, 'p-')}
     <p class="small muted" style="margin:10px 0 0">${tr('Temperatury podpowiada akwen dla wybranego miesiąca; wpisz własne, jeśli znasz aktualne.')}</p></section>
+
+  <button class="primary" data-act="log-from-plan">${tr('Po nurkowaniu: zapisz i oceń')}</button>
 
   <div id="thermal-box">${thermalCardHtml(pl, items)}</div>
 
@@ -354,7 +356,6 @@ function viewCalc(){
 
   <div id="lead-box">${ui.explain ? leadDetailHtml(pl, items, p) : ''}</div>
 
-  <button class="primary" data-act="log-from-plan">${tr('Po nurkowaniu: zapisz i oceń')}</button>
   </div>`;
 }
 
@@ -367,6 +368,7 @@ function viewLog(){
       <span class="small muted" style="align-self:center">${tr('plik .json z aplikacji Suunto')}</span></div>
     <input id="dive-file" type="file" accept="application/json,.json" hidden>
     <section class="card"><h2>${tr('Dziennik')} <small>${dives.length} ${tr('nurk.')}</small></h2>
+    ${dives.some(d => !d.leadFb || d.lead == null || d.lead === '') ? `<p class="small muted" style="margin:0 0 10px">${tr('Nurkowania bez ołowiu i oceny balastu nie uczą modelu — otwórz je przyciskiem Edytuj i uzupełnij.')}</p>` : ''}
     ${dives.length ? `<div class="list">${dives.map(d => `<div class="li">
       <div class="main"><div class="t">${esc(siteName(siteOf(d.siteId)))}</div>
       <div class="s mono">${esc(d.date)} · ${fmt(+d.depth, +d.depth % 1 ? 1 : 0)} m · ${esc(d.time)} min · ${fmt(+d.tBottom, +d.tBottom % 1 ? 1 : 0)}–${fmt(+d.tSurf, +d.tSurf % 1 ? 1 : 0)} °C</div>
@@ -374,7 +376,8 @@ function viewLog(){
       ${d.note ? `<div class="s"><i>${esc(d.note)}</i></div>` : ''}</div>
       <div class="r"><div class="mono">${d.lead != null && d.lead !== '' ? fmt(+d.lead) + ' kg' : '—'}</div>
       <div style="margin-top:4px;display:flex;gap:4px;justify-content:flex-end;flex-wrap:wrap">
-        ${d.leadFb ? `<span class="pill ${d.leadFb === 'ok' ? 'good' : 'warn'}">${d.leadFb === 'ok' ? tr('balast OK') : tr(d.leadFb === 'light' ? 'za lekko {x}' : 'za ciężko {x}', {x: fmt(d.leadAdj)})}</span>` : ''}
+        ${d.leadFb ? `<span class="pill ${d.leadFb === 'ok' ? 'good' : 'warn'}">${d.leadFb === 'ok' ? tr('balast OK') : tr(d.leadFb === 'light' ? 'za lekko {x}' : 'za ciężko {x}', {x: fmt(d.leadAdj)})}</span>`
+          : `<span class="pill">${tr('bez oceny balastu')}</span>`}
         ${d.thermal ? `<span class="pill info">${tr(THERM[d.thermal])}</span>` : ''}</div>
       <button class="sm ghost" style="margin-top:6px" data-act="edit-dive" data-id="${esc(d.id)}">${tr('Edytuj')}</button></div></div>`).join('')}</div>`
       : `<p class="muted">${tr('Brak nurkowań. Po pierwszym zapisie aplikacja zacznie się uczyć.')}</p>`}
@@ -384,6 +387,7 @@ function viewDraft(){
   const d = ui.draft, isNew = !P().dives.some(x => x.id === d.id);
   const seg = (name, cls, opts, val, icons) => `<div class="seg ${cls}" role="group">${opts.map(([v, l]) => `<button data-act="seg" data-name="${name}" data-v="${v}" aria-pressed="${val === v}">${icons && icons[v] || ''}${tr(l)}</button>`).join('')}</div>`;
   return `<div class="stack">
+    ${d.imported ? `<div class="banner">${tr('Wczytane z komputera. Komputer nie zapisuje ołowiu ani ciepła — wybierz sprzęt, wpisz ołów z oceną i zaznacz komfort, wtedy to nurkowanie nauczy model.')}</div>` : ''}
     <section class="card"><h2>${tr(isNew ? 'Nowe nurkowanie' : 'Edycja nurkowania')}</h2>${planFields(d, 'd-')}
       ${d.gps ? `<p class="small muted" style="margin:10px 0 0">${tr('Komputer podał pozycję {lat} N {lon} E — akwen wybierz sam.', {lat: fmt(d.gps.lat, 4), lon: fmt(d.gps.lon, 4)})}</p>` : ''}
       ${d.tMeasured ? `<p class="small muted" style="margin:6px 0 0">${tr('Temperatury zmierzone przez komputer — nie podmieniam ich podpowiedzią akwenu.')}</p>` : ''}</section>
@@ -783,6 +787,7 @@ function importDive(text){
   const r = parseSuuntoJson(text);
   if (!r.ok) return toast(tr(IMPORT_ERR[r.why] || 'Nie rozpoznaję tego pliku'));
   const d = r.dive, draft = draftFromPlan();
+  draft.imported = true;
   draft.date = d.date; draft.depth = d.depth; draft.time = d.time;
   if (d.tSurf != null){ draft.tSurf = d.tSurf; draft.tMeasured = true; }
   if (d.tBottom != null){ draft.tBottom = d.tBottom; draft.tMeasured = true; }
