@@ -25,6 +25,7 @@ const EN = {
   'Przykładowy zestaw':'Example kit','Weź przykład':'Use the example','Pianka 3 mm, kamizelka, butla 12 l, płetwy i automat — podmienisz na swoje.':'A 3 mm wetsuit, BCD, 12 l cylinder, fins and a regulator — swap them for your own.',
   'Pusta szafa':'Empty gear list','Zacznę od zera':'Start from scratch','Zostaje sam automat. Sprzęt dodasz z katalogu w zakładce Szafa.':'Only the regulator stays. Add your gear from the catalogue in the Gear tab.',
   'Wpisz wiek, wzrost i wagę — bez nich nie policzę wyporności ciała.':'Enter age, height and weight — without them I cannot work out body buoyancy.',
+  'Profil gotowy. Dodaj teraz swój sprzęt z katalogu.':'Profile done. Now add your gear from the catalogue.',
   'Gotowe. Wszystko zmienisz w Profilu i Szafie.':'Done. You can change everything in Profile and Gear.',
   'Nurkowie':'Divers','{n} na tym telefonie':'{n} on this phone','aktywny':'active','{n} nurk. w dzienniku':'{n} dives logged','{n} w szafie':'{n} gear items','profil niedokończony':'profile unfinished',
   'Przełącz':'Switch','Dodaj nurka':'Add diver','Nurek usunięty':'Diver deleted',
@@ -117,11 +118,11 @@ const SITE_EN = {redsea:'Red Sea (Marsa Alam, Dahab)', malta:'Malta, Gozo', croa
 // fragmenty nazw katalogowych i źródeł
 const FRAG_EN = [
   ['półsucha, kaptur','semi-dry, hood'],['półsucha','semi-dry'],['(dwuczęściowa)','(two-piece)'],['Kamizelka z kapturem','Hooded vest'],['z kapturem','with hood'],
-  ['Shorty ocieplacz','Shorty overlayer'],['Kaptur','Hood'],['Rękawice','Gloves'],['Buty Flexa','Flexa boots'],['Buty','Boots'],['Rękawice Super Stretch','Super Stretch gloves'],
+  ['Shorty ocieplacz','Shorty overlayer'],['Kaptur','Hood'],['Rękawice','Gloves'],['Buty Imprex Slipper','Imprex slipper'],['Buty Imprex','Imprex boots'],['Buty Flexa','Flexa boots'],['Buty','Boots'],['Rękawice Super Stretch','Super Stretch gloves'],
   ['(trylaminat)','(trilaminate)'],['(membrana 4-warstwowa)','(4-layer membrane)'],['(neopren 4 mm)','(4 mm neoprene)'],['Neopren zgnieciony','Crushed neoprene'],
   ['(góra + dół)','(top + bottom)'],['(podróżny)','(travel)'],['Jacket z wypożyczalni','Rental jacket'],
-  ['Automat + oktopus + manometr','Regulator + octopus + gauge'],['Płetwy gumowe','Rubber fins'],['(guma)','(rubber)'],['szacunek z masy i materiału','estimate from mass and material'],['grubość: producent; masa: szacunek','thickness: manufacturer; mass: estimate'],['szacunek (krój)','estimate (cut)'],['docieplenie','overlayer'],['krótka','shorty'],['Kamizelka neoprenowa','Neoprene vest'],['Buty z zamkiem','Zip boots'],['kaptur','hood'],['rękawice','gloves'],['buty','boots'],['Płetwy plastikowe','Plastic fins'],['Latarka główna','Primary torch'],['Aparat w obudowie','Camera in housing'],
-  ['producent (grubość)','manufacturer (thickness)'],['szacunek (grubość do sprawdzenia)','estimate (check thickness)'],['szacunek (typowe butle EU)','estimate (typical EU cylinders)'],
+  ['Automat + oktopus + manometr','Regulator + octopus + gauge'],['Płetwy gumowe','Rubber fins'],['(guma)','(rubber)'],['szacunek z masy i materiału','estimate from mass and material'],['grubość: producent; masa: szacunek','thickness: manufacturer; mass: estimate'],['szacunek (krój)','estimate (cut)'],['docieplenie','overlayer'],['krótka','shorty'],['Kamizelka neoprenowa','Neoprene vest'],['kaptur','hood'],['rękawice','gloves'],['buty','boots'],['Płetwy plastikowe','Plastic fins'],['Latarka główna','Primary torch'],['Aparat w obudowie','Camera in housing'],
+  ['producent (głównie 3 mm, wstawki 4 mm, kaptur)','manufacturer (mainly 3 mm, 4 mm inserts, hood)'],['producent (grubość)','manufacturer (thickness)'],['szacunek (grubość do sprawdzenia)','estimate (check thickness)'],['szacunek (typowe butle EU)','estimate (typical EU cylinders)'],
   ['szacunek; zakres temp. orientacyjny','estimate; approximate temp. range'],['szacunek; 7–14 °C wg sklepów','estimate; 7–14 °C per retailers'],['szacunek; <7 °C wg sklepów','estimate; <7 °C per retailers'],
   ['udźwig: producent; płyta: stal 2,06 kg / alu ~0,8 kg','lift: manufacturer; plate: steel 2.06 kg / alu ~0.8 kg'],['wypiera ~15,6 l, masa ~14,3 kg','displaces ~15.6 l, mass ~14.3 kg'],
   ['wpisz własną wartość','enter your own value'],['szacunek','estimate'],['wpis własny','own entry'],['zmienione przez Ciebie','edited by you'],

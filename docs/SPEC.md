@@ -83,7 +83,23 @@ Wybór w zestawie: jedna pozycja z `wetsuit`, `dry`, `under`, `tank`, `fins` ora
 
 Pole `src` opisuje wiarygodność: `producent (…)`, `szacunek`, `szacunek z masy i materiału`, `grubość: producent; masa: szacunek`. Producenci pianek, ocieplaczy i płetw nie publikują wyporności — dlatego katalog trzyma parametry fizyczne, a wyporność liczy model dla konkretnego nurka.
 
-Do weryfikacji (backlog B1): masy butów, wyporności płetw, nazwy modeli Tusa (kamizelki i buty), grubość Mares Flexa Core, wyporności kamizelek.
+### Weryfikacja danych (B1, wrzesień 2026)
+
+Sprawdzone u producenta i poprawione:
+
+| Pozycja | Ustalenie | Źródło |
+| --- | --- | --- |
+| `mares-flexacore` | „100% Ultrastretch neoprene, predominantly in 3 mm, with strategic 4 mm inserts", kaptur zintegrowany — grubość 3 mm w modelu potwierdzona | [mares.com](https://www.mares.com/en_SE/flexa-core-412469) |
+| `tusa-boots-5` | but Tusa to **Imprex** (DB-0101), 5,0 mm neopren, zamek boczny | [tusa.com](https://tusa.com/us-/TUSA/Boots/Imprex_(Dive_Boot)) |
+| `tusa-boots-3` | wersja 3 mm to **Imprex Dive Slipper** (DB-0201), 3,0 mm, niskie wsuwane | [scuba.com](https://www.scuba.com/products/tusa-imprex-3mm-dive-slipper) |
+| `tusa-libero` | „Libero II" **nie istnieje** w ofercie Tusa; odpowiednikiem jest **Crestline** (BC-0601) | [divers-supply.com](https://www.divers-supply.com/jacksonville/tusa-crestline-bcd.html) |
+| `tusa-liberator` | nazwa **Liberator Sigma II** (BC-0101) potwierdzona | [tusa.com](https://tusa.com/us-en/Tusa/BCJs/BC0101B_LIBERATOR_SIGMA_II) |
+| `fin-tusa-xpert` | aktualne oznaczenie modelu to **X-Pert Zoom Z3** | [tusa.com](https://tusa.com/us-en/TUSA/Fins) |
+| `fin-mares-aq-plus` | masa pary Regular ≈ 1,7 kg — wartość w katalogu potwierdzona | [divegearexpress.com](https://www.divegearexpress.com/mares-avanti-quattro-plus-fins) |
+
+Wszystkie 62 pozycje deklarujące „producent (grubość)" mają grubość w oznaczeniu modelu (np. `Flexa 5.4.3`, `Buty Imprex 5 mm`), czyli deklaracja pokrywa się ze specyfikacją producenta. Pilnuje tego test „katalog: uczciwe źródła i brak duplikatów nazw".
+
+**Czego nie da się potwierdzić u producentów** (i dlatego zostaje szacunkiem): masy butów, wyporność płetw i wyporność własna kamizelek. Producenci publikują dla kamizelek wyłącznie **udźwig** (lift), a dla płetw ani masy w parze, ani wyporności. Jedyne dostępne liczby to pomiary nurków (np. Scubapro Jet Fin XL: 3,3 lb na płetwę na sucho, −0,6 lb wyporności w wodzie słodkiej — [ScubaBoard](https://scubaboard.com/community/threads/how-negatively-buoyant-are-scubapro-jet-fins.398241/)), zgodne co do rzędu wielkości z katalogiem, ale zbyt zależne od rozmiaru i pasków, żeby podawać je jako dane producenta.
 
 ## 5. Model balastu (`model.js`)
 
@@ -144,7 +160,7 @@ Tokeny w `:root` (jasny) i nadpisanie dla ciemnego (`prefers-color-scheme` oraz 
 
 | # | Zadanie | Uwagi |
 | --- | --- | --- |
-| B1 | Weryfikacja danych katalogu ze źródłami | masy butów, wyporność płetw, nazwy Tusa, Flexa Core, kamizelki; uzupełnić `src` |
+| B1 | Pomiary wyporności płetw, butów i kamizelek | nazwy i grubości zweryfikowane (sekcja 4); brakujących wartości producenci nie publikują — potrzebny własny pomiar w wodzie |
 | B2 | Import logów z komputera nurkowego (UDDF, FIT Garmin/Suunto, eksport Subsurface) | parsowanie lokalne; wypełnia głębokość, czas, temperatury |
 | B4 | Model suchego skafandra zależny od ilości gazu i ocieplacza | obecnie stała `g` |
 | B6 | Testy e2e (Playwright) | pasek, wyszukiwanie akwenu, data, EN, offline |

@@ -507,11 +507,15 @@ function viewWizard(){
 }
 function wizGear(kind){
   const p = P();
-  if (kind === 'sample'){ const s = seedDiver(); p.wardrobe = s.wardrobe; p.plan.items = s.plan.items.slice(); }
-  else { p.wardrobe = [fromCat('misc-reg')]; p.plan.items = ['misc-reg-1']; }
-  finishWizard();
+  if (kind === 'sample'){ const s = seedDiver(); p.wardrobe = s.wardrobe; p.plan.items = s.plan.items.slice(); return finishWizard('calc'); }
+  p.wardrobe = [fromCat('misc-reg')]; p.plan.items = ['misc-reg-1'];
+  finishWizard('gear', tr('Profil gotowy. Dodaj teraz swój sprzęt z katalogu.'));   // pusta szafa: od razu tam, gdzie jest co zrobić
 }
-function finishWizard(){ P().onboarded = true; ui.wiz = 0; tab = 'calc'; toast(tr('Gotowe. Wszystko zmienisz w Profilu i Szafie.')); commit(); window.scrollTo(0, 0); }
+function finishWizard(goTab, msg){
+  P().onboarded = true; ui.wiz = 0; tab = goTab || 'calc';
+  toast(msg || tr('Gotowe. Wszystko zmienisz w Profilu i Szafie.'));
+  commit(); window.scrollTo(0, 0);
+}
 
 // ---------- nurkowie ----------
 function switchDiver(id){
