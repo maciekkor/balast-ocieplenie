@@ -180,7 +180,12 @@ nav.tabs button[aria-current="page"]{color:var(--accent)}
 .pick[aria-pressed="true"] small{color:var(--teal)}
 .slider{display:flex;align-items:center;gap:12px}
 .slider input[type=range]{flex:1;min-width:0;padding:0;border:0;background:transparent;accent-color:var(--teal);height:28px}
-.slider .val{font:700 24px var(--f-display);min-width:4.2em;text-align:right;font-variant-numeric:tabular-nums}
+.slider .val{display:flex;align-items:baseline;gap:3px;font:700 24px var(--f-display);font-variant-numeric:tabular-nums}
+.slider .val input{width:3.2em;padding:4px 2px;border:1px solid transparent;background:transparent;text-align:right;
+  font:inherit;color:inherit;font-variant-numeric:tabular-nums;-moz-appearance:textfield;appearance:textfield}
+.slider .val input::-webkit-outer-spin-button,.slider .val input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+.slider .val input:focus{border-color:var(--teal);background:var(--surface);outline:none;border-radius:6px}
+.slider .val small{font:600 13px var(--f-body);color:var(--muted)}
 .pill svg,.seg button svg{width:15px;height:15px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;vertical-align:-2px;margin-right:3px}
 .seg button svg{display:block;margin:0 auto 2px}
 .sb-q{align-self:start;margin-top:2px;padding:0;border:0;background:transparent;color:var(--muted)}

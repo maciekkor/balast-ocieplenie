@@ -1,5 +1,8 @@
 // ===== Język =====
 const EN = {
+  // butla spoza szafy
+  'Butla standardowa':'Standard cylinder','bez dodawania do szafy':'without adding it to your gear',
+  'Wybrana jest Twoja butla z szafy — tapnięcie standardowej ją zastąpi.':'Your own cylinder is selected — tapping a standard one replaces it.',
   // kopia zapasowa
   'Zapisz kopię do pliku':'Save backup to a file','Wczytaj kopię z pliku':'Load backup from a file','Zapisano plik {x}':'Saved file {x}',
   'Przeglądarka nie pozwoliła zapisać pliku':'The browser would not save the file','Nie udało się odczytać pliku':'Could not read the file',
@@ -10,10 +13,11 @@ const EN = {
   'Bardzo marznę':'I get cold fast','Marznę':'I get cold easily','Przeciętnie':'Average','Odporny':'Cold-resistant','Bardzo odporny':'Very cold-resistant',
   'Model i tak poprawi to po kilku ocenach ciepła.':'The model corrects this anyway after a few warmth ratings.',
   'Łącznie {n} nurk. — poziom podnosi się sam, gdy dopiszesz nurkowania do dziennika.':'{n} dives in total — the level moves up on its own as you log more dives.',
-  'Nurek {n}':'Diver {n}','Krok {n} z {m}':'Step {n} of {m}','Wstecz':'Back','Dalej':'Next','Pomiń':'Skip','Na pewno?':'Sure?',
+  'Nurek {n}':'Diver {n}','Krok {n} z {m}':'Step {n} of {m}','Wstecz':'Back','Dalej':'Next','Na pewno?':'Sure?',
   'Witaj':'Welcome',
   'Policzę, ile ołowiu zabrać i jaki zestaw ocieplenia założyć, a po każdym nurkowaniu nauczę się z Twojej oceny. Najpierw kilka pytań o Ciebie — bez nich wynik byłby zgadywaniem.':'I work out how much lead to take and which exposure suit to wear, and after every dive I learn from your rating. First a few questions about you — without them the result would be guesswork.',
   'Dane zostają w tym telefonie: bez konta, bez serwera, bez wysyłania czegokolwiek.':'Your data stays on this phone: no account, no server, nothing sent anywhere.',
+  'Bez danych o Tobie nie da się policzyć wyporności ciała, a to podstawa całego wyniku — dlatego kreatora nie można pominąć. Zajmie minutę, wszystko zmienisz później.':'Without your details I cannot work out your body buoyancy, and that is the basis of the whole result — so the setup cannot be skipped. It takes a minute, and you can change everything later.',
   'Wypełnij profil':'Fill in my profile','Zobacz przykład':'See an example',
   'Kim jesteś':'About you','Imię przyda się tylko wtedy, gdy z aplikacji korzysta więcej niż jedna osoba.':'A name only matters if more than one person uses the app.','opcjonalnie':'optional',
   'Płeć i wiek wchodzą do szacunku tkanki tłuszczowej i pojemności płuc — stąd wyporność ciała.':'Sex and age feed the body-fat and lung-volume estimates, and those give your body buoyancy.',

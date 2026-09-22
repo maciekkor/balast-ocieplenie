@@ -47,10 +47,10 @@ const SINGLE = {wetsuit:['wetsuit'], dry:['dry'], under:['under'], bcd:['bcd','w
 const targetOf = pre => pre === 'd-' && ui.draft ? ui.draft : P().plan;
 
 function toggleItem(list, uid){
-  const it = P().wardrobe.find(w => w.uid === uid); if (!it) return list;
+  const it = itemOf(uid, P()); if (!it) return list;
   if (list.includes(uid)) return list.filter(u => u !== uid);
   let out = list.slice();
-  const drop = cats => { out = out.filter(u => { const w = P().wardrobe.find(x => x.uid === u); return w && !cats.includes(w.cat); }); };
+  const drop = cats => { out = out.filter(u => { const w = itemOf(u, P()); return w && !cats.includes(w.cat); }); };
   if (SINGLE[it.cat]) drop(SINGLE[it.cat]);
   if (it.cat === 'dry' || it.cat === 'under') drop(['wetsuit','over']);
   if (it.cat === 'wetsuit' || it.cat === 'over') drop(['dry','under']);
@@ -91,10 +91,20 @@ function tiles(act, opts, on, cls){
     `<button type="button" class="pick${o.cls ? ' ' + o.cls : ''}" data-act="${act}" data-v="${esc(o.v)}" aria-pressed="${on(o)}">${o.icon || ''}<span>${esc(o.label)}</span>${o.sub ? `<small>${esc(o.sub)}</small>` : ''}</button>`).join('')}</div>`;
 }
 const fieldset = (lab, body, hint) => `<div class="fieldset"><span class="label">${lab}</span>${body}${hint ? `<p class="small muted" style="margin:6px 0 0">${hint}</p>` : ''}</div>`;
-function slider(k, lab, min, max, step, val, unit){
-  return `<div class="fieldset"><label class="label" for="pr-${k}">${lab}</label><div class="slider">
-    <input id="pr-${k}" type="range" min="${min}" max="${max}" step="${step}" value="${esc(val)}" data-act="slide" data-k="${k}">
-    <output class="val" id="out-${k}" for="pr-${k}">${fmt(+val, step < 1 ? 1 : 0)} ${unit}</output></div></div>`;
+const SLIDE_RANGE = {height:[130, 210, 1, 'cm'], weight:[35, 180, 0.5, 'kg']};
+function slider(k, lab){
+  const [min, max, step, unit] = SLIDE_RANGE[k], val = P().profile[k];
+  return `<div class="fieldset"><label class="label" for="num-${k}">${lab}</label><div class="slider">
+    <input type="range" id="pr-${k}" min="${min}" max="${max}" step="${step}" value="${esc(val)}" data-act="slide" data-k="${k}" aria-label="${lab}">
+    <span class="val"><input id="num-${k}" type="number" inputmode="decimal" step="${step}" min="${min}" max="${max}" value="${esc(val)}" data-act="typed" data-k="${k}"><small>${unit}</small></span>
+  </div></div>`;
+}
+// suwak i pole trzymają tę samą wartość; drugie pole tylko odświeżamy, żeby nie przerywać wpisywania
+function setBodyValue(k, v, from){
+  P().profile[k] = v;
+  const other = document.getElementById((from === 'typed' ? 'pr-' : 'num-') + k);
+  if (other && +other.value !== v) other.value = v;
+  refreshBody();
 }
 
 const AGE_BANDS = [{v:22, label:'do 25', lo:0, hi:25}, {v:30, label:'26–35', lo:26, hi:35}, {v:40, label:'36–45', lo:36, hi:45}, {v:50, label:'46–55', lo:46, hi:55}, {v:62, label:'56+', lo:56, hi:200}];
@@ -178,7 +188,7 @@ function compLabel(r){
   if (r.key === 'lungs') return tr('Płuca, pół oddechu');
   if (r.key === 'exp') return tr('Doświadczenie ({n} nurk.)', {n: L.total});
   if (r.key === 'theta0') return tr('Korekta osobista (nauka)');
-  const uid = r.key.startsWith('th-') ? r.key.slice(3) : r.key, w = P().wardrobe.find(x => x.uid === uid);
+  const uid = r.key.startsWith('th-') ? r.key.slice(3) : r.key, w = itemOf(uid, P());
   const name = w ? nm(w) : r.label;
   return r.key.startsWith('th-') ? tr('Korekta: {x}', {x: name}) : name;
 }
@@ -262,6 +272,18 @@ function quickItem(w){
 
 const sameSet = (a, b) => a.length === b.length && a.every(x => b.some(y => y.uid === x.uid));
 
+// Standardowe butle prosto z katalogu — wybór jednym tapnięciem, bez wpisywania do szafy.
+const STD_TANKS = CATALOG.filter(c => c.cat === 'tank');
+function tankPicker(selected, act){
+  const mine = P().wardrobe.some(w => w.cat === 'tank' && selected.includes(w.uid));
+  return `<div class="group"><div class="label">${tr('Butla standardowa')} <span class="muted">${tr('bez dodawania do szafy')}</span></div>
+    <div class="chips">${STD_TANKS.map(c => {
+      const uid = 'cat:' + c.id, on = selected.includes(uid);
+      return `<button class="chip" data-act="${act || 'plan-toggle'}" data-uid="${esc(uid)}" aria-pressed="${on}">${esc(frag(c.brand))} ${esc(frag(c.model))}</button>`;
+    }).join('')}</div>
+    ${mine ? `<p class="small muted" style="margin:6px 0 0">${tr('Wybrana jest Twoja butla z szafy — tapnięcie standardowej ją zastąpi.')}</p>` : ''}</div>`;
+}
+
 // ---------- widoki ----------
 function viewCalc(){
   const pl = P().plan, items = resolveItems(pl.items, P()), ctx = planCtx(pl), iss = setIssues(items);
@@ -302,7 +324,8 @@ function viewCalc(){
     <button class="sm${ui.quick ? ' ghost' : ''}" data-act="quick-open" aria-expanded="${!!ui.quick}">${tr(ui.quick ? 'Zamknij' : '+ Dodaj sprzęt')}</button></div>
     ${ui.quick ? quickAdd() : ''}
     ${ui.editGear && P().wardrobe.some(w => w.uid === ui.editGear) ? `<div class="label" style="margin-top:4px">${tr('Dodane: {x}', {x: esc(nm(P().wardrobe.find(w => w.uid === ui.editGear)))})}</div>${paramEditor(P().wardrobe.find(w => w.uid === ui.editGear))}<div style="height:12px"></div>` : ''}
-    ${chipsFor(pl.items, 'plan-toggle')}</section>
+    ${chipsFor(pl.items, 'plan-toggle')}
+    ${tankPicker(pl.items)}</section>
 
   ${ui.explain ? leadDetail : ''}
 
@@ -334,7 +357,8 @@ function viewDraft(){
   const seg = (name, cls, opts, val, icons) => `<div class="seg ${cls}" role="group">${opts.map(([v, l]) => `<button data-act="seg" data-name="${name}" data-v="${v}" aria-pressed="${val === v}">${icons && icons[v] || ''}${tr(l)}</button>`).join('')}</div>`;
   return `<div class="stack">
     <section class="card"><h2>${tr(isNew ? 'Nowe nurkowanie' : 'Edycja nurkowania')}</h2>${planFields(d, 'd-')}</section>
-    <section class="card"><h2>${tr('Użyty zestaw')}</h2>${chipsFor(d.items, 'draft-toggle')}</section>
+    <section class="card"><h2>${tr('Użyty zestaw')}</h2>${chipsFor(d.items, 'draft-toggle')}
+      ${tankPicker(d.items, 'draft-toggle')}</section>
     <section class="card"><h2>${tr('Balast')}</h2>
       <div class="grid2"><div class="f"><label for="d-lead">${tr('Ołów, który miałeś (kg)')}</label><input id="d-lead" type="number" step="0.5" inputmode="decimal" data-f="lead" value="${esc(d.lead ?? '')}"></div>
       <div class="f"><label for="d-adj">${tr('O ile (kg)')}</label><select id="d-adj" data-f="leadAdj"${d.leadFb === 'ok' || !d.leadFb ? ' disabled' : ''}>${[0.5,1,1.5,2,2.5,3,4].map(v => `<option value="${v}"${+d.leadAdj === v ? ' selected' : ''}>${fmt(v)}</option>`).join('')}</select></div></div>
@@ -422,8 +446,8 @@ function viewProfile(){
     <div class="fieldset">${nameField(pr)}</div>
     ${sexTiles(pr)}
     ${ageTiles(pr)}
-    ${slider('height', tr('Wzrost'), 130, 210, 1, pr.height, 'cm')}
-    ${slider('weight', tr('Waga'), 35, 180, 0.5, pr.weight, 'kg')}
+    ${slider('height', tr('Wzrost'))}
+    ${slider('weight', tr('Waga'))}
     ${buildTiles(pr)}
     <div class="fieldset">${bfField(pr)}</div>
     ${coldTiles(pr)}
@@ -460,8 +484,7 @@ function wizHead(n, title, lead){
     <h2>${title}</h2>${lead ? `<p class="small muted" style="margin:6px 0 0">${lead}</p>` : ''}`;
 }
 const wizNav = (back, next) => `<div class="btnrow"><button class="primary" data-act="wiz-next">${tr(next || 'Dalej')}</button>
-  ${back ? `<button class="ghost" data-act="wiz-back">${tr('Wstecz')}</button>` : ''}
-  <button class="ghost" data-act="wiz-skip">${tr('Pomiń')}</button></div>`;
+  ${back ? `<button class="ghost" data-act="wiz-back">${tr('Wstecz')}</button>` : ''}</div>`;
 
 function viewWizard(){
   const pr = P().profile, step = ui.wiz;
@@ -470,7 +493,8 @@ function viewWizard(){
     <p style="margin:8px 0 0">${tr('Policzę, ile ołowiu zabrać i jaki zestaw ocieplenia założyć, a po każdym nurkowaniu nauczę się z Twojej oceny. Najpierw kilka pytań o Ciebie — bez nich wynik byłby zgadywaniem.')}</p>
     <p class="small muted" style="margin:8px 0 0">${tr('Dane zostają w tym telefonie: bez konta, bez serwera, bez wysyłania czegokolwiek.')}</p>
     ${langTiles()}
-    <div class="btnrow"><button class="primary" data-act="wiz-next">${tr('Wypełnij profil')}</button><button class="ghost" data-act="seed">${tr('Zobacz przykład')}</button><button class="ghost" data-act="wiz-skip">${tr('Pomiń')}</button></div>
+    <p class="small muted" style="margin:10px 0 0">${tr('Bez danych o Tobie nie da się policzyć wyporności ciała, a to podstawa całego wyniku — dlatego kreatora nie można pominąć. Zajmie minutę, wszystko zmienisz później.')}</p>
+    <div class="btnrow"><button class="primary" data-act="wiz-next">${tr('Wypełnij profil')}</button><button class="ghost" data-act="seed">${tr('Zobacz przykład')}</button></div>
   </section></div>`;
   if (step === 1) return `<div class="stack"><section class="card">
     ${wizHead(1, tr('Kim jesteś'), tr('Imię przyda się tylko wtedy, gdy z aplikacji korzysta więcej niż jedna osoba.'))}
@@ -481,8 +505,8 @@ function viewWizard(){
     ${wizNav(true)}</section></div>`;
   if (step === 2) return `<div class="stack"><section class="card">
     ${wizHead(2, tr('Twoje ciało'), tr('To najważniejsze liczby dla balastu: im więcej tkanki tłuszczowej, tym więcej ołowiu.'))}
-    ${slider('height', tr('Wzrost'), 130, 210, 1, pr.height, 'cm')}
-    ${slider('weight', tr('Waga'), 35, 180, 0.5, pr.weight, 'kg')}
+    ${slider('height', tr('Wzrost'))}
+    ${slider('weight', tr('Waga'))}
     ${buildTiles(pr)}
     <div class="fieldset">${bfField(pr)}</div>
     ${bodyOutBox(false)}
@@ -590,8 +614,9 @@ function kbCheck(){
 }
 function kbFocus(el){
   if (!kbCheck() || !el) return;
-  const box = el.closest('.f') || el;
-  box.scrollIntoView({block: 'start', behavior: 'smooth'});
+  const box = el.closest('.fieldset') || el.closest('.f') || el;   // suwak z podpisem przewijamy w całości
+  const y = box.getBoundingClientRect().top + window.scrollY - 10;  // odstęp, żeby podpis nie ucinał się o krawędź
+  window.scrollTo({top: Math.max(0, y), behavior: 'smooth'});
 }
 document.addEventListener('focusin', e => { const t = e.target; setTimeout(() => kbFocus(t), 260); });
 document.addEventListener('focusout', () => setTimeout(kbCheck, 60));
@@ -622,6 +647,20 @@ function pickSite(pre, id){
   return tg === P().plan ? commit() : render();
 }
 view.addEventListener('mousedown', e => { const b = e.target.closest('[data-act="site-pick"]'); if (b){ e.preventDefault(); pickSite(b.dataset.pre, b.dataset.id); } });
+// Kalendarz na pointerdown i z preventDefault: dotknięcie ikony po wpisaniu daty powodowało blur → change →
+// przebudowę widoku, więc klik lądował w pustce. Zamiast tego sami zapisujemy to, co w polu, i otwieramy wybór daty.
+view.addEventListener('pointerdown', e => {
+  const b = e.target.closest('[data-act="cal"]'); if (!b) return;
+  e.preventDefault();
+  const ae = document.activeElement;
+  if (ae && ae.dataset && ae.dataset.f) applyPlanField(ae, false);
+  openDatePicker(b.dataset.pre);
+});
+function openDatePicker(pre){
+  const pk = document.getElementById(pre + 'datepick'); if (!pk) return;
+  try { pk.showPicker(); }
+  catch(_){ pk.style.pointerEvents = 'auto'; pk.focus(); pk.click(); pk.style.pointerEvents = ''; }
+}
 view.addEventListener('click', e => {
   const b = e.target.closest('[data-act]'); if (!b || b.tagName === 'INPUT' || b.tagName === 'SELECT') return;
   const a = b.dataset.act;
@@ -639,7 +678,6 @@ view.addEventListener('click', e => {
     if (ui.wiz === 2 && !profileOk(P().profile)){ toast(tr('Wpisz wiek, wzrost i wagę — bez nich nie policzę wyporności ciała.')); return; }
     ui.wiz = Math.min(WIZ_STEPS, ui.wiz + 1); render(); return window.scrollTo(0, 0); }
   if (a === 'wiz-back'){ ui.wiz = Math.max(0, ui.wiz - 1); render(); return window.scrollTo(0, 0); }
-  if (a === 'wiz-skip') return finishWizard();
   if (a === 'wiz-gear') return wizGear(b.dataset.v);
   if (a === 'diver-switch') return switchDiver(b.dataset.id);
   if (a === 'diver-add'){ const d = emptyDiver(); S.profiles.push(d); S.activeId = d.id; fillTemps(d.plan); ui.wiz = 1; ui.delDiver = null; ui.draft = null; commit(); return window.scrollTo(0, 0); }
@@ -652,10 +690,9 @@ view.addEventListener('click', e => {
     if (S.activeId === id){ S.activeId = S.profiles[0].id; ui.draft = null; ui.editGear = null; }
     toast(tr('Nurek usunięty')); return commit(); }
   if (a === 'site-pick') return pickSite(b.dataset.pre, b.dataset.id);
-  if (a === 'cal'){ const pk = document.getElementById(b.dataset.pre + 'datepick'); try { pk.showPicker(); } catch(_){ pk.focus(); pk.click(); } return; }
   if (a === 'plan-toggle'){ P().plan.items = toggleItem(P().plan.items, b.dataset.uid); return commit(); }
   if (a === 'draft-toggle'){ ui.draft.items = toggleItem(ui.draft.items, b.dataset.uid); return render(); }
-  if (a === 'use-combo'){ const base = P().plan.items.filter(u => { const w = P().wardrobe.find(x => x.uid === u); return w && !EXPO.includes(w.cat); }); P().plan.items = base.concat(b.dataset.uids.split(',')); toast(tr('Zestaw podmieniony')); return commit(); }
+  if (a === 'use-combo'){ const base = P().plan.items.filter(u => { const w = itemOf(u, P()); return w && !EXPO.includes(w.cat); }); P().plan.items = base.concat(b.dataset.uids.split(',')); toast(tr('Zestaw podmieniony')); return commit(); }
   if (a === 'log-from-plan'){ ui.draft = draftFromPlan(); tab = 'log'; render(); return window.scrollTo(0, 0); }
   if (a === 'new-dive'){ ui.draft = draftFromPlan(); return render(); }
   if (a === 'edit-dive'){ ui.draft = JSON.parse(JSON.stringify(P().dives.find(d => d.id === b.dataset.id))); render(); return window.scrollTo(0, 0); }
@@ -710,6 +747,16 @@ function exportFile(){
     toast(tr('Zapisano plik {x}', {x: name}));
   } catch(_){ toast(tr('Przeglądarka nie pozwoliła zapisać pliku')); }
 }
+// zapisuje pole planu/nurkowania; redraw=false gdy wołamy to sami przed inną akcją
+function applyPlanField(t, redraw){
+  const tg = targetOf(t.id.startsWith('d-') ? 'd-' : 'p-'), k = t.dataset.f, v = t.value;
+  if (k === 'date'){
+    if (!validDate(v)){ if (redraw){ toast(tr('Data w formacie rrrr-mm-dd')); render(); } return; }
+    tg.date = v; fillTemps(tg);
+  } else tg[k] = k === 'note' ? v : num(v);
+  if (!redraw){ if (tg === P().plan){ save(); recompute(); } return; }
+  return tg === P().plan ? commit() : render();
+}
 function importText(txt){
   let o = null;
   try { o = migrate(JSON.parse(txt)); } catch(_){}
@@ -743,15 +790,13 @@ view.addEventListener('keydown', e => {
     const el = document.getElementById(id); if (el) el.blur();
   }
 });
-const SLIDE_UNIT = {height:'cm', weight:'kg'};
 view.addEventListener('input', e => {
   const t = e.target;
-  if (t.dataset.act === 'slide'){
-    const k = t.dataset.k, v = +t.value;
-    P().profile[k] = v;
-    const out = document.getElementById('out-' + k);
-    if (out) out.textContent = fmt(v, k === 'weight' ? 1 : 0) + ' ' + SLIDE_UNIT[k];
-    return refreshBody();
+  if (t.dataset.act === 'slide') return setBodyValue(t.dataset.k, +t.value, 'slide');
+  if (t.dataset.act === 'typed'){
+    const k = t.dataset.k, v = num(t.value);
+    if (v == null || isNaN(v)) return;                 // w trakcie wpisywania pole bywa puste
+    return setBodyValue(k, v, 'typed');
   }
   if (t.dataset.act === 'siteq'){ ui.siteQ = {pre: t.dataset.pre, q: t.value}; ui.hl = 0; return render(); }
   if (t.dataset.date){
@@ -766,6 +811,12 @@ view.addEventListener('input', e => {
 view.addEventListener('change', e => {
   const t = e.target, v = t.value;
   if (t.dataset.act === 'slide'){ save(); recompute(); return; }
+  if (t.dataset.act === 'typed'){                       // po wyjściu z pola: zakres suwaka jest wiążący
+    const k = t.dataset.k, [min, max] = SLIDE_RANGE[k];
+    const val = Math.min(max, Math.max(min, num(v) ?? P().profile[k]));
+    t.value = val; setBodyValue(k, val, 'typed'); save(); recompute();
+    return;
+  }
   if (t.id === 'bk-file'){ const f = t.files[0]; t.value = ''; if (f) f.text().then(importText, () => toast(tr('Nie udało się odczytać pliku'))); return; }
   if (t.dataset.act === 'qc'){ ui.addCat = v; return render(); }
   if (t.dataset.act === 'qqc'){ ui.quick.cat = v; return render(); }
@@ -775,14 +826,7 @@ view.addEventListener('change', e => {
     const tg = targetOf(t.dataset.pick); tg.date = v; fillTemps(tg);
     return tg === P().plan ? commit() : render();
   }
-  if (t.dataset.f){
-    const tg = targetOf(t.id.startsWith('d-') ? 'd-' : 'p-'), k = t.dataset.f;
-    if (k === 'date'){
-      if (!validDate(v)){ toast(tr('Data w formacie rrrr-mm-dd')); return render(); }
-      tg.date = v; fillTemps(tg);
-    } else tg[k] = k === 'note' ? v : num(v);
-    return tg === P().plan ? commit() : render();
-  }
+  if (t.dataset.f) return applyPlanField(t, true);
   if (t.dataset.pr){
     const k = t.dataset.pr; P().profile[k] = ['name','sex','build'].includes(k) ? v : (k === 'bf' ? (v === '' ? '' : num(v)) : num(v));
     save(); recompute(); refreshBody();
