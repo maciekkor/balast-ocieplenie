@@ -178,7 +178,10 @@ function stepField(id, lab, f, val, step, min, max){
   return `<div class="f"><label for="${id}">${lab}</label><div class="step">${bt(-step)}
     <input id="${id}" type="number" inputmode="decimal" data-f="${f}" value="${esc(val)}" step="${step}" min="${min}" max="${max}">${bt(step)}</div></div>`;
 }
-function planFields(pl, pre){
+// Plan pokazuje tylko to, co naprawdę zmienia wynik: akwen, datę, głębokość i temperaturę dna.
+// Czas, numer nurkowania dnia, rezerwa i temperatura powierzchni zostają w danych z rozsądnymi
+// założeniami, a poprawić je można przy zapisie w dzienniku (full = true).
+function planFields(pl, pre, full){
   return `<div class="grid2">
     ${siteCombo(pl, pre)}
     <div class="f wide"><label for="${pre}date">${tr('Data')}</label><div class="datebox">
@@ -186,12 +189,14 @@ function planFields(pl, pre){
       <button type="button" class="calbtn" data-act="cal" data-pre="${pre}" aria-label="${tr('Kalendarz')}"><svg viewBox="0 0 24 24"><rect x="4" y="5" width="16" height="15" rx="2"/><path d="M4 10h16M9 3v4M15 3v4"/></svg></button>
       <input type="date" class="datepick" id="${pre}datepick" data-pick="${pre}" tabindex="-1" aria-hidden="true" value="${esc(validDate(pl.date) ? pl.date : '')}"></div></div>
     ${stepField(pre + 'depth', tr('Głębokość maks. (m)'), 'depth', pl.depth, 1, 0, 120)}
+    ${stepField(pre + 'tb', tr('Temp. na dnie (°C)'), 'tBottom', pl.tBottom, 1, -2, 40)}
+  </div>
+  ${full ? `<details class="more"><summary>${tr('Szczegóły (opcjonalnie)')}</summary><div class="grid2">
     ${stepField(pre + 'time', tr('Czas (min)'), 'time', pl.time, 5, 1, 400)}
     ${stepField(pre + 'nday', tr('Nurkowanie dnia nr'), 'nDay', pl.nDay, 1, 1, 9)}
     ${stepField(pre + 'ts', tr('Temp. powierzchnia (°C)'), 'tSurf', pl.tSurf, 1, -2, 40)}
-    ${stepField(pre + 'tb', tr('Temp. na dnie (°C)'), 'tBottom', pl.tBottom, 1, -2, 40)}
     ${stepField(pre + 'res', tr('Rezerwa w butli (bar)'), 'reserve', pl.reserve, 10, 0, 300)}
-  </div>`;
+  </div></details>` : ''}`;
 }
 function compLabel(r){
   if (r.key === 'tissue') return tr('Ciało (tkanki)');
@@ -341,7 +346,8 @@ function viewCalc(){
   const p = predictLead(items, dst(), ctx, L);
   return `<div class="stack">
   <section class="card"><h2>${tr('Planowane nurkowanie')}</h2>${planFields(pl, 'p-')}
-    <p class="small muted" style="margin:10px 0 0">${tr('Temperatury podpowiada akwen dla wybranego miesiąca; wpisz własne, jeśli znasz aktualne.')}</p></section>
+    <p class="small muted" style="margin:10px 0 0">${tr('Temperaturę dna podpowiada akwen dla wybranego miesiąca; wpisz własną, jeśli znasz aktualną.')}
+    ${tr('Komfort liczę ostrożnie — jak dla {n}. nurkowania w ciągu dnia i {t} min pod wodą, przy rezerwie {r} bar. Czas, kolejność i temperaturę powierzchni poprawisz przy zapisie w dzienniku.', {n: pl.nDay, t: pl.time, r: pl.reserve})}</p></section>
 
   <button class="primary" data-act="log-from-plan">${tr('Po nurkowaniu: zapisz i oceń')}</button>
 
@@ -388,7 +394,7 @@ function viewDraft(){
   const seg = (name, cls, opts, val, icons) => `<div class="seg ${cls}" role="group">${opts.map(([v, l]) => `<button data-act="seg" data-name="${name}" data-v="${v}" aria-pressed="${val === v}">${icons && icons[v] || ''}${tr(l)}</button>`).join('')}</div>`;
   return `<div class="stack">
     ${d.imported ? `<div class="banner">${tr('Wczytane z komputera. Komputer nie zapisuje ołowiu ani ciepła — wybierz sprzęt, wpisz ołów z oceną i zaznacz komfort, wtedy to nurkowanie nauczy model.')}</div>` : ''}
-    <section class="card"><h2>${tr(isNew ? 'Nowe nurkowanie' : 'Edycja nurkowania')}</h2>${planFields(d, 'd-')}
+    <section class="card"><h2>${tr(isNew ? 'Nowe nurkowanie' : 'Edycja nurkowania')}</h2>${planFields(d, 'd-', true)}
       ${d.gps ? `<p class="small muted" style="margin:10px 0 0">${tr('Komputer podał pozycję {lat} N {lon} E — akwen wybierz sam.', {lat: fmt(d.gps.lat, 4), lon: fmt(d.gps.lon, 4)})}</p>` : ''}
       ${d.tMeasured ? `<p class="small muted" style="margin:6px 0 0">${tr('Temperatury zmierzone przez komputer — nie podmieniam ich podpowiedzią akwenu.')}</p>` : ''}</section>
     <section class="card"><h2>${tr('Balast')}</h2>
