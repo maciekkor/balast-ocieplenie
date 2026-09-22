@@ -168,3 +168,21 @@ test('import Suunto: bez próbek liczy z nagłówka, śmieci odrzuca', () => {
   assert.equal(A.parseSuuntoJson(JSON.stringify({DeviceLog: {Header: {ActivityType: 1, DateTime: '2026-01-01T10:00:00+01:00'}}})).why, 'notDive');
   assert.equal(A.kelvinToC(273.15), 0);
 });
+
+test('dopasowanie akwenu do pozycji z komputera', () => {
+  const sites = A.seedSites();
+  const at = (lat, lon) => { const m = A.matchSite({lat, lon}, sites); return m && m.id; };
+  assert.equal(at(44.8014, 14.7619), 'croatia', 'Rab leży w rejonie Adriatyku');
+  assert.equal(at(25.07, 34.90), 'redsea', 'Marsa Alam');
+  assert.equal(at(52.98, 18.00), 'piechcin', 'kamieniołom trafiony w punkt');
+  assert.equal(at(51.97, 20.51), 'deepspot');
+  assert.equal(at(0, 0), null, 'Zatoka Gwinejska nie jest żadnym z akwenów');
+  assert.equal(at(35.6, 139.7), null, 'Tokio też nie');
+  assert.equal(A.matchSite(null, sites), null);
+  // bliższy rejon wygrywa, gdy dwa promienie się nakładają
+  const m = A.matchSite({lat: 52.98, lon: 18.00}, sites);
+  assert.ok(m.km <= 8, 'odległość raportowana w km: ' + m.km);
+  // akwen dopisany ręcznie nie ma współrzędnych i nie bierze udziału
+  assert.equal(A.matchSite({lat: 50, lon: 20}, [{id: 'x', name: 'Własny'}]), null);
+  assert.ok(Math.abs(A.distanceKm(52, 21, 52, 22) - 68.5) < 2, 'stopień długości na 52°N to ~68 km');
+});

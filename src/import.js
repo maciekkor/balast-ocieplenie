@@ -50,4 +50,24 @@ function parseSuuntoJson(text){
   }};
 }
 
-if (typeof module !== 'undefined') module.exports = {parseSuuntoJson, kelvinToC};
+// Dopasowanie akwenu do pozycji z komputera. Presety mają przybliżony środek rejonu (lat/lon)
+// i promień r w km, w którym dopasowanie ma sens: „Chorwacja (Adriatyk)” to 350 km, kamieniołom 8 km.
+// Akweny dopisane ręcznie nie mają współrzędnych, więc ich nie dotyczy.
+function distanceKm(a, b, c, d){
+  const R = 6371, rad = x => x * Math.PI / 180;
+  const dLat = rad(c - a), dLon = rad(d - b);
+  const h = Math.sin(dLat / 2) ** 2 + Math.cos(rad(a)) * Math.cos(rad(c)) * Math.sin(dLon / 2) ** 2;
+  return 2 * R * Math.asin(Math.min(1, Math.sqrt(h)));
+}
+function matchSite(gps, sites){
+  if (!gps || !Array.isArray(sites)) return null;
+  let best = null;
+  for (const s of sites){
+    if (typeof s.lat !== 'number' || typeof s.lon !== 'number') continue;
+    const km = distanceKm(gps.lat, gps.lon, s.lat, s.lon);
+    if (km <= (s.r || 25) && (!best || km < best.km)) best = {id: s.id, km: Math.round(km)};
+  }
+  return best;
+}
+
+if (typeof module !== 'undefined') module.exports = {parseSuuntoJson, kelvinToC, matchSite, distanceKm};
