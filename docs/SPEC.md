@@ -43,7 +43,8 @@ S = {
   v: 1,                         // wersja schematu
   lang: 'pl' | 'en',            // wspólny dla wszystkich nurków
   activeId: 'p-xxxxxx',         // id nurka, którego dane są na ekranie
-  sites: [ { id, name, rho /*kg/l*/, ts: [12 × °C powierzchnia], tb: [12 × °C dno], preset?: bool } ],
+  sites: [ { id, name, rho /*kg/l*/, ts: [12 × °C powierzchnia], tb: [12 × °C dno], preset?: bool,
+             lat?, lon?, r? /*przybliżony środek rejonu i promień w km — do rozpoznania akwenu z GPS*/ } ],
   profiles: [ {                 // każdy nurek osobno (B3)
     id, onboarded /*false = kreator dopyta o profil*/,
     learnSince?: 'rrrr-mm-dd',  // nauka tylko z nurkowań od tej daty
@@ -172,6 +173,8 @@ Dwie rzeczy, których nie widać bez prawdziwego pliku:
 - **`Latitude`/`Longitude` są w radianach**, nie w stopniach.
 
 Szkic z importu dostaje `imported`, przez co formularz otwiera się z banerem mówiącym wprost, czego modelowi brakuje: sprzętu, ołowiu z oceną i komfortu cieplnego. W dzienniku nurkowanie bez ołowiu albo bez oceny balastu ma plakietkę „bez oceny balastu", a nad listą jest przypomnienie, że takie wpisy nie uczą modelu — uzupełnia się je przyciskiem Edytuj.
+
+**Akwen z pozycji GPS.** Presety mają przybliżony środek rejonu (`lat`, `lon`) i promień `r` w km, w którym dopasowanie ma sens — „Chorwacja (Adriatyk)" to 350 km, kamieniołom 8 km, basen 5 km. `matchSite()` liczy odległość po wielkim kole i wybiera najbliższy akwen mieszczący się w swoim promieniu; przy braku trafienia akwen zostaje bez zmian, a pozycja jest tylko pokazana. Akweny dopisane ręcznie nie mają współrzędnych, więc nie biorą udziału. Formularz zawsze mówi, co się stało („Akwen rozpoznany z pozycji … 139 km od środka rejonu — zmień, jeśli nie ten"), bo rejon to nie punkt i pomyłka jest możliwa. `migrate()` dobiera współrzędne po `id` do akwenów zapisanych zanim je wprowadziliśmy.
 
 Temperatury z komputera oznaczamy `tMeasured`, dzięki czemu zmiana akwenu albo daty ich nie nadpisze. Numer nurkowania dnia liczymy z dziennika, a podobne nurkowanie (ta sama data, głębokość ±0,6 m, czas ±3 min) daje ostrzeżenie zamiast cichego duplikatu. **Ołów i ocena ciepła zostają puste** — komputer ich nie zapisuje, a to z nich uczy się model. Pozycję GPS pokazujemy jako podpowiedź; akwen użytkownik wybiera sam.
 

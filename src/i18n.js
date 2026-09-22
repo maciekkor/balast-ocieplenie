@@ -14,6 +14,8 @@ const EN = {
   'Ten plik nie opisuje nurkowania':'This file is not a dive','Nie rozpoznaję tego pliku':'I do not recognise this file',
   'Wczytano: {d} m, {t} min, {a}–{b} °C. Dopisz ołów i ocenę.':'Loaded: {d} m, {t} min, {a}–{b} °C. Add the lead and your rating.',
   'Wczytano, ale podobne nurkowanie już jest w dzienniku':'Loaded, but a similar dive is already in the log',
+  'Wczytano: {s}, {d} m, {t} min, {a}–{b} °C. Dopisz ołów i ocenę.':'Loaded: {s}, {d} m, {t} min, {a}–{b} °C. Add the lead and your rating.',
+  'Akwen rozpoznany z pozycji {lat} N {lon} E ({km} km od środka rejonu) — zmień, jeśli nie ten.':'Dive site recognised from position {lat} N {lon} E ({km} km from the area centre) — change it if it is not the right one.',
   'Komputer podał pozycję {lat} N {lon} E — akwen wybierz sam.':'The computer recorded position {lat} N {lon} E — pick the dive site yourself.',
   'Temperatury zmierzone przez komputer — nie podmieniam ich podpowiedzią akwenu.':'Temperatures measured by the computer — I will not overwrite them with the site defaults.',
   // kopia zapasowa

@@ -397,7 +397,9 @@ function viewDraft(){
   return `<div class="stack">
     ${d.imported ? `<div class="banner">${tr('Wczytane z komputera. Komputer nie zapisuje ołowiu ani ciepła — wybierz sprzęt, wpisz ołów z oceną i zaznacz komfort, wtedy to nurkowanie nauczy model.')}</div>` : ''}
     <section class="card"><h2>${tr(isNew ? 'Nowe nurkowanie' : 'Edycja nurkowania')}</h2>${planFields(d, 'd-', true)}
-      ${d.gps ? `<p class="small muted" style="margin:10px 0 0">${tr('Komputer podał pozycję {lat} N {lon} E — akwen wybierz sam.', {lat: fmt(d.gps.lat, 4), lon: fmt(d.gps.lon, 4)})}</p>` : ''}
+      ${d.gps ? `<p class="small muted" style="margin:10px 0 0">${d.siteFromGps
+        ? tr('Akwen rozpoznany z pozycji {lat} N {lon} E ({km} km od środka rejonu) — zmień, jeśli nie ten.', {lat: fmt(d.gps.lat, 4), lon: fmt(d.gps.lon, 4), km: d.siteFromGps})
+        : tr('Komputer podał pozycję {lat} N {lon} E — akwen wybierz sam.', {lat: fmt(d.gps.lat, 4), lon: fmt(d.gps.lon, 4)})}</p>` : ''}
       ${d.tMeasured ? `<p class="small muted" style="margin:6px 0 0">${tr('Temperatury zmierzone przez komputer — nie podmieniam ich podpowiedzią akwenu.')}</p>` : ''}</section>
     <section class="card"><h2>${tr('Balast')}</h2>
       <div class="grid2">${stepField('d-lead', tr('Ołów, który miałeś (kg)'), 'lead', d.lead ?? '', 0.5, 0, 40)}
@@ -800,12 +802,18 @@ function importDive(text){
   draft.date = d.date; draft.depth = d.depth; draft.time = d.time;
   if (d.tSurf != null){ draft.tSurf = d.tSurf; draft.tMeasured = true; }
   if (d.tBottom != null){ draft.tBottom = d.tBottom; draft.tMeasured = true; }
-  if (d.gps) draft.gps = d.gps;
+  let site = null;
+  if (d.gps){
+    draft.gps = d.gps;
+    site = matchSite(d.gps, S.sites);
+    if (site){ draft.siteId = site.id; draft.siteFromGps = site.km; fillTemps(draft); }   // temperatury chronione znacznikiem tMeasured
+  }
   if (d.note) draft.note = d.note;
   draft.nDay = P().dives.filter(x => x.date === d.date).length + 1;
   const dup = P().dives.some(x => x.date === d.date && Math.abs((+x.depth || 0) - d.depth) < 0.6 && Math.abs((+x.time || 0) - d.time) < 3);
   ui.draft = draft; tab = 'log'; ui.delDiver = null; render(); window.scrollTo(0, 0);
   toast(dup ? tr('Wczytano, ale podobne nurkowanie już jest w dzienniku')
+    : site ? tr('Wczytano: {s}, {d} m, {t} min, {a}–{b} °C. Dopisz ołów i ocenę.', {s: siteName(siteOf(site.id)), d: fmt(d.depth), t: d.time, a: fmt(d.tBottom ?? 0), b: fmt(d.tSurf ?? 0)})
     : tr('Wczytano: {d} m, {t} min, {a}–{b} °C. Dopisz ołów i ocenę.', {d: fmt(d.depth), t: d.time, a: fmt(d.tBottom ?? 0), b: fmt(d.tSurf ?? 0)}));
 }
 

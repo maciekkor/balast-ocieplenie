@@ -75,6 +75,12 @@ function migrate(o){
     p.wardrobe.forEach(w => { if (w.catId && /^misc-fins/.test(w.catId)) w.cat = 'fins'; });
   });
   if (!Array.isArray(S.sites) || !S.sites.length) S.sites = seedSites();
+  // akweny zapisane przed dodaniem współrzędnych: dobieramy je z presetu po id
+  S.sites.forEach(s => {
+    if (s.lat != null) return;
+    const pre = SITE_PRESETS.find(x => x.id === s.id);
+    if (pre){ s.lat = pre.lat; s.lon = pre.lon; s.r = pre.r; }
+  });
   if (!S.profiles.some(p => p.id === S.activeId)) S.activeId = S.profiles[0].id;
   return S;
 }
