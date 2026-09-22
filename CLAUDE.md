@@ -30,6 +30,7 @@ Brak zależności npm. Wymagany Node ≥ 20.
 - **Klawiatura:** pole tekstowe na niskim ekranie włącza `body.kb` (chowa nawigację i pasek, przewija pole na górę). Nowe pola tekstowe testuj przy wysokości ~420 px.
 - **UI:** format daty `rrrr-mm-dd`; przecinek dziesiętny w PL; ołów w górę do 0,5 kg; układ działa na 390 px bez poziomego przewijania, w jasnym i ciemnym motywie; kolory tylko z tokenów CSS.
 - **Sprzęt spoza szafy:** uid `cat:<id>` w `plan.items` bierze pozycję prosto z katalogu (szybki wybór butli). Każde wyszukiwanie sprzętu po uid rób przez `itemOf(uid, P())`, nigdy przez `wardrobe.find`.
+- **Plan ma tylko cztery pola** (akwen, data, głębokość, temp. dna). Czas, nr nurkowania dnia, rezerwa i temp. powierzchni żyją w danych z założeniami normalizowanymi w `migrate()`, a edytuje się je w zwijanej sekcji formularza nurkowania — nie dodawaj ich z powrotem do planu.
 - **Wiele profili:** dane aktywnego nurka bierz przez `P()` (nigdy `S.profile` itd.), a do modelu podawaj `dst()`. Akweny i język są wspólne.
 - **Kreator (`onboarded: false`)** renderuje się bez pełnego `render()` przy edycji pól i musi mieć stałą wysokość — inaczej przycisk „Dalej” ucieka spod palca między naciśnięciem a puszczeniem.
 - Po zmianach sprawdź w przeglądarce: pasek podsumowania przypięty, oba języki, formularz nurkowania, szafa, offline po instalacji.

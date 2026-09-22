@@ -14,7 +14,7 @@ function emptyDiver(){
     profile: Object.assign({}, BASE_PROFILE),
     wardrobe: [fromCat('misc-reg')],
     dives: [],
-    plan: {siteId:'redsea', date: isoOf(new Date()), depth:18, time:50, tSurf:26, tBottom:25, nDay:1, reserve:50, items:['misc-reg-1']}
+    plan: {siteId:'redsea', date: isoOf(new Date()), depth:18, time:50, tSurf:26, tBottom:25, nDay:2, reserve:50, items:['misc-reg-1']}
   };
 }
 // Przykładowy nurek z kompletnym zestawem — „Wczytaj przykład” i pierwsze uruchomienie.
@@ -31,7 +31,7 @@ function seedDiver(){
       fromCat('fin-mares-aq-plus', {year:y}), fromCat('misc-reg')
     ],
     dives: [],
-    plan: {siteId:'redsea', date, depth:18, time:50, tSurf:26, tBottom:25, nDay:1, reserve:50,
+    plan: {siteId:'redsea', date, depth:18, time:50, tSurf:26, tBottom:25, nDay:2, reserve:50,
       items:['mares-reef-3-1','mares-prestige-1','al-s80-1','fin-mares-aq-plus-1','misc-reg-1']}
   };
   const m = +date.slice(5, 7) - 1; s.plan.tSurf = SITE_PRESETS[0].ts[m]; s.plan.tBottom = SITE_PRESETS[0].tb[m];
@@ -67,6 +67,10 @@ function migrate(o){
     if (!Array.isArray(p.dives)) p.dives = [];
     if (!p.plan) p.plan = emptyDiver().plan;
     if (p.profile.divesBefore == null) p.profile.divesBefore = Math.max(0, (+p.profile.dives || 0) - p.dives.length);
+    // plan nie ma już pól na rezerwę i kolejność nurkowania — trzymamy w nim ostrożne założenia
+    p.plan.reserve = 50;
+    if (!(p.plan.nDay >= 2)) p.plan.nDay = 2;
+    if (p.plan.time == null) p.plan.time = 50;
     p.wardrobe.forEach(w => { if (w.rental == null && /wypożycz/i.test(w.model)) w.rental = true; });
     p.wardrobe.forEach(w => { if (w.catId && /^misc-fins/.test(w.catId)) w.cat = 'fins'; });
   });
