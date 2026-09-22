@@ -1,5 +1,10 @@
 // ===== Język =====
 const EN = {
+  // kopia zapasowa
+  'Zapisz kopię do pliku':'Save backup to a file','Wczytaj kopię z pliku':'Load backup from a file','Zapisano plik {x}':'Saved file {x}',
+  'Przeglądarka nie pozwoliła zapisać pliku':'The browser would not save the file','Nie udało się odczytać pliku':'Could not read the file',
+  'Przeglądarka nie pozwala zapisywać danych — zmiany znikną po zamknięciu. Zapisz kopię do pliku.':'This browser will not store data — changes disappear when you close it. Save a backup to a file.',
+  'Kopia to jeden plik {x} z profilami, szafą, dziennikiem i akwenami. Wczytanie kopii zastępuje wszystkie dane w tej przeglądarce.':'The backup is a single {x} file with profiles, gear, log and dive sites. Loading a backup replaces all data in this browser.',
   // kreator profilu i nurkowie
   'Wyjaśnij':'Explain','Wiek':'Age','Wzrost':'Height','Waga':'Weight','do 25':'under 25','Tolerancja zimna':'Cold tolerance','Doświadczenie':'Experience',
   'Bardzo marznę':'I get cold fast','Marznę':'I get cold easily','Przeciętnie':'Average','Odporny':'Cold-resistant','Bardzo odporny':'Very cold-resistant',
@@ -92,10 +97,8 @@ const EN = {
   'Korekty to różnica między fizyką a tym, co naprawdę działało w wodzie. Starsze nurkowania ważą mniej (połowa wagi po 30 nurkowaniach).':'Corrections are the gap between physics and what actually worked in the water. Older dives count less (half weight after 30 dives).',
   'Ucz od dziś od nowa':'Restart learning from today','Przywróć całą historię':'Use full history again','Nauka liczy nurkowania od {d}.':'Learning uses dives from {d}.','Nauka zaczyna się od dziś':'Learning restarts today',
   'Kopia zapasowa':'Backup','dane są tylko w tej przeglądarce':'data lives only in this browser',
-  'Przeglądarka nie pozwala zapisywać danych — zmiany znikną po zamknięciu. Skopiuj kopię poniżej.':'This browser blocks storage — changes will be lost when you close it. Copy the backup below.',
-  'Eksport (skopiuj i zachowaj)':'Export (copy and keep)','Kopiuj do schowka':'Copy to clipboard','Import (wklej kopię)':'Import (paste a backup)','Wczytaj wklejoną kopię':'Load pasted backup','albo plik:':'or a file:',
   'Na pewno? Kliknij ponownie':'Sure? Click again','Wyczyść wszystkie dane':'Clear all data','Wczytaj przykład':'Load example','Język':'Language',
-  'Skopiowano':'Copied','Zaznaczono — skopiuj ręcznie':'Selected — copy it manually','Wczytano kopię':'Backup loaded','To nie jest kopia z tej aplikacji — sprawdź, czy wkleiłeś całość':'That is not a backup from this app — check you pasted all of it',
+  'Wczytano kopię':'Backup loaded','To nie jest kopia z tej aplikacji — wybierz plik zapisany przez tę aplikację':'That is not a backup from this app — pick a file it saved',
   'Wyczyszczono. Zacznij od profilu i szafy.':'Cleared. Start with your profile and gear.','Wczytano przykład':'Example loaded','Zestaw podmieniony':'Kit swapped'
 };
 const LBL = {

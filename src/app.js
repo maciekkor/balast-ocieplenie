@@ -442,11 +442,10 @@ function viewProfile(){
   </section>
 
   <section class="card"><h2>${tr('Kopia zapasowa')} <small>${tr('dane są tylko w tej przeglądarce')}</small></h2>
-    ${memOnly ? `<div class="banner">${tr('Przeglądarka nie pozwala zapisywać danych — zmiany znikną po zamknięciu. Skopiuj kopię poniżej.')}</div>` : ''}
-    <div class="f" style="margin-top:8px"><label for="bk-out">${tr('Eksport (skopiuj i zachowaj)')}</label><textarea id="bk-out" readonly>${esc(JSON.stringify(S))}</textarea></div>
-    <div class="btnrow"><button class="sm" data-act="copy">${tr('Kopiuj do schowka')}</button></div>
-    <div class="f" style="margin-top:14px"><label for="bk-in">${tr('Import (wklej kopię)')}</label><textarea id="bk-in" placeholder="{&quot;v&quot;:1,…}"></textarea></div>
-    <div class="btnrow"><button class="sm" data-act="import">${tr('Wczytaj wklejoną kopię')}</button><label class="small muted" for="bk-file" style="align-self:center">${tr('albo plik:')}</label><input id="bk-file" type="file" accept=".json,application/json" style="width:auto;flex:1"></div>
+    ${memOnly ? `<div class="banner">${tr('Przeglądarka nie pozwala zapisywać danych — zmiany znikną po zamknięciu. Zapisz kopię do pliku.')}</div>` : ''}
+    <p class="small muted" style="margin:8px 0 0">${tr('Kopia to jeden plik {x} z profilami, szafą, dziennikiem i akwenami. Wczytanie kopii zastępuje wszystkie dane w tej przeglądarce.', {x: '.json'})}</p>
+    <div class="btnrow"><button class="sm primary" data-act="export-file">${tr('Zapisz kopię do pliku')}</button><button class="sm" data-act="import-file">${tr('Wczytaj kopię z pliku')}</button></div>
+    <input id="bk-file" type="file" accept="application/json,.json" hidden>
     <div class="btnrow" style="margin-top:18px"><button class="danger sm" data-act="wipe">${tr(ui.confirmWipe ? 'Na pewno? Kliknij ponownie' : 'Wyczyść wszystkie dane')}</button><button class="sm ghost" data-act="seed">${tr('Wczytaj przykład')}</button></div>
   </section></div>`;
 }
@@ -663,8 +662,8 @@ view.addEventListener('click', e => {
   if (a === 'del-site'){ S.sites = S.sites.filter(s => s.id !== b.dataset.id); ui.editSite = null; return commit(); }
   if (a === 'reset-learn'){ P().learnSince = today(); toast(tr('Nauka zaczyna się od dziś')); return commit(); }
   if (a === 'unreset-learn'){ delete P().learnSince; return commit(); }
-  if (a === 'copy'){ const t = $('#bk-out'); t.select(); (navigator.clipboard ? navigator.clipboard.writeText(t.value) : Promise.reject()).then(() => toast(tr('Skopiowano')), () => { try { document.execCommand('copy'); toast(tr('Skopiowano')); } catch(_){ toast(tr('Zaznaczono — skopiuj ręcznie')); } }); return; }
-  if (a === 'import'){ return importText($('#bk-in').value); }
+  if (a === 'export-file') return exportFile();
+  if (a === 'import-file'){ const f = $('#bk-file'); f.value = ''; f.click(); return; }
   if (a === 'wipe'){ if (!ui.confirmWipe){ ui.confirmWipe = true; return render(); }
     ui.confirmWipe = false; const d = emptyDiver();
     S = {v:1, lang: LANG, sites: seedSites(), profiles:[d], activeId: d.id};
@@ -672,10 +671,22 @@ view.addEventListener('click', e => {
     toast(tr('Wyczyszczono. Zacznij od profilu i szafy.')); return commit(); }
   if (a === 'seed'){ S = seedState(); S.lang = LANG; P().onboarded = true; tab = 'calc'; ui.wiz = 0; ui.draft = null; toast(tr('Wczytano przykład')); return commit(); }
 });
+// kopia jako plik do pobrania — w PWA działa zwykły <a download>
+function exportFile(){
+  const name = 'balast-ocieplenie-' + today() + '.json';
+  try {
+    const url = URL.createObjectURL(new Blob([JSON.stringify(S)], {type:'application/json'}));
+    const a = document.createElement('a');
+    a.href = url; a.download = name; a.rel = 'noopener';
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 10000);
+    toast(tr('Zapisano plik {x}', {x: name}));
+  } catch(_){ toast(tr('Przeglądarka nie pozwoliła zapisać pliku')); }
+}
 function importText(txt){
   let o = null;
   try { o = migrate(JSON.parse(txt)); } catch(_){}
-  if (!o) return toast(tr('To nie jest kopia z tej aplikacji — sprawdź, czy wkleiłeś całość'));
+  if (!o) return toast(tr('To nie jest kopia z tej aplikacji — wybierz plik zapisany przez tę aplikację'));
   S = o; LANG = S.lang === 'en' ? 'en' : 'pl';
   tab = 'calc'; ui.wiz = 0; ui.draft = null; ui.editGear = null; ui.delDiver = null;
   toast(tr('Wczytano kopię')); commit();
@@ -723,7 +734,7 @@ view.addEventListener('input', e => {
 view.addEventListener('change', e => {
   const t = e.target, v = t.value;
   if (t.dataset.act === 'slide'){ save(); recompute(); return; }
-  if (t.id === 'bk-file' && t.files[0]){ t.files[0].text().then(importText); return; }
+  if (t.id === 'bk-file'){ const f = t.files[0]; t.value = ''; if (f) f.text().then(importText, () => toast(tr('Nie udało się odczytać pliku'))); return; }
   if (t.dataset.act === 'qc'){ ui.addCat = v; return render(); }
   if (t.dataset.act === 'qqc'){ ui.quick.cat = v; return render(); }
   if (t.dataset.act === 'siteq') return;

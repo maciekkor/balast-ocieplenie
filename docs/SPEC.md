@@ -124,7 +124,7 @@ Edycja profilu **nie przebudowuje widoku**: suwak i pola tekstowe zapisują stan
 2. **Dziennik:** lista (najnowsze pierwsze) i formularz nurkowania z oceną balastu i ciepła.
 3. **Szafa:** mój sprzęt z wyporności na 5 m w morzu i nauczoną korektą; edytor parametrów; katalog z wyszukiwaniem.
 4. **Akweny:** presety i własne; gęstość wody i 12 miesięcy temperatur.
-5. **Profil:** te same kafelki i suwaki co w kreatorze (język z flagami, płeć, wiek w 5 zakresach, wzrost i waga suwakami, budowa jako sylwetki, tolerancja zimna w 5 stopniach z wartością w °C, doświadczenie w 4 poziomach), karta **Nurkowie** (lista z liczbą nurkowań i sprzętu, przełączanie, dodanie nurka przez kreator, usunięcie z potwierdzeniem — ostatniego nurka nie da się usunąć), język, dane ciała, tolerancja zimna, nurkowania poza dziennikiem, czego nauczył się model, reset nauki, kopia zapasowa (kopiuj/wklej, plik), czyszczenie, wczytanie przykładu.
+5. **Profil:** te same kafelki i suwaki co w kreatorze (język z flagami, płeć, wiek w 5 zakresach, wzrost i waga suwakami, budowa jako sylwetki, tolerancja zimna w 5 stopniach z wartością w °C, doświadczenie w 4 poziomach), karta **Nurkowie** (lista z liczbą nurkowań i sprzętu, przełączanie, dodanie nurka przez kreator, usunięcie z potwierdzeniem — ostatniego nurka nie da się usunąć), język, dane ciała, tolerancja zimna, nurkowania poza dziennikiem, czego nauczył się model, reset nauki, kopia zapasowa (zapis i odczyt pliku `.json`, bez pokazywania danych na ekranie), czyszczenie, wczytanie przykładu.
 
 Przełącznik nurków siedzi w nagłówku (`#who`) i pojawia się dopiero przy co najmniej dwóch profilach; przy jednym nagłówek pokazuje licznik nurkowań jak dotąd.
 
@@ -147,7 +147,6 @@ Tokeny w `:root` (jasny) i nadpisanie dla ciemnego (`prefers-color-scheme` oraz 
 | B1 | Weryfikacja danych katalogu ze źródłami | masy butów, wyporność płetw, nazwy Tusa, Flexa Core, kamizelki; uzupełnić `src` |
 | B2 | Import logów z komputera nurkowego (UDDF, FIT Garmin/Suunto, eksport Subsurface) | parsowanie lokalne; wypełnia głębokość, czas, temperatury |
 | B4 | Model suchego skafandra zależny od ilości gazu i ocieplacza | obecnie stała `g` |
-| B5 | Eksport kopii jako plik do pobrania | w PWA działa `<a download>` |
 | B6 | Testy e2e (Playwright) | pasek, wyszukiwanie akwenu, data, EN, offline |
-| B7 | Usunąć nieużywane klucze tłumaczeń (`odczuw.`, `odczuwalnie {t} °C`, `Twój zestaw daje komfort od`) | porządki |
+| B7 | Usunąć nieużywane klucze tłumaczeń (`odczuw.`, `odczuwalnie {t} °C`, `Twój zestaw daje komfort od`) | porządki; klucze po schowkowej kopii zapasowej już usunięte |
 | B8 | Dostępność: pełna obsługa klawiatury w chipach i doradcy, role ARIA wykresu | |
