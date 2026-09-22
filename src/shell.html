@@ -147,6 +147,9 @@ button.sm{padding:5px 10px;font-size:13px}
 .opt .items{font-size:14px}
 .opt .meta{font:13px var(--f-mono);color:var(--muted)}
 .therm-head{display:flex;gap:10px;flex-wrap:wrap;align-items:center;justify-content:space-between}
+/* nagłówek karty z przyciskiem „?” : tytuł może się zawinąć, znak zapytania zostaje przy pierwszej linii */
+.card-head{display:flex;gap:10px;align-items:flex-start;justify-content:space-between;flex-wrap:nowrap;margin-bottom:10px}
+.card-head h2{margin:0;min-width:0}
 .kv{display:grid;grid-template-columns:auto 1fr;gap:4px 12px;font-size:14px}
 .kv dt{color:var(--muted)} .kv dd{margin:0;font-family:var(--f-mono);text-align:right}
 .kv.fixed{grid-template-columns:minmax(0,1fr) 6.6em}  /* kreator: stała szerokość wartości, żeby podgląd nie zmieniał wysokości pod palcem */

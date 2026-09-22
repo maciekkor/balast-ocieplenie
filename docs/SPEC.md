@@ -153,7 +153,7 @@ Czas, numer nurkowania dnia, rezerwa i temperatura powierzchni **nie mają pól 
 | Rezerwa | 50 bar | punkt kontrolny balastu i tak zakłada rezerwę |
 | Temp. powierzchni | z presetu akwenu na wybrany miesiąc | waży tylko 25% temperatury nurkowania, więc rzadko zmienia werdykt |
 
-Karta planu wypisuje te założenia wprost, żeby nie były ukrytą magią. `migrate()` normalizuje je w planie (rezerwa 50, `nDay` co najmniej 2), bo nie ma już UI, w którym dałoby się je zmienić. Wszystkie cztery są za to **opcjonalne w formularzu nurkowania** — w zwijanej sekcji „Szczegóły (opcjonalnie)" (`planFields(pl, pre, true)`), bo tam zapisuje się rzeczywistość, a nie plan.
+Karta planu trzyma te założenia pod przyciskiem **`?`** w nagłówku (`ui.planInfo`) — domyślnie nie zabierają miejsca, ale jednym tapnięciem widać, skąd bierze się wynik. `migrate()` normalizuje je w planie (rezerwa 50, `nDay` co najmniej 2), bo nie ma już UI, w którym dałoby się je zmienić. Wszystkie cztery są za to **opcjonalne w formularzu nurkowania** — w zwijanej sekcji „Szczegóły (opcjonalnie)" (`planFields(pl, pre, true)`), bo tam zapisuje się rzeczywistość, a nie plan.
 
 2. **Dziennik:** lista (najnowsze pierwsze) i formularz nurkowania w kolejności wpisywania po wyjściu z wody: **dane nurkowania** (to, co pokazuje komputer, plus zwijane szczegóły: czas, kolejność, temperatura powierzchni, rezerwa), **balast** z oceną, **komfort cieplny** z notatką, a na końcu **użyty zestaw** — sprzęt zwykle nie zmienia się między nurkowaniami, więc nie zasłania tego, co trzeba poprawić.
 3. **Szafa:** mój sprzęt z wyporności na 5 m w morzu i nauczoną korektą; edytor parametrów; katalog z wyszukiwaniem.
