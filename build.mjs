@@ -6,7 +6,7 @@ import {createHash} from 'node:crypto';
 const r = f => readFileSync(new URL(f, import.meta.url), 'utf8');
 const shell = r('./src/shell.html');
 const [head, rest] = shell.split('</style>');
-const js = ['data.js', 'model.js', 'seed.js', 'i18n.js', 'app.js'].map(f => r('./src/' + f)).join('\n');
+const js = ['data.js', 'model.js', 'import.js', 'seed.js', 'i18n.js', 'app.js'].map(f => r('./src/' + f)).join('\n');
 const body = rest.replace(/<script>[\s\S]*<\/script>\s*$/, '<script>\n' + js + '\n</script>');
 
 const html = `<!doctype html>

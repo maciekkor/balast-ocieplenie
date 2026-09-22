@@ -130,3 +130,41 @@ test('wielu nurków: osobne szafy i dzienniki, wspólne akweny', () => {
   S.activeId = b.id;
   assert.equal(A.diverState(S).profile.name, 'Bob');
 });
+
+test('import Suunto: nagłówek, zamienione nazwy temperatur i GPS w radianach', () => {
+  // Kształt jak w prawdziwym eksporcie z aplikacji Suunto (Ocean/Nautic), ale bez cudzych danych:
+  // „Max” w Header.Temperature bywa chłodniejsze niż „Min”, a współrzędne są w radianach.
+  const file = JSON.stringify({DeviceLog: {
+    Header: {ActivityType: 51, DateTime: '2026-08-15T10:54:09.830+02:00', Depth: {Max: 27.99},
+      DiveTime: 1911.2, Duration: 2218.479, Temperature: {Max: 290.3, Min: 298.5}, Notes: '',
+      Device: {Info: {HW: 'Seal_RevA3'}, Name: 'Porvoo'}},
+    Samples: [
+      {TimeISO8601: '2026-08-15T10:54:17.870+02:00', Temperature: 297.67},
+      {TimeISO8601: '2026-08-15T11:10:00.000+02:00', Temperature: 290.3, Depth: 27.79},
+      {TimeISO8601: '2026-08-15T11:26:59.000+02:00', Latitude: 0.7819315904371371, Longitude: 0.25764416551186664}
+    ]}});
+  const r = A.parseSuuntoJson(file);
+  assert.equal(r.ok, true);
+  assert.equal(r.dive.date, '2026-08-15');
+  assert.equal(r.dive.depth, 28);
+  assert.equal(r.dive.time, 32, 'DiveTime w sekundach → minuty');
+  assert.equal(r.dive.tSurf, 24.5, 'najcieplejsza próbka to powierzchnia');
+  assert.equal(r.dive.tBottom, 17.2, 'najzimniejsza to dno');
+  assert.equal(r.dive.gps.lat, 44.8014, 'radiany → stopnie');
+  assert.equal(r.dive.gps.lon, 14.7619);
+});
+
+test('import Suunto: bez próbek liczy z nagłówka, śmieci odrzuca', () => {
+  const only = JSON.stringify({DeviceLog: {Header: {ActivityType: 51, DateTime: '2026-05-05T08:00:00+02:00',
+    Depth: {Max: 18.4}, DiveTime: 2400, Temperature: {Max: 285.15, Min: 295.15}}}});
+  const r = A.parseSuuntoJson(only);
+  assert.equal(r.ok, true);
+  assert.equal(r.dive.time, 40);
+  assert.equal(r.dive.tSurf, 22, 'cieplejsza z pary to powierzchnia, mimo nazwy „Min”');
+  assert.equal(r.dive.tBottom, 12);
+  assert.equal(r.dive.gps, null);
+  assert.equal(A.parseSuuntoJson('').why, 'notJson');
+  assert.equal(A.parseSuuntoJson('{"foo":1}').why, 'notSuunto');
+  assert.equal(A.parseSuuntoJson(JSON.stringify({DeviceLog: {Header: {ActivityType: 1, DateTime: '2026-01-01T10:00:00+01:00'}}})).why, 'notDive');
+  assert.equal(A.kelvinToC(273.15), 0);
+});

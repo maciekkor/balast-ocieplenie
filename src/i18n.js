@@ -3,6 +3,14 @@ const EN = {
   // butla spoza szafy
   'Butla standardowa':'Standard cylinder','bez dodawania do szafy':'without adding it to your gear',
   'Wybrana jest Twoja butla z szafy — tapnięcie standardowej ją zastąpi.':'Your own cylinder is selected — tapping a standard one replaces it.',
+  // wczytanie nurkowania z komputera
+  'Wczytaj z komputera':'Load from dive computer','plik .json z aplikacji Suunto':'.json file from the Suunto app',
+  'To nie jest plik .json':'That is not a .json file','Nie rozpoznaję tego pliku — oczekuję eksportu z aplikacji Suunto':'I do not recognise this file — I expect an export from the Suunto app',
+  'Ten plik nie opisuje nurkowania':'This file is not a dive','Nie rozpoznaję tego pliku':'I do not recognise this file',
+  'Wczytano: {d} m, {t} min, {a}–{b} °C. Dopisz ołów i ocenę.':'Loaded: {d} m, {t} min, {a}–{b} °C. Add the lead and your rating.',
+  'Wczytano, ale podobne nurkowanie już jest w dzienniku':'Loaded, but a similar dive is already in the log',
+  'Komputer podał pozycję {lat} N {lon} E — akwen wybierz sam.':'The computer recorded position {lat} N {lon} E — pick the dive site yourself.',
+  'Temperatury zmierzone przez komputer — nie podmieniam ich podpowiedzią akwenu.':'Temperatures measured by the computer — I will not overwrite them with the site defaults.',
   // kopia zapasowa
   'Zapisz kopię do pliku':'Save backup to a file','Wczytaj kopię z pliku':'Load backup from a file','Zapisano plik {x}':'Saved file {x}',
   'Przeglądarka nie pozwoliła zapisać pliku':'The browser would not save the file','Nie udało się odczytać pliku':'Could not read the file',

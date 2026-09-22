@@ -23,6 +23,7 @@ Zasady nienegocjowalne:
 | `src/shell.html` | `<title>`, CSS (tokeny kolorów, jasny i ciemny motyw), szkielet: nagłówek, przypięty pasek podsumowania `#summary`, `#view`, dolna nawigacja |
 | `src/data.js` | `CATALOG` (sprzęt), `SZ` (rozmiarówki), `CATS`, `CAT_ORDER`, `SITE_PRESETS` (akweny), `WATER_TYPES` |
 | `src/model.js` | Fizyka balastu, model ocieplenia, uczenie, `diverState()`. Czyste funkcje bez DOM |
+| `src/import.js` | `parseSuuntoJson()` — wczytanie nurkowania z pliku aplikacji Suunto. Czysta funkcja, bez DOM |
 | `src/seed.js` | `fromCat()`, `seedDiver()` (przykładowy nurek), `emptyDiver()` (nurek bez danych), `seedSites()`, `seedState()`, `migrate()` — dane startowe i migracja zapisanego stanu |
 | `src/i18n.js` | `EN` (słownik PL→EN kluczowany polskim tekstem), `LBL` (etykiety kategorii, miesięcy, budowy, krojów, wody), `SITE_EN`, `FRAG_EN` (tłumaczenie fragmentów nazw katalogowych), `tr()`, `frag()` |
 | `src/app.js` | Stan, zapis, widoki (render przez template stringi), obsługa zdarzeń (delegacja na `#view`) |
@@ -31,7 +32,7 @@ Zasady nienegocjowalne:
 | `build.mjs` | Skleja `src/` w `dist/index.html`, generuje `dist/sw.js` |
 | `tests/` | Testy `node:test` modelu, katalogu i i18n |
 
-Kolejność skryptów w buildzie: `data.js → model.js → seed.js → i18n.js → app.js` (wspólny zakres globalny, jak w przeglądarce).
+Kolejność skryptów w buildzie: `data.js → model.js → import.js → seed.js → i18n.js → app.js` (wspólny zakres globalny, jak w przeglądarce).
 
 Service worker: pliki aplikacji **najpierw sieć, potem pamięć** (świeża wersja po wdrożeniu), czcionki Google **najpierw pamięć, w tle odświeżenie**.
 
@@ -52,7 +53,8 @@ S = {
     wardrobe: [ { uid, catId /*id z CATALOG lub null*/, cat, brand, model, size, year|null,
                   rental?: bool, p: {/*parametry wg kategorii, kopia z katalogu, edytowalna*/}, src /*źródło wartości*/ } ],
     dives: [ { id, date, siteId, depth, time, tSurf, tBottom, nDay, reserve, items: [uid],
-               lead /*kg*/|null, leadFb: 'light'|'ok'|'heavy'|null, leadAdj /*kg*/, thermal: 'cold'|'cool'|'ok'|'warm'|null, note } ],
+               lead /*kg*/|null, leadFb: 'light'|'ok'|'heavy'|null, leadAdj /*kg*/, thermal: 'cold'|'cool'|'ok'|'warm'|null, note,
+               tMeasured?: bool /*temperatury z komputera — podpowiedź akwenu ich nie nadpisuje*/, gps?: {lat, lon} } ],
     plan: { siteId, date, depth, time, tSurf, tBottom, nDay, reserve, items: [uid] }
   } ]
 }
@@ -146,6 +148,19 @@ Edycja profilu **nie przebudowuje widoku**: suwak i pola tekstowe zapisują stan
 
 Przełącznik nurków siedzi w nagłówku (`#who`) i pojawia się dopiero przy co najmniej dwóch profilach; przy jednym nagłówek pokazuje licznik nurkowań jak dotąd.
 
+### Wczytanie nurkowania z komputera
+
+`parseSuuntoJson()` w `src/import.js` czyta plik `.json` z aplikacji Suunto (Ocean, Nautic, Nautic S — jeden plik to jedno nurkowanie) i wypełnia szkic nurkowania: datę, głębokość maks. (`Header.Depth.Max`), czas (`Header.DiveTime` w sekundach, nie `Duration` — ta liczy też powierzchnię) oraz temperatury.
+
+Dwie rzeczy, których nie widać bez prawdziwego pliku:
+
+- **nazwy w `Header.Temperature` bywają zamienione** — `Max` potrafi być chłodniejsze niż `Min` — więc nie ufamy nazwom, tylko bierzemy skrajne wartości (najcieplej = powierzchnia, najzimniej = dno), najchętniej z próbek;
+- **`Latitude`/`Longitude` są w radianach**, nie w stopniach.
+
+Temperatury z komputera oznaczamy `tMeasured`, dzięki czemu zmiana akwenu albo daty ich nie nadpisze. Numer nurkowania dnia liczymy z dziennika, a podobne nurkowanie (ta sama data, głębokość ±0,6 m, czas ±3 min) daje ostrzeżenie zamiast cichego duplikatu. **Ołów i ocena ciepła zostają puste** — komputer ich nie zapisuje, a to z nich uczy się model. Pozycję GPS pokazujemy jako podpowiedź; akwen użytkownik wybiera sam.
+
+Plik ma zwykle ~1 MB (głównie próbki), ale do stanu trafia sam wynik — próbki są odrzucane.
+
 ### Liczby wpisywane kciukiem
 
 Głębokość, czas, numer nurkowania dnia, obie temperatury, rezerwa i ołów w dzienniku to pola z przyciskami **−/+** (`stepField()`, klasa `.step`) z krokiem dobranym do wielkości: 1 m, 5 min, 1 °C, 10 bar, 0,5 kg. Wpisanie z klawiatury numerycznej działa jak wcześniej.
@@ -173,7 +188,7 @@ Tokeny w `:root` (jasny) i nadpisanie dla ciemnego (`prefers-color-scheme` oraz 
 | # | Zadanie | Uwagi |
 | --- | --- | --- |
 | B1 | Pomiary wyporności płetw, butów i kamizelek | nazwy i grubości zweryfikowane (sekcja 4); brakujących wartości producenci nie publikują — potrzebny własny pomiar w wodzie |
-| B2 | Import logów: UDDF z pliku, na Androidzie przez cel udostępniania (`share_target`) | opcja dla wąskiej grupy — dane są lokalne, więc import musi odbyć się na telefonie, a tam eksport z aplikacji producenta jest niewygodny; komputery i tak nie zapisują ołowiu ani oceny ciepła. FIT (Garmin, Suunto Ocean) dopiero na konkretne zgłoszenie |
+| B2 | Import: UDDF oraz cel udostępniania na Androidzie (`share_target`) | JSON z aplikacji Suunto już działa (sekcja 7). Zostaje UDDF (Shearwater, Subsurface) i wygodniejsza droga na Androidzie; FIT dopiero na konkretne zgłoszenie |
 | B4 | Model suchego skafandra zależny od ilości gazu i ocieplacza | obecnie stała `g` |
 | B6 | Testy e2e (Playwright) | pasek, wyszukiwanie akwenu, data, EN, offline |
 | B7 | Usunąć nieużywane klucze tłumaczeń (`odczuw.`, `odczuwalnie {t} °C`, `Twój zestaw daje komfort od`) | porządki; klucze po schowkowej kopii zapasowej już usunięte |

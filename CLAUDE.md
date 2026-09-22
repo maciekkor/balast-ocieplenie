@@ -14,7 +14,7 @@ Brak zależności npm. Wymagany Node ≥ 20.
 
 ## Struktura
 
-- `src/shell.html` — CSS i szkielet; `src/data.js` katalog i akweny; `src/model.js` fizyka i nauka (czyste funkcje, bez DOM); `src/seed.js` dane startowe i migracja; `src/i18n.js` tłumaczenia; `src/app.js` stan, widoki, zdarzenia; `src/sw.template.js` service worker.
+- `src/shell.html` — CSS i szkielet; `src/data.js` katalog i akweny; `src/model.js` fizyka i nauka (czyste funkcje, bez DOM); `src/import.js` wczytywanie nurkowania z pliku komputera; `src/seed.js` dane startowe i migracja; `src/i18n.js` tłumaczenia; `src/app.js` stan, widoki, zdarzenia; `src/sw.template.js` service worker.
 - `public/` — pliki statyczne kopiowane do `dist/`.
 - `dist/` — wynik buildu, **nie commituj** (jest w `.gitignore`); publikuje go GitHub Actions (`.github/workflows/pages.yml`).
 
