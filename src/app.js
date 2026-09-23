@@ -62,12 +62,16 @@ function toggleItem(list, uid){
   if (it.cat === 'wetsuit' || it.cat === 'over') drop(['dry','under']);
   out.push(uid); return out;
 }
-function setIssues(items){
-  const iss = [];
-  if (!items.some(i => i.cat === 'bcd' || i.cat === 'wing')) iss.push(tr('kamizelki lub skrzydła'));
-  if (!items.some(i => i.cat === 'tank')) iss.push(tr('butli'));
-  return iss;
-}
+// Bez butli i bez kamizelki/skrzydła nie ma czego liczyć — to one dźwigają największą część
+// wyporności zestawu. Zamiast pokazywać liczbę, która zaraz się zmieni o kilka kilogramów,
+// mówimy wprost, czego brakuje. Dwie formy, bo raz mówimy „Brak butli", a raz „Dodaj butlę".
+const SET_NEED = [
+  {has: i => i.cat === 'bcd' || i.cat === 'wing', gen: 'kamizelki lub skrzydła', acc: 'kamizelkę albo skrzydło'},
+  {has: i => i.cat === 'tank', gen: 'butli', acc: 'butlę'}
+];
+const setIssues = items => SET_NEED.filter(n => !items.some(n.has));
+const issGen = iss => iss.map(n => tr(n.gen)).join(tr(' i '));
+const issAcc = iss => iss.map(n => tr(n.acc)).join(tr(' i '));
 
 // ---------- ikony i kafelki wyboru (mniej wpisywania, więcej klikania) ----------
 const SVG = (inner, vb) => `<svg viewBox="${vb || '0 0 24 24'}" aria-hidden="true">${inner}</svg>`;
@@ -101,12 +105,12 @@ function tiles(act, opts, on, cls){
     `<button type="button" class="pick${o.cls ? ' ' + o.cls : ''}" data-act="${act}" data-v="${esc(o.v)}" aria-pressed="${on(o)}">${o.icon || ''}<span>${esc(o.label)}</span>${o.sub ? `<small>${esc(o.sub)}</small>` : ''}</button>`).join('')}</div>`;
 }
 const fieldset = (lab, body, hint) => `<div class="fieldset"><span class="label">${lab}</span>${body}${hint ? `<p class="small muted" style="margin:6px 0 0">${hint}</p>` : ''}</div>`;
-const SLIDE_RANGE = {height:[130, 210, 1, 'cm'], weight:[35, 180, 0.5, 'kg']};
+const SLIDE_RANGE = {height:[130, 210, 2.5, 'cm'], weight:[35, 180, 2.5, 'kg']};
 function slider(k, lab){
   const [min, max, step, unit] = SLIDE_RANGE[k], val = P().profile[k];
   return `<div class="fieldset"><label class="label" for="num-${k}">${lab}</label><div class="slider">
     <input type="range" id="pr-${k}" min="${min}" max="${max}" step="${step}" value="${esc(val)}" data-act="slide" data-k="${k}" aria-label="${lab}">
-    <span class="val"><input id="num-${k}" type="number" inputmode="decimal" step="${step}" min="${min}" max="${max}" value="${esc(val)}" data-act="typed" data-k="${k}"><small>${unit}</small></span>
+    <span class="val"><input id="num-${k}" type="number" inputmode="decimal" step="any" min="${min}" max="${max}" value="${esc(val)}" data-act="typed" data-k="${k}"><small>${unit}</small></span>
   </div></div>`;
 }
 // suwak i pole trzymają tę samą wartość; drugie pole tylko odświeżamy, żeby nie przerywać wpisywania
@@ -304,7 +308,7 @@ function quickAdd(){
     <div class="btnrow"><select id="qq-own" aria-label="${tr('Rodzaj pozycji ogólnej')}" style="width:auto;flex:1">${CAT_ORDER.map(c => `<option value="${c}"${qa.cat === c ? ' selected' : ''}>${catOne(c)}</option>`).join('')}</select><button class="sm" data-act="quick-own">${tr('Dodaj pozycję ogólną')}</button></div>
   </div>`;
 }
-const OWN_DEFAULTS = {wetsuit:{t:5, cover:'full'}, over:{t:3, cover:'vest', hood:true}, hood:{t:5, cover:'hood', hood:true}, gloves:{t:3, cover:'gloves'}, boots:{t:5, cover:'boots'}, dry:{shell:'trilam', b:0.3}, under:{g:4, tmin:8}, bcd:{b:1.0}, wing:{plate:'alu'}, tank:{vol:12, mat:'stal', be:-1.4, vd:13.8}, fins:{b:0, mass:1500}, misc:{b:0}};
+const OWN_DEFAULTS = {wetsuit:{t:5, cover:'full'}, over:{t:3, cover:'vest', hood:true}, hood:{t:5, cover:'hood', hood:true}, gloves:{t:3, cover:'gloves'}, boots:{t:5, cover:'boots'}, dry:{shell:'trilam', b:0.3}, under:{g:4, tmin:8}, bcd:{b:1.0}, wing:{plate:'alu'}, tank:{vol:12, mat:'stal', be:-1.4, vd:13.8}, stage:{vol:11.1, mat:'alu', be:1.5, vd:15.7}, fins:{b:0, mass:1500}, misc:{b:0}};
 function quickItem(w){
   const rental = ui.quick && ui.quick.kind === 'rental';
   if (rental){ w.rental = true; w.year = null; w.model += ' ' + tr('(wypożyczony)'); }
@@ -319,23 +323,31 @@ const sameSet = (a, b) => a.length === b.length && a.every(x => b.some(y => y.ui
 
 // Standardowe butle prosto z katalogu — wybór jednym tapnięciem, bez wpisywania do szafy.
 const STD_TANKS = CATALOG.filter(c => c.cat === 'tank');
-function tankPicker(selected, act){
-  const mine = P().wardrobe.some(w => w.cat === 'tank' && selected.includes(w.uid));
-  return `<div class="group"><div class="label">${tr('Butla standardowa')} <span class="muted">${tr('bez dodawania do szafy')}</span></div>
-    <div class="chips">${STD_TANKS.map(c => {
+const STD_STAGES = CATALOG.filter(c => c.cat === 'stage');
+function tankRow(list, label, hint, selected, act){
+  return `<div class="group"><div class="label">${label} <span class="muted">${hint}</span></div>
+    <div class="chips">${list.map(c => {
       const uid = 'cat:' + c.id, on = selected.includes(uid);
       return `<button class="chip" data-act="${act || 'plan-toggle'}" data-uid="${esc(uid)}" aria-pressed="${on}">${esc(frag(c.brand))} ${esc(frag(c.model))}</button>`;
-    }).join('')}</div>
-    ${mine ? `<p class="small muted" style="margin:6px 0 0">${tr('Wybrana jest Twoja butla z szafy — tapnięcie standardowej ją zastąpi.')}</p>` : ''}</div>`;
+    }).join('')}</div>`;
+}
+function tankPicker(selected, act){
+  const mine = P().wardrobe.some(w => w.cat === 'tank' && selected.includes(w.uid));
+  // Butla podstawowa jest jedna — wybór nowej zastępuje poprzednią. Stage odwrotnie: dokłada się
+  // do zestawu i można mieć kilka, więc siedzi w osobnym rzędzie, żeby nikt nie szukał, czemu nic nie zniknęło.
+  return tankRow(STD_TANKS, tr('Butla standardowa'), tr('bez dodawania do szafy'), selected, act) +
+    `${mine ? `<p class="small muted" style="margin:6px 0 0">${tr('Wybrana jest Twoja butla z szafy — tapnięcie standardowej ją zastąpi.')}</p>` : ''}</div>` +
+    tankRow(STD_STAGES, tr('Butla stage'), tr('bez dodawania do szafy, dokładana do podstawowej'), selected, act) + '</div>';
 }
 
 // ---------- widoki ----------
 function leadDetailHtml(pl, items, p){
   const iss = setIssues(items), site = siteOf(pl.siteId);
+  if (iss.length) return `<section class="card" id="lead-detail"><h2>${tr('Balast')}</h2>
+    <p style="margin:10px 0 0">${tr('Najpierw dodaj {x} do zestawu. To one ważą najwięcej w bilansie wyporności, więc liczba bez nich byłaby zgadywaniem.', {x: issAcc(iss)})}</p></section>`;
   return `<section class="card" id="lead-detail"><h2>${tr('Balast')} <small>${tr('zakres 80%: {a}–{b} kg', {a: fmt(Math.max(0, p.lo)), b: fmt(p.hi)})}</small></h2>
     <div class="small muted">${esc(siteName(site))} · ${L.n ? tr('nauka z {n} nurk. w dzienniku', {n: L.n}) : tr('bez nauki, tylko fizyka')} · ${tr('doświadczenie: {n} nurk. ({l})', {n: L.total, l: tr(L.exp.label)})}</div>
     ${scaleHtml(p)}
-    ${iss.length ? `<div class="banner" style="margin-top:28px">${tr('Zestaw nie ma {x} — wynik jest niepełny.', {x: iss.join(tr(' ani '))})}</div>` : ''}
     <div class="note">${esc(distribution(p, items))} ${tr('Przy pierwszym nurkowaniu w tej konfiguracji zrób kontrolę na 5 m z rezerwą i pustą kamizelką.')}</div>
   </section>
 
@@ -355,7 +367,9 @@ function thermalCardHtml(pl, items){
       ${adv.list.map(r => { const on = sameSet(r.c, curExpo); return `<div class="opt${on ? ' best' : ''}">
         <div class="items">${r.c.map(x => esc(nm(x))).join(' + ')}</div>
         ${on ? `<span class="pill info" style="align-self:start">${tr('Wybrany')}</span>` : `<button class="sm" data-act="use-combo" data-uids="${esc(r.c.map(x => x.uid).join(','))}">${tr('Użyj')}</button>`}
-        <div class="meta">${tr('komfort od {c} °C · zapas {m} °C · ołów {l} kg', {c: fmt(r.th.comfort - delta), m: sgn(r.m), l: fmt(r.lead)})}</div>
+        <div class="meta">${setIssues(items).length
+          ? tr('komfort od {c} °C · zapas {m} °C', {c: fmt(r.th.comfort - delta), m: sgn(r.m)})
+          : tr('komfort od {c} °C · zapas {m} °C · ołów {l} kg', {c: fmt(r.th.comfort - delta), m: sgn(r.m), l: fmt(r.lead)})}</div>
       </div>`; }).join('') || `<p class="muted small">${tr('Dodaj piankę lub suchy skafander do szafy.')}</p>`}
       ${!adv.anyOk && adv.list.length ? `<p class="small muted">${tr('Brakuje cieplejszej warstwy: grubszej pianki, ocieplacza z kapturem albo suchego skafandra.')}</p>` : ''}
     </div>
@@ -484,7 +498,7 @@ function paramEditor(w){
   if (w.cat === 'fins') h += n('b', 'Wyporność pary w wodzie (kg)') + n('mass', 'Masa pary (g)', '10');
   if (w.cat === 'boots') h += n('mass', 'Masa pary (g)', '10');
   if (w.cat === 'wing') h += sel('plate', 'Płyta', [['alu',tr('Aluminium')],['steel',tr('Stal')],['soft',tr('Miękka / brak')]]);
-  if (w.cat === 'tank') h += n('vol', 'Pojemność (l)') + n('be', 'Wyporność pusta, morze (kg)') + n('vd', 'Objętość zewnętrzna (l)');
+  if (w.cat === 'tank' || w.cat === 'stage') h += n('vol', 'Pojemność (l)') + n('be', 'Wyporność pusta, morze (kg)') + n('vd', 'Objętość zewnętrzna (l)');
   return `<div class="editor">${h}</div>${foot}</div>`;
 }
 
@@ -662,7 +676,7 @@ const WIZ_CATS = [
   {cats:['hood','gloves','boots'], label:'Kaptur, rękawice, buty', hint:'Drobiazgi, które dokładają trochę wyporności i sporo komfortu.'},
   {cats:['bcd','wing'], label:'Kamizelka albo skrzydło', need:true, hint:'Jacket, skrzydło z płytą — wybierz to, na czym nurkujesz.'},
   {cats:['fins'], label:'Płetwy', hint:'Gumowe ciągną w dół mocniej niż plastikowe.'},
-  {cats:['tank'], label:'Butla', hint:'Możesz pominąć: na ekranie Oblicz wybierzesz butlę jednym tapnięciem spośród standardowych.'},
+  {cats:['tank','stage'], label:'Butla', hint:'Możesz pominąć: na ekranie Oblicz wybierzesz butlę jednym tapnięciem spośród standardowych. Stage dokłada się do podstawowej, nie zamiast niej.'},
   {cats:['misc'], label:'Reszta', hint:'Latarka, aparat. Automat masz już w szafie.'}
 ];
 const wizMissing = () => WIZ_CATS.filter(c => c.need && !P().wardrobe.some(w => c.cats.includes(w.cat)));
@@ -711,17 +725,21 @@ function whoHtml(){
 function summaryHtml(){
   const pl = P().plan, items = resolveItems(pl.items, P()), ctx = planCtx(pl), iss = setIssues(items);
   const p = predictLead(items, dst(), ctx, L), delta = (+P().profile.coldTol || 0) + T.delta, tef = tEf(pl, delta), th = thermalOfSet(items, pl.depth);
-  const short = it => it.cat === 'tank' ? (it.p.mat === 'alu' ? 'Alu ' : tr('Stal') + ' ') + fmt(it.p.vol, it.p.vol % 1 ? 1 : 0) + ' l' : nm(it).replace(/ \((wypożyczon[ay]|własny|rented|own)\)/, '');
-  const order = ['wetsuit','over','hood','dry','under','bcd','wing','tank','fins'];
+  const vlab = p => { const n = p.n || 1, v = p.vol / n; return (n > 1 ? n + ' × ' : '') + fmt(v, v % 1 ? 1 : 0) + ' l'; };
+  const short = it => it.cat === 'tank' || it.cat === 'stage'
+    ? (it.cat === 'stage' ? 'Stage ' : '') + (it.p.mat === 'alu' ? 'Alu ' : tr('Stal') + ' ') + vlab(it.p)
+    : nm(it).replace(/ \((wypożyczon[ay]|własny|rented|own)\)/, '');
+  const order = ['wetsuit','over','hood','dry','under','bcd','wing','tank','stage','fins'];
   const shown = items.filter(i => order.includes(i.cat)).sort((a, b) => order.indexOf(a.cat) - order.indexOf(b.cat));
   return `<div class="sb" role="status" aria-live="polite">
     <div class="sb-lead"><div class="sb-head"><span class="label">${tr('Ołów')}</span>
-        <button class="sb-q" data-act="explain" aria-expanded="${!!ui.explain}" aria-controls="lead-detail" title="${tr('Wyjaśnij')}" aria-label="${tr('Wyjaśnij')}">${ICON.ask}</button></div>
-      <div class="sb-big">${fmt(p.rec)}<small>kg</small></div><div class="range">${fmt(Math.max(0, p.lo))}–${fmt(p.hi)}</div></div>
+        ${iss.length ? '' : `<button class="sb-q" data-act="explain" aria-expanded="${!!ui.explain}" aria-controls="lead-detail" title="${tr('Wyjaśnij')}" aria-label="${tr('Wyjaśnij')}">${ICON.ask}</button>`}</div>
+      ${iss.length ? `<div class="sb-big none">—</div><div class="range">${tr('brak danych')}</div>`
+        : `<div class="sb-big">${fmt(p.rec)}<small>kg</small></div><div class="range">${fmt(Math.max(0, p.lo))}–${fmt(p.hi)}</div>`}</div>
     <div class="sb-set"><div class="label">${tr('Zestaw')}</div>
       <div class="sb-items">${shown.map(i => esc(short(i))).join(' · ') || tr('Nic nie wybrano')}</div>
       <div class="sb-therm"><span>${tr('woda')} <b class="mono">${fmt(tBreak(pl).t)}°</b> · ${tr('komfort od')} <b class="mono">${fmt(th.comfort - delta)}°</b></span>${thermalVerdict(tef - th.comfort)}</div>
-      ${iss.length ? `<div class="sb-warn">${tr('Brak')} ${iss.join(tr(' i '))}</div>` : ''}</div></div>`;
+      ${iss.length ? `<div class="sb-warn">${tr('Dodaj {x} — bez tego nie policzę ołowiu.', {x: issAcc(iss)})}</div>` : ''}</div></div>`;
 }
 function render(){
   const ae = document.activeElement, fid = ae && ae.id && view.contains(ae) ? ae.id : null;
@@ -749,7 +767,8 @@ const TOUR = [
   {tab:'calc', sel:'#plan-card', title:'Gdzie i kiedy', text:'Akwen i miesiąc wystarczą — temperaturę dna podpowie akwen, a Ty poprawisz ją, jeśli znasz aktualną. Głębokość i temperaturę zmieniasz przyciskami, bez klawiatury.'},
   {tab:'calc', sel:'#thermal-card', title:'Czy nie zmarzniesz', text:'Aplikacja porównuje komfort Twojego zestawu z temperaturą nurkowania i mówi wprost: wystarczy, na granicy czy za zimno. Niżej proponuje najlżejsze zestawy z szafy, które dadzą radę.'},
   {tab:'calc', sel:'#set-card', title:'Co masz na sobie', text:'Tapnij, żeby włączyć albo wyłączyć element z zestawu — ołów przeliczy się od razu. Butlę możesz wziąć ze standardowych, bez wstawiania jej do szafy.'},
-  {tab:'calc', sel:'[data-act="log-from-plan"]', title:'Najważniejszy przycisk', text:'Po wyjściu z wody zapisz nurkowanie i oceń: czy ołowiu było dobrze i czy było Ci ciepło. Z tych dwóch ocen model uczy się Ciebie — bez nich zostaje przy fizyce dla przeciętnego nurka.'},
+  {tab:'calc', sel:'[data-act="log-from-plan"]', title:'Najważniejszy przycisk', text:'Po wyjściu z wody zapisz nurkowanie i oceń dwie rzeczy: czy ołowiu było za dużo, za mało czy w sam raz, i czy w tym zestawie było Ci ciepło. Oceny wiążą się z konkretnym sprzętem, więc model uczy się, ile ołowiu potrzebujesz Ty i która pianka wystarcza Tobie — bez nich zostaje przy fizyce dla przeciętnego nurka.'},
+  {tab:'log', sel:'[data-act="import-dive"]', title:'Nurkowanie z komputera', text:'Plik z aplikacji Suunto wczyta datę, głębokość, czas i temperatury — nie trzeba niczego przepisywać. Zostaje zaznaczyć sprzęt, wpisać ołów i ocenić komfort, bo tego żaden komputer nie zapisuje, a to właśnie z tego uczy się model.'},
   {sel:'nav.tabs', title:'Reszta aplikacji', text:'Dziennik to historia z ocenami, Szafa — Twój sprzęt, Akweny — temperatury i gęstość wody, Profil — dane ciała, kopia zapasowa i ten samouczek, gdybyś chciał go powtórzyć.'}
 ];
 let tourStep = -1;
@@ -918,7 +937,7 @@ window.addEventListener('resize', kbCheck);
 const view = document.getElementById('view');
 function draftFromPlan(){
   const p = predictLead(resolveItems(P().plan.items, P()), dst(), planCtx(P().plan), L);
-  return Object.assign(JSON.parse(JSON.stringify(P().plan)), {id: newId('d'), lead: p.rec, leadFb: null, leadAdj: 1, thermal: null, note: '', date: today()});                    // plan trzyma już tylko miesiąc; dzień poprawisz w formularzu
+  return Object.assign(JSON.parse(JSON.stringify(P().plan)), {id: newId('d'), lead: setIssues(resolveItems(P().plan.items, P())).length ? '' : p.rec, leadFb: null, leadAdj: 1, thermal: null, note: '', date: today()});                    // plan trzyma już tylko miesiąc; dzień poprawisz w formularzu
 }
 function setLang(l){ LANG = l; S.lang = l; save(); render(); }
 $('#lang').addEventListener('click', () => setLang(LANG === 'pl' ? 'en' : 'pl'));

@@ -26,6 +26,21 @@ test('katalog: uczciwe źródła i brak duplikatów nazw', () => {
   for (const c of A.CATALOG) assert.ok(/producent|szacunek|wpisz|wypiera/.test(c.src), c.id + ': nieczytelne źródło „' + c.src + '”');
 });
 
+test('twinset i stage: butle liczone tą samą fizyką', () => {
+  const buoy = id => A.itemBuoy(A.fromCat(id), A.diverState(A.seedState()).profile, ctx);
+  const single = buoy('st-12-232'), twin = buoy('tw-2x12-232');
+  // twinset to dwie butle plus manifold i obejmy — musi ciągnąć w dół mocniej niż dwie pojedyncze
+  assert.ok(twin < 2 * single, `twinset ${twin} nie jest cięższy od dwóch butli ${2 * single}`);
+  assert.ok(twin > 2 * single - 5, 'twinset nie może być cięższy o więcej niż kilka kg od dwóch butli');
+  // stage liczy się jak butla: aluminiowa S80 pusta z rezerwą unosi
+  const stage = buoy('stg-al-s80');
+  assert.ok(stage > 0, `aluminiowy stage powinien unosić, jest ${stage}`);
+  assert.ok(Math.abs(stage - buoy('al-s80')) < 0.5, 'stage S80 ma wypornosć zbliżoną do tej samej butli w roli podstawowej');
+  // stage nie zastępuje butli podstawowej — to osobna kategoria
+  assert.equal(A.CATALOG.find(c => c.id === 'stg-al-s80').cat, 'stage');
+  assert.equal(A.CATALOG.find(c => c.id === 'tw-2x12-232').cat, 'tank');
+});
+
 test('komfort pianek zgodny z tabelami sklepów (±1 °C)', () => {
   const at = (ids, d) => A.thermalOfSet(ids.map(id => A.fromCat(id)), d).comfort;
   assert.ok(Math.abs(at(['mares-reef-3'], 20) - 22) < 1);
