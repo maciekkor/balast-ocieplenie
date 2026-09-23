@@ -189,12 +189,14 @@ function stepField(id, lab, f, val, step, min, max){
 // Czas, numer nurkowania dnia, rezerwa i temperatura powierzchni zostają w danych z rozsądnymi
 // założeniami, a poprawić je można przy zapisie w dzienniku (full = true).
 function planFields(pl, pre, full){
+  // W planie data służy tylko do podania temperatur z akwenu, więc wystarczy miesiąc — jedno tapnięcie
+  // zamiast wpisywania rrrr-mm-dd i walki z kalendarzem. Dziennik dostaje pełną datę, bo tam liczy się dzień.
   return `<div class="grid2">
-    ${siteCombo(pl, pre)}
-    <div class="f wide"><label for="${pre}date">${tr('Data')}</label><div class="datebox">
+    ${siteCombo(pl, pre)}${full ? '' : '</div>' + fieldset(tr('Miesiąc'), tiles('set-month', lbl().months.map((lab, i) => ({v: i, label: lab})), o => +o.v === monthOf(pl.date), 'compact')) + '<div class="grid2">'}
+    ${full ? `<div class="f wide"><label for="${pre}date">${tr('Data')}</label><div class="datebox">
       <input id="${pre}date" type="text" inputmode="numeric" maxlength="10" placeholder="${tr('rrrr-mm-dd')}" data-f="date" data-date="1" value="${esc(pl.date)}">
       <button type="button" class="calbtn" data-act="cal" data-pre="${pre}" aria-label="${tr('Kalendarz')}"><svg viewBox="0 0 24 24"><rect x="4" y="5" width="16" height="15" rx="2"/><path d="M4 10h16M9 3v4M15 3v4"/></svg></button>
-      <input type="date" class="datepick" id="${pre}datepick" data-pick="${pre}" tabindex="-1" aria-hidden="true" value="${esc(validDate(pl.date) ? pl.date : '')}"></div></div>
+      <input type="date" class="datepick" id="${pre}datepick" data-pick="${pre}" tabindex="-1" aria-hidden="true" value="${esc(validDate(pl.date) ? pl.date : '')}"></div></div>` : ''}
     ${stepField(pre + 'depth', tr('Głębokość maks. (m)'), 'depth', pl.depth, 1, 0, 120)}
     ${stepField(pre + 'tb', tr('Temp. na dnie (°C)'), 'tBottom', pl.tBottom, 1, -2, 40)}
   </div>
@@ -823,7 +825,7 @@ window.addEventListener('resize', kbCheck);
 const view = document.getElementById('view');
 function draftFromPlan(){
   const p = predictLead(resolveItems(P().plan.items, P()), dst(), planCtx(P().plan), L);
-  return Object.assign(JSON.parse(JSON.stringify(P().plan)), {id: newId('d'), lead: p.rec, leadFb: null, leadAdj: 1, thermal: null, note: '', date: P().plan.date || today()});
+  return Object.assign(JSON.parse(JSON.stringify(P().plan)), {id: newId('d'), lead: p.rec, leadFb: null, leadAdj: 1, thermal: null, note: '', date: today()});                    // plan trzyma już tylko miesiąc; dzień poprawisz w formularzu
 }
 function setLang(l){ LANG = l; S.lang = l; save(); render(); }
 $('#lang').addEventListener('click', () => setLang(LANG === 'pl' ? 'en' : 'pl'));
@@ -898,6 +900,12 @@ view.addEventListener('click', e => {
   }
   if (a === 'wiz-back'){ ui.wiz = Math.max(0, ui.wiz - 1); render(); return window.scrollTo(0, 0); }
   if (a === 'wiz-done') return wizDone();
+  if (a === 'set-month'){
+    const pl = P().plan, y = +String(pl.date).slice(0, 4) || new Date().getFullYear();
+    pl.date = y + '-' + String(+b.dataset.v + 1).padStart(2, '0') + '-01';
+    fillTemps(pl);
+    return commit();
+  }
   if (a === 'gate-skip'){ S.installSkip = true; return commit(); }
   if (a === 'gate-steps'){ ui.gateSteps = true; return render(); }
   if (a === 'gate-show'){ delete S.installSkip; ui.gateSteps = false; window.scrollTo(0, 0); return commit(); }
