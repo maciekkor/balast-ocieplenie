@@ -59,15 +59,19 @@ function distanceKm(a, b, c, d){
   const h = Math.sin(dLat / 2) ** 2 + Math.cos(rad(a)) * Math.cos(rad(c)) * Math.sin(dLon / 2) ** 2;
   return 2 * R * Math.asin(Math.min(1, Math.sqrt(h)));
 }
+// Porównujemy odległość mierzoną promieniem akwenu (km / r), a nie w kilometrach:
+// inaczej wielkie rejony („Bałtyk”, promień 400 km) wygrywałyby z kamieniołomem,
+// nad którym nurek właśnie stoi — tak Honoratka wychodziła jako Bałtyk.
 function matchSite(gps, sites){
   if (!gps || !Array.isArray(sites)) return null;
   let best = null;
   for (const s of sites){
     if (typeof s.lat !== 'number' || typeof s.lon !== 'number') continue;
+    const r = s.r || 25;
     const km = distanceKm(gps.lat, gps.lon, s.lat, s.lon);
-    if (km <= (s.r || 25) && (!best || km < best.km)) best = {id: s.id, km: Math.round(km)};
+    if (km <= r && (!best || km / r < best.score)) best = {id: s.id, km: Math.round(km), score: km / r};
   }
-  return best;
+  return best && {id: best.id, km: best.km};
 }
 
 if (typeof module !== 'undefined') module.exports = {parseSuuntoJson, kelvinToC, matchSite, distanceKm};

@@ -1,6 +1,6 @@
 // ===== Aplikacja =====
 const KEY = 'balast-ocieplenie.v1';
-let S, L, T, memOnly = false, tab = 'calc', ui = {draft:null, editGear:null, editSite:null, addQ:'', addCat:'', confirmWipe:false, quick:null, siteQ:null, hl:0, wiz:0, delDiver:null, explain:false, planInfo:false};
+let S, L, T, memOnly = false, tab = 'calc', ui = {draft:null, editGear:null, editSite:null, addQ:'', addCat:'', confirmWipe:false, quick:null, siteQ:null, hl:0, wiz:0, delDiver:null, explain:false, planInfo:false, thermInfo:false};
 const $ = s => document.querySelector(s);
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const fmt = (x, d = 1) => { const s = (Math.round(x * Math.pow(10, d)) / Math.pow(10, d)).toFixed(d); return LANG === 'en' ? s : s.replace('.', ','); };
@@ -274,7 +274,7 @@ function quickAdd(){
     <div class="btnrow"><select id="qq-own" aria-label="${tr('Rodzaj pozycji ogólnej')}" style="width:auto;flex:1">${CAT_ORDER.map(c => `<option value="${c}"${qa.cat === c ? ' selected' : ''}>${catOne(c)}</option>`).join('')}</select><button class="sm" data-act="quick-own">${tr('Dodaj pozycję ogólną')}</button></div>
   </div>`;
 }
-const OWN_DEFAULTS = {wetsuit:{t:5, cover:'full'}, over:{t:3, cover:'vest', hood:true}, hood:{t:5, cover:'hood', hood:true}, gloves:{t:3, cover:'gloves'}, boots:{t:5, cover:'boots'}, dry:{shell:'trilam', b:0.3}, under:{g:4, tmin:8}, bcd:{b:1.0}, wing:{lift:15, plate:'alu'}, tank:{vol:12, bar:232, mat:'stal', be:-1.4, vd:13.8}, fins:{b:0, mass:1500}, misc:{b:0}};
+const OWN_DEFAULTS = {wetsuit:{t:5, cover:'full'}, over:{t:3, cover:'vest', hood:true}, hood:{t:5, cover:'hood', hood:true}, gloves:{t:3, cover:'gloves'}, boots:{t:5, cover:'boots'}, dry:{shell:'trilam', b:0.3}, under:{g:4, tmin:8}, bcd:{b:1.0}, wing:{plate:'alu'}, tank:{vol:12, mat:'stal', be:-1.4, vd:13.8}, fins:{b:0, mass:1500}, misc:{b:0}};
 function quickItem(w){
   const rental = ui.quick && ui.quick.kind === 'rental';
   if (rental){ w.rental = true; w.year = null; w.model += ' ' + tr('(wypożyczony)'); }
@@ -315,10 +315,11 @@ function leadDetailHtml(pl, items, p){
 function thermalCardHtml(pl, items){
   const delta = (+P().profile.coldTol || 0) + T.delta, tef = tEf(pl, delta), th = thermalOfSet(items, pl.depth), m = tef - th.comfort;
   const tb = tBreak(pl), adv = advisor(pl, items), curExpo = items.filter(i => EXPO.includes(i.cat));
-  return `<section class="card" id="thermal-card"><h2>${tr('Ocieplenie')} <small>${tr('temperatura nurkowania {t} °C', {t: fmt(tb.t)})}</small></h2>
+  return `<section class="card" id="thermal-card"><div class="card-head"><h2>${tr('Ocieplenie')} <small>${tr('temperatura nurkowania {t} °C', {t: fmt(tb.t)})}</small></h2>
+      <button class="sb-q" data-act="therm-info" aria-expanded="${!!ui.thermInfo}" title="${tr('Skąd ta temperatura')}" aria-label="${tr('Skąd ta temperatura')}">${ICON.ask}</button></div>
     <div class="therm-head"><div class="small">${tr('Twój zestaw daje Ci komfort od')} <b class="mono">${fmt(th.comfort - delta)} °C</b></div>${thermalVerdict(m)}</div>
-    <p class="small muted" style="margin:8px 0 0">${tr('Temperatura nurkowania = dno {b} °C × 75% + powierzchnia {s} °C × 25%', {b: fmt(pl.tBottom), s: fmt(pl.tSurf)})}${tb.long ? tr(' − {x} °C za długie nurkowanie', {x: fmt(tb.long)}) : ''}${tb.rep ? tr(' − {x} °C za kolejne nurkowanie dnia', {x: fmt(tb.rep)}) : ''}.
-    ${tr('Komfort zestawu dla przeciętnego nurka: od {c} °C', {c: fmt(th.comfort)})}${Math.abs(delta) >= 0.1 ? tr('; Twoja tolerancja zimna {d} °C', {d: sgn(delta)}) : ''}.</p>
+    ${ui.thermInfo ? `<p class="small muted" style="margin:8px 0 0">${tr('Temperatura nurkowania = dno {b} °C × 75% + powierzchnia {s} °C × 25%', {b: fmt(pl.tBottom), s: fmt(pl.tSurf)})}${tb.long ? tr(' − {x} °C za długie nurkowanie', {x: fmt(tb.long)}) : ''}${tb.rep ? tr(' − {x} °C za kolejne nurkowanie dnia', {x: fmt(tb.rep)}) : ''}.
+    ${tr('Komfort zestawu dla przeciętnego nurka: od {c} °C', {c: fmt(th.comfort)})}${Math.abs(delta) >= 0.1 ? tr('; Twoja tolerancja zimna {d} °C', {d: sgn(delta)}) : ''}.</p>` : ''}
     <div class="stack" style="margin-top:12px;gap:8px">
       <div class="label">${tr(adv.anyOk ? 'Najlżejsze wystarczające zestawy z Twojej szafy (bez wypożyczonych)' : 'Nic w szafie nie wystarcza — najcieplejsze opcje')}</div>
       ${adv.list.map(r => { const on = sameSet(r.c, curExpo); return `<div class="opt${on ? ' best' : ''}">
@@ -419,7 +420,9 @@ function paramEditor(w){
   const p = w.p, n = (k, lab, step = '0.1') => `<div class="f"><label for="g-${k}">${tr(lab)}</label><input id="g-${k}" type="number" step="${step}" inputmode="decimal" data-p="${k}" value="${esc(p[k] ?? '')}"></div>`;
   const sel = (k, lab, opts) => `<div class="f"><label for="g-${k}">${tr(lab)}</label><select id="g-${k}" data-p="${k}">${opts.map(([v, l]) => `<option value="${v}"${String(p[k]) === String(v) ? ' selected' : ''}>${l}</option>`).join('')}</select></div>`;
   const chk = (k, lab) => `<div class="f"><label for="g-${k}">${tr(lab)}</label><select id="g-${k}" data-p="${k}" data-bool="1"><option value="0"${!p[k] ? ' selected' : ''}>${tr('nie')}</option><option value="1"${p[k] ? ' selected' : ''}>${tr('tak')}</option></select></div>`;
-  const cat = CATALOG.find(c => c.id === w.catId), sizes = cat ? cat.sizes : null;
+  const cat = CATALOG.find(c => c.id === w.catId);
+  // rozmiar zapisany wcześniej zostawiamy na liście, nawet gdy katalog zmienił oznaczenia
+  const sizes = cat ? (w.size && !cat.sizes.includes(w.size) ? cat.sizes.concat([w.size]) : cat.sizes) : null;
   let h = `<div class="grid2">
     <div class="f wide"><label for="g-name">${tr('Nazwa')}</label><input id="g-name" type="text" data-w="model" value="${esc(w.model)}"></div>
     <div class="f"><label for="g-size">${tr('Rozmiar')}</label>${sizes && sizes.length > 1 ? `<select id="g-size" data-w="size"><option value="">—</option>${sizes.map(s => `<option${s === w.size ? ' selected' : ''}>${esc(s)}</option>`).join('')}</select>` : `<input id="g-size" type="text" data-w="size" value="${esc(w.size)}">`}</div>
@@ -431,8 +434,8 @@ function paramEditor(w){
   if (w.cat === 'bcd' || w.cat === 'misc') h += n('b', 'Wyporność w wodzie (kg)');
   if (w.cat === 'fins') h += n('b', 'Wyporność pary w wodzie (kg)') + n('mass', 'Masa pary (g)', '10');
   if (w.cat === 'boots') h += n('mass', 'Masa pary (g)', '10');
-  if (w.cat === 'wing') h += n('lift', 'Udźwig (kg)', '1') + sel('plate', 'Płyta', [['steel',tr('Stal')],['alu',tr('Aluminium')],['soft',tr('Miękka / brak')]]);
-  if (w.cat === 'tank') h += n('vol', 'Pojemność (l)') + n('bar', 'Ciśnienie robocze (bar)', '1') + n('be', 'Wyporność pusta, morze (kg)') + n('vd', 'Objętość zewnętrzna (l)');
+  if (w.cat === 'wing') h += sel('plate', 'Płyta', [['alu',tr('Aluminium')],['steel',tr('Stal')],['soft',tr('Miękka / brak')]]);
+  if (w.cat === 'tank') h += n('vol', 'Pojemność (l)') + n('be', 'Wyporność pusta, morze (kg)') + n('vd', 'Objętość zewnętrzna (l)');
   h += `</div><p class="small muted" style="margin:10px 0 0">${tr('Źródło wartości: {x}', {x: esc(frag(w.src || 'wpis własny'))})}</p>
     <div class="btnrow"><button class="primary sm" data-act="close-gear">${tr('Gotowe')}</button><button class="danger sm" data-act="del-gear" data-uid="${esc(w.uid)}">${tr('Usuń z szafy')}</button></div>`;
   return `<div class="editor">${h}</div>`;
@@ -538,7 +541,7 @@ function viewWizard(){
     <p class="small muted" style="margin:8px 0 0">${tr('Dane zostają w tym telefonie: bez konta, bez serwera, bez wysyłania czegokolwiek.')}</p>
     ${langTiles()}
     <p class="small muted" style="margin:10px 0 0">${tr('Bez danych o Tobie nie da się policzyć wyporności ciała, a to podstawa całego wyniku — dlatego kreatora nie można pominąć. Zajmie minutę, wszystko zmienisz później.')}</p>
-    <div class="btnrow"><button class="primary" data-act="wiz-next">${tr('Wypełnij profil')}</button><button class="ghost" data-act="seed">${tr('Zobacz przykład')}</button></div>
+    <div class="btnrow"><button class="primary" data-act="wiz-next">${tr('Wypełnij profil')}</button></div>
   </section></div>`;
   if (step === 1) return `<div class="stack"><section class="card">
     ${wizHead(1, tr('Kim jesteś'), tr('Imię przyda się tylko wtedy, gdy z aplikacji korzysta więcej niż jedna osoba.'))}
@@ -694,12 +697,13 @@ view.addEventListener('mousedown', e => { const b = e.target.closest('[data-act=
 // Kalendarz na pointerdown i z preventDefault: dotknięcie ikony po wpisaniu daty powodowało blur → change →
 // przebudowę widoku, więc klik lądował w pustce. Zamiast tego sami zapisujemy to, co w polu, i otwieramy wybór daty.
 view.addEventListener('pointerdown', e => {
-  const b = e.target.closest('[data-act="cal"],[data-act="step"],[data-act="plan-info"]'); if (!b) return;
+  const b = e.target.closest('[data-act="cal"],[data-act="step"],[data-act="plan-info"],[data-act="therm-info"]'); if (!b) return;
   e.preventDefault();                                   // bez blur → bez przebudowy widoku w trakcie dotknięcia
   const ae = document.activeElement;
   if (ae && ae.dataset && ae.dataset.f && ae !== document.getElementById(b.dataset.t)) applyPlanField(ae, false);
   if (b.dataset.act === 'cal') return openDatePicker(b.dataset.pre);
   if (b.dataset.act === 'plan-info'){ ui.planInfo = !ui.planInfo; return render(); }
+  if (b.dataset.act === 'therm-info'){ ui.thermInfo = !ui.thermInfo; return render(); }
   stepValue(b);
 });
 function stepValue(b){

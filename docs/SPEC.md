@@ -74,12 +74,14 @@ Migracje wykonuje `migrate()` w `seed.js`, wołane przy starcie (`load()`) **i p
 | `dry` | `shell` (`trilam`, `membrane`, `crushed`, `neo`), `b` kg (dla nie-neoprenowych), `t` mm (dla `neo`) |
 | `under` | `g` kg wyporności gazu dla BSA 1,9 m², `tmin` °C dolna granica komfortu |
 | `bcd` | `b` kg wyporności w wodzie |
-| `wing` | `lift` kg, `plate` (`steel`, `alu`, `soft`), `b?` nadpisanie |
-| `tank` | `vol` l, `bar`, `mat` (`stal`, `alu`), `be` kg wyporność pusta w morzu 1,025 z zaworem, `vd` l objętość zewnętrzna |
-| `fins` | `b` kg wyporność pary, `mass?` g pary, `mat?` |
+| `wing` | `plate` (`steel`, `alu`, `soft`; domyślnie `alu`), `b?` nadpisanie |
+| `tank` | `vol` l, `mat` (`stal`, `alu`), `be` kg wyporność pusta w morzu 1,025 z zaworem, `vd` l objętość zewnętrzna |
+| `fins` | `b` kg wyporność pary, `mass?` g pary |
 | `misc` | `b` kg |
 
 **Pozycja spoza szafy.** `plan.items` (i `dives[].items`) mogą zawierać uid w formie `cat:<id z CATALOG>` — sprzęt brany prosto z katalogu, bez kopiowania do szafy; używa tego szybki wybór butli na ekranie Oblicz i w formularzu nurkowania. `itemOf()`/`resolveItems()` w `model.js` rozwiązują takie uid przez `catalogItem()`. Model liczy je jak każdą inną pozycję, ale **nie są cechą w nauce** — korekty per sztuka wymagają historii nurkowań w tej konkretnej sztuce, a te ma tylko sprzęt z szafy.
+
+**Każde pole `p` ma odbiorcę** — przegląd z września 2026 usunął te, których nikt nie czytał: `lift` skrzydeł (model liczy wyporność zestawu z płyty i pęcherza kamizelki, nie z udźwigu), `bar` butli (ciśnienie robocze nie wchodzi do wzoru — liczy się `vol` i rezerwa) oraz `mat` płetw (materiał siedzi już w `b`). `mass` płetw zostaje: nie wchodzi do wzoru, ale jest podstawą szacunku `b` i widać ją na liście.
 
 Wybór w zestawie: jedna pozycja z `wetsuit`, `dry`, `under`, `tank`, `fins` oraz jedna z pary `bcd`/`wing`. Suchy skafander wyklucza pianki i ocieplacze mokre i odwrotnie.
 
@@ -87,7 +89,23 @@ Wybór w zestawie: jedna pozycja z `wetsuit`, `dry`, `under`, `tank`, `fins` ora
 
 161 pozycji w 12 kategoriach. Marki: Mares, Cressi, Scubapro, Fourth Element, Bare, Aqualung, Tusa, Scubatech, Santi, Avatar, XDEEP, Tecline, Apeks, Hollis oraz pozycje ogólne.
 
-Pole `src` opisuje wiarygodność: `producent (…)`, `szacunek`, `szacunek z masy i materiału`, `grubość: producent; masa: szacunek`. Producenci pianek, ocieplaczy i płetw nie publikują wyporności — dlatego katalog trzyma parametry fizyczne, a wyporność liczy model dla konkretnego nurka.
+Pole `src` opisuje wiarygodność: `producent (…)`, `szacunek`, `szacunek z masy i materiału`, `grubość: producent; masa: szacunek`, `szacunek z wybranej płyty` (skrzydła). Producenci pianek, ocieplaczy i płetw nie publikują wyporności — dlatego katalog trzyma parametry fizyczne, a wyporność liczy model dla konkretnego nurka.
+
+### Rozmiarówka (weryfikacja, wrzesień 2026)
+
+Rozmiary są tylko informacją dla użytkownika — model ich nie czyta — ale mają się zgadzać z tym, co sprzedaje producent. Zestawy siedzą w `SZ` w `data.js`:
+
+| Zestaw | Wartości | Dla kogo |
+| --- | --- | --- |
+| `mares` | 2–8 | pianki Mares (numeracja producenta) |
+| `maresBoot` | `XS 38-39` … `3XL 45-46` | buty Mares — sklepy podają literę razem z EU ([underwater.pl](https://www.underwater.pl/2130-buty-nurkowe-mares-flexa-ds-5-mm.html)) |
+| `maresFin` | `S`, `R`, `XL` | płetwy Mares z otwartą piętą, m.in. Avanti Quattro+ ([mares.com](https://www.mares.com/en_US/avanti-quattro-18)) |
+| `finJet` | `S`–`2XL` | Scubapro Jet Fin |
+| `finHollis` | `R`, `XL`, `2XL` | Hollis F1 i F1 LT — nie ma S ani M ([diverightinscuba.com](https://www.diverightinscuba.com/f1-tech-fin.html)) |
+| `cressi` | `XS/1` … `XXXL/7` | **tylko pianki** Cressi; kamizelki, kaptury i rękawice tej marki mają zwykłe litery |
+| `one` | `uniwersalny` | skrzydła (XDEEP, Tecline, Mares XR są jednorozmiarowe), butle, drobne, pozycje ogólne |
+
+Rozmiar zapisany wcześniej zostaje na liście wyboru, nawet jeśli katalog zmienił oznaczenia — edytor dokłada go do `sizes`, żeby nie znikał ze sprzętu w szafie.
 
 ### Weryfikacja danych (B1, wrzesień 2026)
 
@@ -136,13 +154,13 @@ L_suchy = L_woda / (1 − ρ_w / 11,34)     → zaokrąglenie w górę do 0,5 kg
 
 ## 7. Ekrany
 
-0. **Kreator profilu (obowiązkowy)** — pokazuje się zamiast zakładek, gdy aktywny nurek ma `onboarded: false`: pierwsze uruchomienie, po „Wyczyść wszystkie dane" i po dodaniu nurka. Dolna nawigacja jest wtedy ukryta. Kroki: powitanie z wyborem języka (albo „Zobacz przykład", albo „Pomiń"), 1. imię, płeć, wiek; 2. wzrost, waga, budowa, opcjonalny % tłuszczu z podglądem wyporności ciała; 3. poziom doświadczenia i tolerancja zimna; 4. wybór startowej szafy (przykładowy zestaw albo sam automat). Krok 2 nie przepuszcza dalej bez sensownego wieku, wzrostu i wagi. **Kreatora nie można pominąć** — bez danych ciała nie da się policzyć wyporności, więc jedyne wyjście poza nim to „Zobacz przykład", które wczytuje kompletny profil przykładowego nurka.
+0. **Kreator profilu (obowiązkowy)** — pokazuje się zamiast zakładek, gdy aktywny nurek ma `onboarded: false`: pierwsze uruchomienie, po „Wyczyść wszystkie dane" i po dodaniu nurka. Dolna nawigacja jest wtedy ukryta. Kroki: powitanie z wyborem języka, 1. imię, płeć, wiek; 2. wzrost, waga, budowa, opcjonalny % tłuszczu z podglądem wyporności ciała; 3. poziom doświadczenia i tolerancja zimna; 4. wybór startowej szafy (przykładowy zestaw albo sam automat). Krok 2 nie przepuszcza dalej bez sensownego wieku, wzrostu i wagi. **Kreatora nie można pominąć ani obejść** — bez danych ciała nie da się policzyć wyporności. Powitanie nie proponuje już wczytania przykładowego nurka: na pierwszym uruchomieniu cudzy profil niczego nie wyjaśnia, a podstawia dane, które i tak trzeba zaraz zastąpić. Przykład został tam, gdzie ma sens — w Profilu, obok czyszczenia danych — i w kroku 4, gdzie „Weź przykład" dotyczy samej szafy.
 
 **Wybór zamiast wpisywania.** Płeć, wiek, budowa, tolerancja zimna, doświadczenie i język to kafelki z grafiką (`tiles()`, klasy `.picks`/`.pick`), a wzrost i waga to suwaki — z polem liczbowym obok, więc wartość można też wpisać z klawiatury numerycznej (`inputmode="decimal"`); suwak i pole trzymają tę samą wartość, a po wyjściu z pola obowiązuje zakres suwaka. Do wpisania zostają tylko imię i opcjonalny % tłuszczu. Te same komponenty obsługują kreator i zakładkę Profil, więc jedna zmiana działa w obu miejscach.
 
 Edycja profilu **nie przebudowuje widoku**: suwak i pola tekstowe zapisują stan i odświeżają wyłącznie `#body-out` (`refreshBody()`), a ten ma stałą wysokość (`.kv.fixed`). Inaczej przycisk „Dalej" uciekał spod palca — `blur → change → render()` podmieniał DOM między naciśnięciem a puszczeniem i kliknięcie przepadało.
 
-1. **Oblicz:** przypięty pasek (ołów + zakres, przycisk **wyjaśnij** `?`, skrót zestawu, woda, komfort, werdykt) — nie przewija się. Karty w kolejności: **Planowane nurkowanie** — tylko cztery pola, które realnie zmieniają wynik: akwen z wyszukiwaniem po pierwszych literach, data rrrr-mm-dd z ikoną kalendarza otwierającą natywny wybór daty (obsługiwaną na `pointerdown` z `preventDefault()`, żeby dotknięcie po wpisaniu daty nie przepadło przez przebudowę widoku), głębokość maks. i temperatura dna; zaraz pod nią przycisk zapisu po nurkowaniu, bo to następny krok po tej samej karcie; dalej **Ocieplenie** (rozbicie temperatury, doradca) i **Zestaw** (chipy + szybkie dodawanie: kupiony/wypożyczony, katalog, pozycja ogólna, edytor) wraz z rzędem **standardowych butli** wybieranych jednym tapnięciem, bez wpisywania czegokolwiek do szafy. Skąd bierze się liczba ołowiu — karty **Balast** (skala z przedziałem, rozkład ołowiu, przypomnienie o kontroli na 5 m) i **Skąd ta liczba** (wykres rozbieżny składników) — pokazuje dopiero przycisk `?` w pasku (`ui.explain`), który po rozwinięciu przewija do nich. 
+1. **Oblicz:** przypięty pasek (ołów + zakres, przycisk **wyjaśnij** `?`, skrót zestawu, woda, komfort, werdykt) — nie przewija się. Karty w kolejności: **Planowane nurkowanie** — tylko cztery pola, które realnie zmieniają wynik: akwen z wyszukiwaniem po pierwszych literach, data rrrr-mm-dd z ikoną kalendarza otwierającą natywny wybór daty (obsługiwaną na `pointerdown` z `preventDefault()`, żeby dotknięcie po wpisaniu daty nie przepadło przez przebudowę widoku), głębokość maks. i temperatura dna; zaraz pod nią przycisk zapisu po nurkowaniu, bo to następny krok po tej samej karcie; dalej **Ocieplenie** (werdykt i doradca od razu, rozbicie temperatury nurkowania pod przyciskiem `?` w nagłówku — `ui.thermInfo`) i **Zestaw** (chipy + szybkie dodawanie: kupiony/wypożyczony, katalog, pozycja ogólna, edytor) wraz z rzędem **standardowych butli** wybieranych jednym tapnięciem, bez wpisywania czegokolwiek do szafy. Skąd bierze się liczba ołowiu — karty **Balast** (skala z przedziałem, rozkład ołowiu, przypomnienie o kontroli na 5 m) i **Skąd ta liczba** (wykres rozbieżny składników) — pokazuje dopiero przycisk `?` w pasku (`ui.explain`), który po rozwinięciu przewija do nich. 
 ### Założenia planu zamiast pól
 
 Czas, numer nurkowania dnia, rezerwa i temperatura powierzchni **nie mają pól w planie** — zostają w danych z ostrożnymi założeniami, bo plan ma być szybki do ustawienia:
@@ -174,7 +192,7 @@ Dwie rzeczy, których nie widać bez prawdziwego pliku:
 
 Szkic z importu dostaje `imported`, przez co formularz otwiera się z banerem mówiącym wprost, czego modelowi brakuje: sprzętu, ołowiu z oceną i komfortu cieplnego. W dzienniku nurkowanie bez ołowiu albo bez oceny balastu ma plakietkę „bez oceny balastu", a nad listą jest przypomnienie, że takie wpisy nie uczą modelu — uzupełnia się je przyciskiem Edytuj.
 
-**Akwen z pozycji GPS.** Presety mają przybliżony środek rejonu (`lat`, `lon`) i promień `r` w km, w którym dopasowanie ma sens — „Chorwacja (Adriatyk)" to 350 km, kamieniołom 8 km, basen 5 km. `matchSite()` liczy odległość po wielkim kole i wybiera najbliższy akwen mieszczący się w swoim promieniu; przy braku trafienia akwen zostaje bez zmian, a pozycja jest tylko pokazana. Akweny dopisane ręcznie nie mają współrzędnych, więc nie biorą udziału. Formularz zawsze mówi, co się stało („Akwen rozpoznany z pozycji … 139 km od środka rejonu — zmień, jeśli nie ten"), bo rejon to nie punkt i pomyłka jest możliwa. `migrate()` dobiera współrzędne po `id` do akwenów zapisanych zanim je wprowadziliśmy.
+**Akwen z pozycji GPS.** Presety mają przybliżony środek rejonu (`lat`, `lon`) i promień `r` w km, w którym dopasowanie ma sens — „Chorwacja (Adriatyk)" to 350 km, kamieniołom 8 km, basen 5 km. `matchSite()` liczy odległość po wielkim kole i wybiera akwen o **najmniejszym ilorazie `km / r`**, czyli ten, w którego zasięgu pozycja siedzi najgłębiej; przy braku trafienia akwen zostaje bez zmian, a pozycja jest tylko pokazana. Porównywanie samych kilometrów nie działało: nurkowanie w Honoratce (52,3402 N 18,2686 E) trafiało na „Bałtyk" 278 km dalej, bo jego promień 400 km obejmuje pół Polski, a kamieniołom nie mieścił się w swoim ośmiokilometrowym, skoro preset miał współrzędne o 12 km obok. Jedno i drugie jest poprawione, a pozycja z tamtego pliku jest w testach. Akweny dopisane ręcznie nie mają współrzędnych, więc nie biorą udziału. Formularz zawsze mówi, co się stało („Akwen rozpoznany z pozycji … 139 km od środka rejonu — zmień, jeśli nie ten"), bo rejon to nie punkt i pomyłka jest możliwa. Współrzędnych nie da się edytować w aplikacji, więc `migrate()` bierze je zawsze z presetu po `id` — zapisane kopie dostają i brakujące, i poprawione wartości.
 
 Temperatury z komputera oznaczamy `tMeasured`, dzięki czemu zmiana akwenu albo daty ich nie nadpisze. Numer nurkowania dnia liczymy z dziennika, a podobne nurkowanie (ta sama data, głębokość ±0,6 m, czas ±3 min) daje ostrzeżenie zamiast cichego duplikatu. **Ołów i ocena ciepła zostają puste** — komputer ich nie zapisuje, a to z nich uczy się model. Pozycję GPS pokazujemy jako podpowiedź; akwen użytkownik wybiera sam.
 
