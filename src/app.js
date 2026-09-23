@@ -821,6 +821,8 @@ function tourEnd(){
   const box = document.getElementById('tour');
   box.hidden = true; box.innerHTML = '';
   if (!S.tourDone){ S.tourDone = true; save(); }
+  // samouczek kończy się na Dzienniku (krok o imporcie), a nurek ma zacząć od liczenia
+  tab = 'calc'; render(); window.scrollTo(0, 0);
 }
 // Dymek żyje poza #view, więc nie łapie go główny nasłuch kliknięć — ma własny.
 $('#tour').addEventListener('click', e => {
