@@ -376,7 +376,7 @@ function viewCalc(){
   const pl = P().plan, items = resolveItems(pl.items, P()), ctx = planCtx(pl);
   const p = predictLead(items, dst(), ctx, L);
   return `<div class="stack">
-  <section class="card"><div class="card-head"><h2>${tr('Planowane nurkowanie')}</h2>
+  <section class="card" id="plan-card"><div class="card-head"><h2>${tr('Planowane nurkowanie')}</h2>
       <button class="sb-q" data-act="plan-info" aria-expanded="${!!ui.planInfo}" title="${tr('Założenia')}" aria-label="${tr('Założenia')}">${ICON.ask}</button></div>
     ${planFields(pl, 'p-')}
     ${S.geo == null ? `<div class="opt" style="margin-top:10px;grid-template-columns:1fr"><div class="items">${tr('Ustawiać akwen po Twojej lokalizacji?')}</div>
@@ -391,7 +391,7 @@ function viewCalc(){
 
   <div id="thermal-box">${thermalCardHtml(pl, items)}</div>
 
-  <section class="card"><div class="therm-head" style="margin-bottom:10px"><h2 style="margin:0">${tr('Zestaw')}</h2>
+  <section class="card" id="set-card"><div class="therm-head" style="margin-bottom:10px"><h2 style="margin:0">${tr('Zestaw')}</h2>
     <button class="sm${ui.quick ? ' ghost' : ''}" data-act="quick-open" aria-expanded="${!!ui.quick}">${tr(ui.quick ? 'Zamknij' : '+ Dodaj sprzęt')}</button></div>
     ${ui.quick ? quickAdd() : ''}
     ${ui.editGear && P().wardrobe.some(w => w.uid === ui.editGear) ? `<div class="label" style="margin-top:4px">${tr('Dodane: {x}', {x: esc(nm(P().wardrobe.find(w => w.uid === ui.editGear)))})}</div>${paramEditor(P().wardrobe.find(w => w.uid === ui.editGear))}<div style="height:12px"></div>` : ''}
@@ -579,6 +579,10 @@ function viewProfile(){
     <input id="bk-file" type="file" accept="application/json,.json" hidden>
     <div class="btnrow" style="margin-top:18px"><button class="danger sm" data-act="wipe">${tr(ui.confirmWipe ? 'Na pewno? Kliknij ponownie' : 'Wyczyść wszystkie dane')}</button><button class="sm ghost" data-act="seed">${tr('Wczytaj przykład')}</button></div>
   </section>
+  <section class="card"><h2>${tr('Samouczek')}</h2>
+    <p class="small muted" style="margin:8px 0 0">${tr('Krótkie oprowadzanie po ekranie Oblicz i pozostałych zakładkach — pokazane na żywo, na Twoich danych.')}</p>
+    <div class="btnrow"><button class="sm" data-act="tour-start">${tr('Pokaż jeszcze raz')}</button></div></section>
+
   <p class="credit">${tr('Balast i Ocieplenie')} · © ${new Date().getFullYear()} Maciej Korzeniowski</p></div>`;
 }
 
@@ -675,6 +679,7 @@ function finishWizard(goTab, msg){
   P().onboarded = true; ui.wiz = 0; tab = goTab || 'calc';
   toast(msg || tr('Gotowe. Wszystko zmienisz w Profilu i Szafie.'));
   commit(); window.scrollTo(0, 0);
+  if (!S.tourDone && !gateOn()) setTimeout(tourStart, 400);   // po kreatorze pokazujemy aplikację na żywo
 }
 
 // ---------- nurkowie ----------
@@ -734,6 +739,78 @@ function render(){
   view.innerHTML = f();
   if (fid){ const el = document.getElementById(fid); if (el){ el.focus({preventScroll:true}); if (sel) try { el.setSelectionRange(sel[0], sel[1]); } catch(_){} } }
 }
+
+// ---------- samouczek ----------
+// Pokazujemy prawdziwe elementy na żywym ekranie: podświetlenie wycina kształt celu
+// z przyciemnionego tła, a dymek staje nad nim albo pod nim. Żadnych zrzutów ekranu —
+// nurek od razu widzi to, czego potem użyje. Raz po kreatorze (S.tourDone), potem z Profilu.
+const TOUR = [
+  {tab:'calc', sel:'#summary .sb', title:'Tu jest wynik', text:'Pasek trzyma się góry ekranu i zawsze pokazuje ołów dla bieżącego zestawu. Znak zapytania obok liczby rozwija rozbicie: co ciągnie w dół, co unosi.'},
+  {tab:'calc', sel:'#plan-card', title:'Gdzie i kiedy', text:'Akwen i miesiąc wystarczą — temperaturę dna podpowie akwen, a Ty poprawisz ją, jeśli znasz aktualną. Głębokość i temperaturę zmieniasz przyciskami, bez klawiatury.'},
+  {tab:'calc', sel:'#thermal-card', title:'Czy nie zmarzniesz', text:'Aplikacja porównuje komfort Twojego zestawu z temperaturą nurkowania i mówi wprost: wystarczy, na granicy czy za zimno. Niżej proponuje najlżejsze zestawy z szafy, które dadzą radę.'},
+  {tab:'calc', sel:'#set-card', title:'Co masz na sobie', text:'Tapnij, żeby włączyć albo wyłączyć element z zestawu — ołów przeliczy się od razu. Butlę możesz wziąć ze standardowych, bez wstawiania jej do szafy.'},
+  {tab:'calc', sel:'[data-act="log-from-plan"]', title:'Najważniejszy przycisk', text:'Po wyjściu z wody zapisz nurkowanie i oceń: czy ołowiu było dobrze i czy było Ci ciepło. Z tych dwóch ocen model uczy się Ciebie — bez nich zostaje przy fizyce dla przeciętnego nurka.'},
+  {sel:'nav.tabs', title:'Reszta aplikacji', text:'Dziennik to historia z ocenami, Szafa — Twój sprzęt, Akweny — temperatury i gęstość wody, Profil — dane ciała, kopia zapasowa i ten samouczek, gdybyś chciał go powtórzyć.'}
+];
+let tourStep = -1;
+const tourOn = () => tourStep >= 0;
+
+function tourStart(){
+  tourStep = 0; ui.editGear = ui.quick = null;
+  if (tab !== 'calc'){ tab = 'calc'; render(); }
+  tourShow();
+}
+function tourShow(){
+  const st = TOUR[tourStep];
+  if (!st) return tourEnd();
+  if (st.tab && tab !== st.tab){ tab = st.tab; render(); }
+  const el = st.sel && document.querySelector(st.sel);
+  if (!el) return tourStep < TOUR.length - 1 ? (tourStep++, tourShow()) : tourEnd();
+  const fixed = getComputedStyle(el).position === 'fixed' || el.closest('.pin, nav.tabs');
+  if (!fixed) el.scrollIntoView({block: 'center'});
+  requestAnimationFrame(() => tourPaint(st, el));
+}
+// Rysujemy po układzie strony, więc pozycje bierzemy z getBoundingClientRect() przy każdym kroku
+// i przy każdej zmianie rozmiaru albo przewinięciu — inaczej dymek zostaje tam, gdzie celu już nie ma.
+function tourPaint(st, el){
+  const box = document.getElementById('tour');
+  const r = el.getBoundingClientRect(), pad = 6;
+  const top = Math.max(4, r.top - pad), left = Math.max(4, r.left - pad);
+  const w = Math.min(window.innerWidth - 8, r.width + pad * 2), h = r.height + pad * 2;
+  const last = tourStep === TOUR.length - 1;
+  box.hidden = false;
+  box.innerHTML = `<div class="tour-hole" style="top:${top}px;left:${left}px;width:${w}px;height:${h}px"></div>
+    <div class="tour-box" role="dialog" aria-modal="true" aria-label="${tr('Samouczek')}">
+      <h3>${tr(st.title)}</h3><p>${tr(st.text)}</p>
+      <div class="btnrow"><button class="primary sm" data-act="tour-next">${tr(last ? 'Zaczynamy' : 'Dalej')}</button>
+        ${last ? '' : `<button class="ghost sm" data-act="tour-end">${tr('Pomiń')}</button>`}
+        <span class="tour-step">${tourStep + 1}/${TOUR.length}</span></div>
+    </div>`;
+  const tip = box.querySelector('.tour-box'), th = tip.offsetHeight, tw = tip.offsetWidth;
+  const nav = document.querySelector('nav.tabs');
+  const navH = nav && !nav.hidden ? nav.offsetHeight : 0;
+  // Cel wyższy niż pół ekranu i tak nie zmieści dymka obok siebie — wtedy dymek siada nad
+  // nawigacją, żeby nie zasłaniał tego, o czym właśnie opowiada.
+  const tall = h > window.innerHeight * 0.5;
+  const below = top + h + 10 + th < window.innerHeight - navH;
+  tip.style.top = (tall ? Math.max(8, window.innerHeight - navH - th - 12)
+    : below ? top + h + 10 : Math.max(8, top - th - 10)) + 'px';
+  tip.style.left = Math.max(8, Math.min(window.innerWidth - tw - 8, r.left + r.width / 2 - tw / 2)) + 'px';
+}
+function tourEnd(){
+  tourStep = -1;
+  const box = document.getElementById('tour');
+  box.hidden = true; box.innerHTML = '';
+  if (!S.tourDone){ S.tourDone = true; save(); }
+}
+// Dymek żyje poza #view, więc nie łapie go główny nasłuch kliknięć — ma własny.
+$('#tour').addEventListener('click', e => {
+  const b = e.target.closest('[data-act]'); if (!b) return;
+  if (b.dataset.act === 'tour-next'){ tourStep++; return tourShow(); }
+  if (b.dataset.act === 'tour-end') return tourEnd();
+});
+addEventListener('resize', () => { if (tourOn()) tourShow(); });
+addEventListener('keydown', e => { if (tourOn() && e.key === 'Escape') tourEnd(); });
 
 // ---------- zaproszenie do instalacji ----------
 // Na telefonie w przeglądarce pokazujemy, jak dodać aplikację do ekranu początkowego:
@@ -909,6 +986,7 @@ view.addEventListener('click', e => {
     fillTemps(pl);
     return commit();
   }
+  if (a === 'tour-start') return tourStart();
   if (a === 'gate-skip'){ S.installSkip = true; return commit(); }
   if (a === 'gate-steps'){ ui.gateSteps = true; return render(); }
   if (a === 'gate-show'){ delete S.installSkip; ui.gateSteps = false; window.scrollTo(0, 0); return commit(); }

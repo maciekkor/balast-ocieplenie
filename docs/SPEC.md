@@ -45,6 +45,7 @@ S = {
   activeId: 'p-xxxxxx',         // id nurka, którego dane są na ekranie
   geo?: 'on' | 'off',           // zgoda na pytanie telefonu o pozycję (brak = jeszcze nie pytaliśmy)
   installSkip?: true,           // „Użyję w przeglądarce" — bramka instalacyjna już nie wraca
+  tourDone?: true,              // samouczek już przeszedł — po kreatorze nie startuje drugi raz
   gateSeen?: true,              // instrukcja instalacji już się w tej przeglądarce pokazywała
   sites: [ { id, name, rho /*kg/l*/, ts: [12 × °C powierzchnia], tb: [12 × °C dno], preset?: bool,
              lat?, lon?, r? /*przybliżony środek rejonu i promień w km — do rozpoznania akwenu z GPS*/ } ],
@@ -167,6 +168,18 @@ Edycja profilu **nie przebudowuje widoku**: suwak i pola tekstowe zapisują stan
 **Dlaczego w planie jest miesiąc, a nie data.** Plan potrzebuje daty wyłącznie po to, żeby wziąć z akwenu temperatury na ten miesiąc — dzień nie zmienia niczego w wyniku. Pole `rrrr-mm-dd` z ikoną kalendarza okazało się przy tym najbardziej zawodnym elementem ekranu na telefonie, więc na Oblicz zastąpiły je kafelki miesięcy (`set-month`; akcja nie może nazywać się `pick-…`, bo tamten prefiks obsługuje kafelki profilu). Kafelek zapisuje `plan.date` jako pierwszy dzień wybranego miesiąca, zachowując dotychczasowy rok, i od razu woła `fillTemps()`.
 
 **Pełna data zostaje w dzienniku**, gdzie liczy się dzień: formularz nurkowania (`planFields(pl, pre, true)`) ma pole `rrrr-mm-dd` i ikonę kalendarza obsługiwaną na `pointerdown` z `preventDefault()`, żeby dotknięcie po wpisaniu daty nie przepadło przez przebudowę widoku. Nurkowanie zakładane przyciskiem „Po nurkowaniu" dostaje **dzisiejszą datę**, bo plan niesie już tylko miesiąc.
+
+### Samouczek na żywym ekranie
+
+Po kreatorze (`finishWizard`, z opóźnieniem 400 ms) rusza sześciokrokowe oprowadzanie: pasek z wynikiem → karta planu → ocieplenie → zestaw → „Po nurkowaniu: zapisz i oceń" → dolna nawigacja. Nie ma zrzutów ekranu ani osobnego widoku — **podświetlamy prawdziwe elementy** na danych nurka: `.tour-hole` to `position: fixed` z `box-shadow: 0 0 0 9999px` przyciemniającym resztę, a `.tour-box` to dymek stawiany nad albo pod celem. Cel wyższy niż pół ekranu (karta planu, karta zestawu) i tak nie zmieści dymka obok, więc wtedy dymek siada nad nawigacją — inaczej zasłaniałby to, o czym właśnie opowiada.
+
+Trzy rzeczy, które trzeba pamiętać przy zmianach:
+
+- **`#tour` żyje poza `#view`**, bo `render()` podmienia całe wnętrze widoku. Ma własny nasłuch kliknięć — główny go nie obejmuje.
+- **Kroki celują selektorami** (`#summary .sb`, `#plan-card`, `#thermal-card`, `#set-card`, `[data-act="log-from-plan"]`, `nav.tabs`). Zmiana struktury tych kart wymaga poprawienia `TOUR`; krok bez celu jest po cichu pomijany, więc zepsuty selektor nie wywali aplikacji, tylko zgubi krok.
+- **Pozycje liczymy z `getBoundingClientRect()`** przy każdym kroku i przy `resize`, bo dymek przypięty na sztywno rozjeżdża się po obrocie telefonu.
+
+`S.tourDone` pilnuje, żeby samouczek poszedł raz — także wtedy, gdy ktoś doda drugiego nurka. Powtórzyć go można z Profilu („Samouczek → Pokaż jeszcze raz"). Na telefonie w przeglądarce pierwszeństwo ma bramka instalacyjna (`gateOn()`), więc samouczek poczeka do instalacji.
 
 ### Założenia planu zamiast pól
 
