@@ -33,7 +33,7 @@ const EN = {
   'Policzę, ile ołowiu zabrać i jaki zestaw ocieplenia założyć, a po każdym nurkowaniu nauczę się z Twojej oceny. Najpierw kilka pytań o Ciebie — bez nich wynik byłby zgadywaniem.':'I work out how much lead to take and which exposure suit to wear, and after every dive I learn from your rating. First a few questions about you — without them the result would be guesswork.',
   'Dane zostają w tym telefonie: bez konta, bez serwera, bez wysyłania czegokolwiek.':'Your data stays on this phone: no account, no server, nothing sent anywhere.',
   'Bez danych o Tobie nie da się policzyć wyporności ciała, a to podstawa całego wyniku — dlatego kreatora nie można pominąć. Zajmie minutę, wszystko zmienisz później.':'Without your details I cannot work out your body buoyancy, and that is the basis of the whole result — so the setup cannot be skipped. It takes a minute, and you can change everything later.',
-  'Wypełnij profil':'Fill in my profile','Zobacz przykład':'See an example',
+  'Wypełnij profil':'Fill in my profile','Skąd ta temperatura':'Where this temperature comes from',
   'Kim jesteś':'About you','Imię przyda się tylko wtedy, gdy z aplikacji korzysta więcej niż jedna osoba.':'A name only matters if more than one person uses the app.','opcjonalnie':'optional',
   'Płeć i wiek wchodzą do szacunku tkanki tłuszczowej i pojemności płuc — stąd wyporność ciała.':'Sex and age feed the body-fat and lung-volume estimates, and those give your body buoyancy.',
   'Twoje ciało':'Your body','To najważniejsze liczby dla balastu: im więcej tkanki tłuszczowej, tym więcej ołowiu.':'These numbers matter most for weighting: more body fat means more lead.',
@@ -133,7 +133,7 @@ const LBL = {
       cover:{full:'Full', longjohn:'Long john', shorty:'Shorty', overhood:'Hooded overlayer', vest:'Vest', hood:'Hood', gloves:'Gloves', boots:'Boots'},
       water:{'1.029':'Red Sea · 40‰','1.028':'Mediterranean · 38‰','1.025':'Ocean · 35‰','1.005':'Baltic · 7‰','1':'Fresh water'}}
 };
-const SITE_EN = {redsea:'Red Sea (Marsa Alam, Dahab)', malta:'Malta, Gozo', croatia:'Croatia (Adriatic)', cyprus:'Cyprus', baltic:'Baltic Sea', piechcin:'Piechcin (quarry)', deepspot:'Deepspot (pool)'};
+const SITE_EN = {marsaalam:'Marsa Alam', dahab:'Dahab', redsea:'Red Sea (other spots)', malta:'Malta', gozo:'Gozo, Comino', croatia:'Croatia (Adriatic)', cyprus:'Cyprus', baltic:'Baltic Sea', piechcin:'Piechcin (quarry)', deepspot:'Deepspot (pool)'};
 // fragmenty nazw katalogowych i źródeł
 const FRAG_EN = [
   ['półsucha, kaptur','semi-dry, hood'],['półsucha','semi-dry'],['(dwuczęściowa)','(two-piece)'],['Kamizelka z kapturem','Hooded vest'],['z kapturem','with hood'],
@@ -143,8 +143,8 @@ const FRAG_EN = [
   ['Automat + oktopus + manometr','Regulator + octopus + gauge'],['Płetwy gumowe','Rubber fins'],['(guma)','(rubber)'],['szacunek z masy i materiału','estimate from mass and material'],['grubość: producent; masa: szacunek','thickness: manufacturer; mass: estimate'],['szacunek (krój)','estimate (cut)'],['docieplenie','overlayer'],['krótka','shorty'],['Kamizelka neoprenowa','Neoprene vest'],['kaptur','hood'],['rękawice','gloves'],['buty','boots'],['Płetwy plastikowe','Plastic fins'],['Latarka główna','Primary torch'],['Aparat w obudowie','Camera in housing'],
   ['producent (głównie 3 mm, wstawki 4 mm, kaptur)','manufacturer (mainly 3 mm, 4 mm inserts, hood)'],['producent (grubość)','manufacturer (thickness)'],['szacunek (grubość do sprawdzenia)','estimate (check thickness)'],['szacunek (typowe butle EU)','estimate (typical EU cylinders)'],
   ['szacunek; zakres temp. orientacyjny','estimate; approximate temp. range'],['szacunek; 7–14 °C wg sklepów','estimate; 7–14 °C per retailers'],['szacunek; <7 °C wg sklepów','estimate; <7 °C per retailers'],
-  ['udźwig: producent; płyta: stal 2,06 kg / alu ~0,8 kg','lift: manufacturer; plate: steel 2.06 kg / alu ~0.8 kg'],['wypiera ~15,6 l, masa ~14,3 kg','displaces ~15.6 l, mass ~14.3 kg'],
-  ['wpisz własną wartość','enter your own value'],['szacunek','estimate'],['wpis własny','own entry'],['zmienione przez Ciebie','edited by you'],
+  ['wypiera ~15,6 l, masa ~14,3 kg','displaces ~15.6 l, mass ~14.3 kg'],
+  ['szacunek z wybranej płyty','estimate from the chosen backplate'],['wpisz własną wartość','enter your own value'],['szacunek','estimate'],['wpis własny','own entry'],['zmienione przez Ciebie','edited by you'],
   ['(wypożyczony)','(rented)'],['(wypożyczona)','(rented)'],['(własny)','(own)'],['Stal','Steel'],['Aluminium','Aluminium'],['Ogólne','Generic']
 ];
 let LANG = 'pl';

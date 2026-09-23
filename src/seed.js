@@ -14,7 +14,7 @@ function emptyDiver(){
     profile: Object.assign({}, BASE_PROFILE),
     wardrobe: [fromCat('misc-reg')],
     dives: [],
-    plan: {siteId:'redsea', date: isoOf(new Date()), depth:18, time:50, tSurf:26, tBottom:25, nDay:2, reserve:50, items:['misc-reg-1']}
+    plan: {siteId:'marsaalam', date: isoOf(new Date()), depth:18, time:50, tSurf:26, tBottom:25, nDay:2, reserve:50, items:['misc-reg-1']}
   };
 }
 // Przykładowy nurek z kompletnym zestawem — „Wczytaj przykład” i pierwsze uruchomienie.
@@ -31,7 +31,7 @@ function seedDiver(){
       fromCat('fin-mares-aq-plus', {year:y}), fromCat('misc-reg')
     ],
     dives: [],
-    plan: {siteId:'redsea', date, depth:18, time:50, tSurf:26, tBottom:25, nDay:2, reserve:50,
+    plan: {siteId:'marsaalam', date, depth:18, time:50, tSurf:26, tBottom:25, nDay:2, reserve:50,
       items:['mares-reef-3-1','mares-prestige-1','al-s80-1','fin-mares-aq-plus-1','misc-reg-1']}
   };
   const m = +date.slice(5, 7) - 1; s.plan.tSurf = SITE_PRESETS[0].ts[m]; s.plan.tBottom = SITE_PRESETS[0].tb[m];
@@ -75,12 +75,19 @@ function migrate(o){
     p.wardrobe.forEach(w => { if (w.catId && /^misc-fins/.test(w.catId)) w.cat = 'fins'; });
   });
   if (!Array.isArray(S.sites) || !S.sites.length) S.sites = seedSites();
-  // akweny zapisane przed dodaniem współrzędnych: dobieramy je z presetu po id
+  // współrzędne akwenów z listy bierzemy zawsze z presetu: nie ma ich w edytorze,
+  // a zapisane kopie mogą nieść stare lub brakujące wartości (Honoratka była o 12 km obok)
   S.sites.forEach(s => {
-    if (s.lat != null) return;
     const pre = SITE_PRESETS.find(x => x.id === s.id);
     if (pre){ s.lat = pre.lat; s.lon = pre.lon; s.r = pre.r; }
   });
+  // nowe presety (np. Marsa Alam i Dahab osobno) dokładamy do list założonych wcześniej
+  SITE_PRESETS.forEach(pre => {
+    if (!S.sites.some(s => s.id === pre.id)) S.sites.push(Object.assign({preset: true}, JSON.parse(JSON.stringify(pre))));
+  });
+  // zbiorcze wpisy zmieniły znaczenie; nazwę poprawiamy tylko wtedy, gdy użytkownik jej nie zmienił
+  const RENAMED = {redsea: ['Morze Czerwone (Marsa Alam, Dahab)', 'Morze Czerwone (inne)'], malta: ['Malta, Gozo', 'Malta']};
+  S.sites.forEach(s => { const r = RENAMED[s.id]; if (r && s.name === r[0]) s.name = r[1]; });
   if (!S.profiles.some(p => p.id === S.activeId)) S.activeId = S.profiles[0].id;
   return S;
 }

@@ -173,13 +173,19 @@ test('dopasowanie akwenu do pozycji z komputera', () => {
   const sites = A.seedSites();
   const at = (lat, lon) => { const m = A.matchSite({lat, lon}, sites); return m && m.id; };
   assert.equal(at(44.8014, 14.7619), 'croatia', 'Rab leży w rejonie Adriatyku');
-  assert.equal(at(25.07, 34.90), 'redsea', 'Marsa Alam');
+  assert.equal(at(25.07, 34.90), 'marsaalam', 'Marsa Alam ma własny wpis, nie zbiorczy redsea');
+  assert.equal(at(28.50, 34.51), 'dahab', 'Dahab osobno');
+  assert.equal(at(27.2, 33.8), 'redsea', 'Hurghada: brak własnego wpisu, zostaje zbiorcze Morze Czerwone');
+  assert.equal(at(35.89, 14.45), 'malta');
+  assert.equal(at(36.04, 14.24), 'gozo', 'Gozo bliżej niż Malta');
   assert.equal(at(52.98, 18.00), 'piechcin', 'kamieniołom trafiony w punkt');
   assert.equal(at(51.97, 20.51), 'deepspot');
+  // pozycja z prawdziwego nurkowania w Honoratce: mały akwen musi wygrać z ogromnym Bałtykiem
+  assert.equal(at(52.3402, 18.2686), 'honoratka', 'Honoratka, nie Bałtyk 278 km dalej');
   assert.equal(at(0, 0), null, 'Zatoka Gwinejska nie jest żadnym z akwenów');
   assert.equal(at(35.6, 139.7), null, 'Tokio też nie');
   assert.equal(A.matchSite(null, sites), null);
-  // bliższy rejon wygrywa, gdy dwa promienie się nakładają
+  // przy nakładających się promieniach wygrywa ten, w którego zasięgu pozycja siedzi głębiej (km/r)
   const m = A.matchSite({lat: 52.98, lon: 18.00}, sites);
   assert.ok(m.km <= 8, 'odległość raportowana w km: ' + m.km);
   // akwen dopisany ręcznie nie ma współrzędnych i nie bierze udziału
