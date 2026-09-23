@@ -821,7 +821,7 @@ const ANDROID = /Android/.test(navigator.userAgent);
 // przeglądarki wbudowane w aplikacje nie mają „dodaj do ekranu" — tam trzeba najpierw wyjść do Safari/Chrome
 const INAPP = /FBAN|FBAV|Instagram|Messenger|LinkedIn|Twitter|Snapchat|Pinterest|TikTok|MicroMessenger/.test(navigator.userAgent);
 const standalone = () => ['standalone','fullscreen','minimal-ui'].some(m => matchMedia('(display-mode: ' + m + ')').matches) || navigator.standalone === true;
-let installPrompt = null, installedApp = false;
+let installPrompt = null, installedApp = false, installedNow = false;
 // Czy aplikacja stoi już na ekranie telefonu? Na Androidzie mówi to wprost przeglądarka
 // (getInstalledRelatedApps, Chrome 84+); na iOS żadne API tego nie zdradza, więc zostaje poszlaka:
 // instrukcję instalacji ktoś tu już widział, a w tej przeglądarce nie ma żadnych danych.
@@ -833,10 +833,13 @@ function checkInstalled(){
   }, () => {});
 }
 window.addEventListener('beforeinstallprompt', e => { e.preventDefault(); installPrompt = e; if (gateOn()) render(); });
-window.addEventListener('appinstalled', () => { installPrompt = null; render(); });
+window.addEventListener('appinstalled', () => { installPrompt = null; installedNow = true; render(); });
 const gateOn = () => (IOS || ANDROID) && !standalone() && !S.installSkip;
 // czy nurek ma już coś do stracenia — na iOS aplikacja z ekranu ma osobną pamięć niż Safari
 const hasData = () => P().onboarded || P().dives.length || P().wardrobe.length > 1 || S.profiles.length > 1;
+
+const homeIcon = () => `<figure class="home-icon"><img src="icons/icon-192.png" alt="" width="64" height="64"><figcaption>Balast</figcaption></figure>
+  <p class="small muted" style="text-align:center;margin:6px 0 0">${tr('Tej ikony szukaj na ekranie telefonu.')}</p>`;
 
 function viewGate(){
   // kroki to nasz własny HTML (z ikoną Udostępnij), więc nie przechodzą przez esc()
@@ -850,6 +853,14 @@ function viewGate(){
       : [tr('Otwórz menu przeglądarki (⋮)'),
          tr('Wybierz „Zainstaluj aplikację” albo „Dodaj do ekranu głównego”'),
          tr('Potwierdź — ikona stanie na ekranie telefonu')];
+  if (installedNow) return `<div class="stack">
+    <section class="card">
+      <h2>${tr('Gotowe — ikona jest na ekranie')}</h2>
+      <p style="margin:10px 0 0">${tr('Zamknij tę kartę i otwieraj aplikację z ekranu telefonu: startuje jednym tapnięciem, działa bez internetu i nie ginie wśród kart przeglądarki.')}</p>
+      ${homeIcon()}
+      <div class="btnrow" style="margin-top:16px"><button class="ghost sm" data-act="gate-skip">${tr('Zostanę w przeglądarce')}</button></div>
+    </section>
+  </div>`;
   // ktoś, kto ma już ikonę na ekranie, a wszedł z przeglądarki, przede wszystkim powinien wrócić do aplikacji
   if ((installedApp || (gateSeenBefore && !hasData())) && !ui.gateSteps) return `<div class="stack">
     <section class="card">
@@ -858,6 +869,7 @@ function viewGate(){
       <p style="margin:10px 0 0">${tr(IOS
         ? 'Na iPhonie wersja z ekranu początkowego i ta w Safari mają osobne dane: nurkowania, szafa i profil wpisane w aplikacji nie są tu widoczne, a to, co wpiszesz tutaj, nie trafi do aplikacji. Zamknij tę kartę i otwórz ikonę z ekranu.'
         : 'Aplikacja z ekranu otwiera się jednym tapnięciem i działa bez internetu — na łodzi to bywa jedyna różnica między policzeniem balastu a nie. Dane masz te same, więc niczego nie stracisz.')}</p>
+      ${homeIcon()}
       <div class="btnrow" style="margin-top:16px"><button class="sm" data-act="gate-steps">${tr('Nie mam jej — pokaż, jak dodać')}</button>
         <button class="ghost sm" data-act="gate-skip">${tr('Użyję w przeglądarce')}</button></div>
     </section>
@@ -872,6 +884,7 @@ function viewGate(){
         <div class="items">${tr('Najpierw zrób kopię zapasową')}</div>
         <div class="desc">${tr('Na iPhonie aplikacja z ekranu początkowego ma osobną pamięć niż Safari, więc dane wpisane tutaj nie przejdą same. Zapisz plik i wczytaj go w Profilu zaraz po instalacji.')}</div>
         <div class="btnrow" style="margin-top:6px"><button class="sm" data-act="export-file">${tr('Zapisz kopię zapasową')}</button></div></div>` : ''}
+      ${INAPP ? '' : homeIcon() + `<p class="small muted" style="margin:8px 0 0">${tr('Gdy ikona stanie na ekranie, zamknij tę kartę i otwieraj aplikację stamtąd — dopiero wtedy działa bez internetu.')}</p>`}
       <div class="btnrow" style="margin-top:16px"><button class="ghost sm" data-act="gate-skip">${tr('Użyję w przeglądarce')}</button></div>
     </section>
   </div>`;
