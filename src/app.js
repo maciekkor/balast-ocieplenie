@@ -494,7 +494,9 @@ function catalogPicker(cats){
       <div class="list" style="margin-top:8px">${found.slice(0, cats ? 99 : q || ui.addCat ? 60 : 10).map(c => `<div class="li"><div class="main"><div class="t">${esc(frag(c.brand === 'Ogólne' ? c.model : c.brand + ' ' + c.model))}</div><div class="s">${catOne(c.cat)}${c.p.mass ? ' · ' + c.p.mass + ' g' : ''}${c.cat === 'fins' ? ' · ' + sgn(c.p.b) + ' kg' : ''} · ${esc(frag(c.src))}</div></div>
         <div class="r"><button class="sm" data-act="add-cat" data-id="${esc(c.id)}">${tr('Dodaj')}</button></div></div>`).join('') || `<p class="muted small">${tr('Nic nie pasuje. Dodaj pozycję własną poniżej.')}</p>`}</div>
       ${!cats && !q && !ui.addCat && found.length > 10 ? `<p class="small muted" style="margin:8px 0 0">${tr('Pokazuję 10 z {n} — wpisz markę lub wybierz kategorię.', {n: found.length})}</p>` : ''}
-      <div class="btnrow"><select id="custom-cat" aria-label="${tr('Kategoria pozycji własnej')}" style="width:auto">${(cats || CAT_ORDER).map(c => `<option value="${c}">${catOne(c)}</option>`).join('')}</select><button data-act="add-custom">${tr('Dodaj pozycję własną')}</button></div>`;
+      <div class="btnrow">${cats
+        ? cats.map(c => `<button class="alt sm" data-act="add-custom" data-cat="${c}">${tr('Nie ma mojej — dodam własną')}${cats.length > 1 ? ': ' + catOne(c) : ''}</button>`).join('')
+        : `<select id="custom-cat" aria-label="${tr('Kategoria pozycji własnej')}" style="width:auto">${CAT_ORDER.map(c => `<option value="${c}">${catOne(c)}</option>`).join('')}</select><button class="alt" data-act="add-custom">${tr('Dodaj pozycję własną')}</button>`}</div>`;
 }
 function viewGear(){
   const ctx = {rho:1.025, depth:5, reserve:50, year:new Date().getFullYear()};
@@ -571,7 +573,8 @@ function viewProfile(){
     <div class="btnrow"><button class="sm primary" data-act="export-file">${tr('Zapisz kopię do pliku')}</button><button class="sm" data-act="import-file">${tr('Wczytaj kopię z pliku')}</button></div>
     <input id="bk-file" type="file" accept="application/json,.json" hidden>
     <div class="btnrow" style="margin-top:18px"><button class="danger sm" data-act="wipe">${tr(ui.confirmWipe ? 'Na pewno? Kliknij ponownie' : 'Wyczyść wszystkie dane')}</button><button class="sm ghost" data-act="seed">${tr('Wczytaj przykład')}</button></div>
-  </section></div>`;
+  </section>
+  <p class="credit">${tr('Balast i Ocieplenie')} · © ${new Date().getFullYear()} Maciej Korzeniowski</p></div>`;
 }
 
 // ---------- kreator profilu (dane domyślne: pierwsze uruchomienie, wyczyszczenie danych, nowy nurek) ----------
@@ -628,10 +631,10 @@ function viewWizard(){
       <h3 style="font-size:20px">${tr(c.label)}${c.need ? ` <small class="req">${tr('wymagane')}</small>` : ''}</h3>
       <p class="small muted" style="margin:6px 0 0">${tr(c.hint)}</p>
       ${have.length ? `<div class="chips" style="margin-top:10px">${have.map(w => `<span class="chip" aria-pressed="true">${esc(nm(w))}${w.size ? ' · ' + esc(w.size) : ''}</span>`).join('')}</div>` : ''}
-      ${catalogPicker(c.cats)}
-      <div class="btnrow" style="margin-top:16px"><button class="primary" data-act="wiz-cat-next">${tr(last ? 'Gotowe' : have.length || c.need ? 'Dalej' : 'Pomiń')}</button>
+      <div class="btnrow"><button class="primary" data-act="wiz-cat-next">${tr(last ? 'Gotowe' : have.length || c.need ? 'Dalej' : 'Pomiń')}</button>
         <button class="ghost" data-act="wiz-cat-back">${tr('Wstecz')}</button></div>
       ${c.need && !have.length ? `<p class="small muted" style="margin:8px 0 0">${tr('Bez tego nie policzę ołowiu — wybierz jedną pozycję.')}</p>` : ''}
+      ${catalogPicker(c.cats)}
     </section>
     ${groups.length ? `<section class="card"><h2>${tr('Moja szafa')} <small>${tr('{n} pozycji', {n: P().wardrobe.length})}</small></h2>
       ${groups.map(g => `<div class="group" style="margin-top:12px"><div class="label">${catLabel(g.k)}</div><div class="list">${g.items.map(w => `<div class="li"><div class="main"><div class="t">${esc(nm(w))}</div>
@@ -962,7 +965,7 @@ view.addEventListener('click', e => {
     return commit();
   }
   if (a === 'add-custom'){
-    const cat = $('#custom-cat').value;
+    const cat = b.dataset.cat || $('#custom-cat').value;
     const w = {uid: newId('own'), catId: null, cat, brand: 'Własne', model: catOne(cat) + ' ' + tr('(własny)'), size: '', year: new Date().getFullYear(), p: JSON.parse(JSON.stringify(OWN_DEFAULTS[cat])), src: 'wpis własny'};
     P().wardrobe.push(w); ui.editGear = w.uid; return commit();
   }

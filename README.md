@@ -28,3 +28,7 @@ Specyfikacja: [`docs/SPEC.md`](docs/SPEC.md). Zasady pracy (także dla Claude Co
 ## Przenoszenie danych
 
 Profil → Kopia zapasowa → **Zapisz kopię do pliku**. Na drugim urządzeniu: Profil → Kopia zapasowa → **Wczytaj kopię z pliku**. Kopia to jeden plik `.json` ze wszystkimi profilami, szafą, dziennikiem i akwenami — wczytanie zastępuje dane w przeglądarce.
+
+## Autor
+
+© 2026 Maciej Korzeniowski. Kod i dane katalogowe powstały na własny użytek i są udostępnione bez gwarancji — wynik kalkulatora jest punktem startowym, nie zwolnieniem z kontroli pływalności.
