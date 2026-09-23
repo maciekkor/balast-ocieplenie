@@ -229,6 +229,9 @@ Tokeny w `:root` (jasny) i nadpisanie dla ciemnego (`prefers-color-scheme` oraz 
 
 ## 10. Backlog
 
+Rozpoznanie na przyszłość — zbieranie danych do globalnego modelu i monetyzacja — leży w **`docs/POMYSLY.md`**. Nic z tego nie jest zdecydowane; obie drogi ruszają zasadę „dane tylko lokalnie", więc wymagają świadomej decyzji, a nie cichego wdrożenia.
+
+
 | # | Zadanie | Uwagi |
 | --- | --- | --- |
 | B1 | Pomiary wyporności płetw, butów i kamizelek | nazwy i grubości zweryfikowane (sekcja 4); brakujących wartości producenci nie publikują — potrzebny własny pomiar w wodzie |
