@@ -25,6 +25,7 @@ const SZ = {
 const CATALOG = [
   // --- Pianki mokre i półsuche ---
   {id:'mares-reef-3', cat:'wetsuit', brand:'Mares', model:'Reef 3 mm', p:{t:3, cover:'full'}, sizes:SZ.mares, src:'producent (grubość)'},
+  {id:'mares-reef-shorty-25', cat:'wetsuit', brand:'Mares', model:'Reef Shorty 2,5 mm', p:{t:2.5, cover:'shorty'}, sizes:SZ.mares, src:'producent (grubość)'},
   {id:'mares-flexa-543', cat:'wetsuit', brand:'Mares', model:'Flexa 5.4.3', p:{t:5, tl:4, cover:'full'}, sizes:SZ.mares, src:'producent (grubość)'},
   {id:'mares-flexa-865', cat:'wetsuit', brand:'Mares', model:'Flexa 8.6.5', p:{t:8, tl:6, cover:'full'}, sizes:SZ.mares, src:'producent (grubość)'},
   {id:'mares-evo-5', cat:'wetsuit', brand:'Mares', model:'Evolution 5 mm', p:{t:5, cover:'full'}, sizes:SZ.mares, src:'producent (grubość)'},

@@ -121,6 +121,8 @@ button.sm{padding:5px 10px;font-size:13px}
 .chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:5px}
 .chip{border:1px solid var(--line);background:var(--sunk);color:var(--ink);border-radius:999px;padding:6px 12px;font:14px var(--f-body);cursor:pointer}
 .chip[aria-pressed="true"]{background:var(--teal);border-color:var(--teal);color:var(--surface)}
+.chip svg,.chip-key svg{width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round;vertical-align:-2px;margin-right:5px}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
 .seg{display:flex;border:1px solid var(--line);border-radius:8px;overflow:hidden}
 .seg button{flex:1;border:0;border-radius:0;background:var(--sunk);font-weight:600;padding:9px 6px;font-size:14px}
 .seg button+button{border-left:1px solid var(--line)}
@@ -189,6 +191,7 @@ nav.tabs button[aria-current="page"]{color:var(--accent)}
 .slider .val input::-webkit-outer-spin-button,.slider .val input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
 .slider .val input:focus{border-color:var(--teal);background:var(--surface);outline:none;border-radius:6px}
 .slider .val small{font:600 13px var(--f-body);color:var(--muted)}
+.btnrow button svg{width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;vertical-align:-3px;margin-right:6px}
 .pill svg,.seg button svg{width:15px;height:15px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;vertical-align:-2px;margin-right:3px}
 .seg button svg{display:block;margin:0 auto 2px}
 .sb-q{align-self:start;margin-top:2px;padding:0;border:0;background:transparent;color:var(--muted)}
