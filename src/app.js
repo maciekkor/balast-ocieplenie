@@ -767,7 +767,8 @@ const TOUR = [
   {tab:'calc', sel:'#plan-card', title:'Gdzie i kiedy', text:'Akwen i miesiąc wystarczą — temperaturę dna podpowie akwen, a Ty poprawisz ją, jeśli znasz aktualną. Głębokość i temperaturę zmieniasz przyciskami, bez klawiatury.'},
   {tab:'calc', sel:'#thermal-card', title:'Czy nie zmarzniesz', text:'Aplikacja porównuje komfort Twojego zestawu z temperaturą nurkowania i mówi wprost: wystarczy, na granicy czy za zimno. Niżej proponuje najlżejsze zestawy z szafy, które dadzą radę.'},
   {tab:'calc', sel:'#set-card', title:'Co masz na sobie', text:'Tapnij, żeby włączyć albo wyłączyć element z zestawu — ołów przeliczy się od razu. Butlę możesz wziąć ze standardowych, bez wstawiania jej do szafy.'},
-  {tab:'calc', sel:'[data-act="log-from-plan"]', title:'Najważniejszy przycisk', text:'Po wyjściu z wody zapisz nurkowanie i oceń: czy ołowiu było dobrze i czy było Ci ciepło. Z tych dwóch ocen model uczy się Ciebie — bez nich zostaje przy fizyce dla przeciętnego nurka.'},
+  {tab:'calc', sel:'[data-act="log-from-plan"]', title:'Najważniejszy przycisk', text:'Po wyjściu z wody zapisz nurkowanie i oceń dwie rzeczy: czy ołowiu było za dużo, za mało czy w sam raz, i czy w tym zestawie było Ci ciepło. Oceny wiążą się z konkretnym sprzętem, więc model uczy się, ile ołowiu potrzebujesz Ty i która pianka wystarcza Tobie — bez nich zostaje przy fizyce dla przeciętnego nurka.'},
+  {tab:'log', sel:'[data-act="import-dive"]', title:'Nurkowanie z komputera', text:'Plik z aplikacji Suunto wczyta datę, głębokość, czas i temperatury — nie trzeba niczego przepisywać. Zostaje zaznaczyć sprzęt, wpisać ołów i ocenić komfort, bo tego żaden komputer nie zapisuje, a to właśnie z tego uczy się model.'},
   {sel:'nav.tabs', title:'Reszta aplikacji', text:'Dziennik to historia z ocenami, Szafa — Twój sprzęt, Akweny — temperatury i gęstość wody, Profil — dane ciała, kopia zapasowa i ten samouczek, gdybyś chciał go powtórzyć.'}
 ];
 let tourStep = -1;

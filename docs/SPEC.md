@@ -173,7 +173,7 @@ Edycja profilu **nie przebudowuje widoku**: suwak i pola tekstowe zapisują stan
 
 ### Samouczek na żywym ekranie
 
-Po kreatorze (`finishWizard`, z opóźnieniem 400 ms) rusza sześciokrokowe oprowadzanie: pasek z wynikiem → karta planu → ocieplenie → zestaw → „Po nurkowaniu: zapisz i oceń" → dolna nawigacja. Nie ma zrzutów ekranu ani osobnego widoku — **podświetlamy prawdziwe elementy** na danych nurka: `.tour-hole` to `position: fixed` z `box-shadow: 0 0 0 9999px` przyciemniającym resztę, a `.tour-box` to dymek stawiany nad albo pod celem. Cel wyższy niż pół ekranu (karta planu, karta zestawu) i tak nie zmieści dymka obok, więc wtedy dymek siada nad nawigacją — inaczej zasłaniałby to, o czym właśnie opowiada.
+Po kreatorze (`finishWizard`, z opóźnieniem 400 ms) rusza siedmiokrokowe oprowadzanie: pasek z wynikiem → karta planu → ocieplenie → zestaw → „Po nurkowaniu: zapisz i oceń" → „Wczytaj z komputera" w Dzienniku → dolna nawigacja. Dwa kroki o nauce modelu stoją obok siebie nie bez powodu: piąty mówi, że oceny wiążą się z **konkretnym sprzętem** (ile ołowiu potrzebuje ten nurek, która pianka wystarcza właśnie jemu), a szósty — że dane z komputera wypełnią datę, głębokość, czas i temperatury, ale sprzęt, ołów i komfort trzeba dodać samemu, bo tego żaden komputer nie zapisuje. Nie ma zrzutów ekranu ani osobnego widoku — **podświetlamy prawdziwe elementy** na danych nurka: `.tour-hole` to `position: fixed` z `box-shadow: 0 0 0 9999px` przyciemniającym resztę, a `.tour-box` to dymek stawiany nad albo pod celem. Cel wyższy niż pół ekranu (karta planu, karta zestawu) i tak nie zmieści dymka obok, więc wtedy dymek siada nad nawigacją — inaczej zasłaniałby to, o czym właśnie opowiada.
 
 Trzy rzeczy, które trzeba pamiętać przy zmianach:
 
