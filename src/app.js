@@ -84,7 +84,8 @@ const ICON = {
   ask: SVG('<circle cx="12" cy="12" r="9"/><path d="M9.3 9.3a2.8 2.8 0 1 1 3.4 3.3c-.5.2-.7.6-.7 1.1v.6"/><path d="M12 17.4v.2"/>'),
   geo: SVG('<circle cx="12" cy="12" r="6.2"/><circle cx="12" cy="12" r="1.6"/><path d="M12 2.2v2.6M12 19.2v2.6M2.2 12h2.6M19.2 12h2.6"/>'),
   own: SVG('<path d="M3.5 10.5 12 3.8l8.5 6.7"/><path d="M6 10v9.5h12V10"/>'),
-  rent: SVG('<circle cx="10" cy="19.4" r="1.5"/><circle cx="17" cy="19.4" r="1.5"/><path d="M2.6 4h2.6l2.4 11h10l2.2-8.2H6.2"/>')
+  rent: SVG('<circle cx="10" cy="19.4" r="1.5"/><circle cx="17" cy="19.4" r="1.5"/><path d="M2.6 4h2.6l2.4 11h10l2.2-8.2H6.2"/>'),
+  share: SVG('<path d="M12 3.2v11"/><path d="M8.4 6.8 12 3.2l3.6 3.6"/><path d="M7 10.5H5.2v9.3h13.6v-9.3H17"/>')
 };
 const THERM_ICON = {cold: ICON.cold1, cool: ICON.temp, ok: ICON.ok, warm: ICON.warm1};
 const FLAG = {
@@ -556,6 +557,10 @@ function viewProfile(){
     ${P().learnSince ? `<p class="small muted">${tr('Nauka liczy nurkowania od {d}.', {d: esc(P().learnSince)})}</p>` : ''}
   </section>
 
+  ${(IOS || ANDROID) && !standalone() ? `<section class="card"><h2>${tr('Na ekranie telefonu')}</h2>
+    <p class="small muted" style="margin:8px 0 0">${tr('Aplikacja chodzi teraz w przeglądarce. Dodana do ekranu początkowego otwiera się jednym tapnięciem i działa bez internetu.')}</p>
+    <div class="btnrow"><button class="sm" data-act="gate-show">${tr('Pokaż, jak dodać')}</button></div></section>` : ''}
+
   <section class="card"><h2>${tr('Kopia zapasowa')} <small>${tr('dane są tylko w tej przeglądarce')}</small></h2>
     ${memOnly ? `<div class="banner">${tr('Przeglądarka nie pozwala zapisywać danych — zmiany znikną po zamknięciu. Zapisz kopię do pliku.')}</div>` : ''}
     <p class="small muted" style="margin:8px 0 0">${tr('Kopia to jeden plik {x} z profilami, szafą, dziennikiem i akwenami. Wczytanie kopii zastępuje wszystkie dane w tej przeglądarce.', {x: '.json'})}</p>
@@ -690,14 +695,57 @@ function render(){
   document.querySelectorAll('[data-t]').forEach(e => e.textContent = tr(e.dataset.t));
   $('#lang').textContent = LANG === 'pl' ? 'EN' : 'PL';
   $('#lang').setAttribute('aria-label', LANG === 'pl' ? 'Switch to English' : 'Przełącz na polski');
-  const wiz = wizardOn();
-  $('#summary').innerHTML = !wiz && tab === 'calc' ? summaryHtml() : '';
-  document.querySelector('nav.tabs').hidden = wiz;
+  const gate = gateOn(), wiz = !gate && wizardOn();
+  $('#summary').innerHTML = !gate && !wiz && tab === 'calc' ? summaryHtml() : '';
+  document.querySelector('nav.tabs').hidden = gate || wiz;
   document.querySelectorAll('nav.tabs button').forEach(b => b.dataset.tab === tab ? b.setAttribute('aria-current', 'page') : b.removeAttribute('aria-current'));
   $('#who').innerHTML = whoHtml(); $('#who').title = P().profile.name || '';
-  const f = wiz ? viewWizard : {calc:viewCalc, log:viewLog, gear:viewGear, sites:viewSites, profile:viewProfile}[tab];
+  const f = gate ? viewGate : wiz ? viewWizard : {calc:viewCalc, log:viewLog, gear:viewGear, sites:viewSites, profile:viewProfile}[tab];
   view.innerHTML = f();
   if (fid){ const el = document.getElementById(fid); if (el){ el.focus({preventScroll:true}); if (sel) try { el.setSelectionRange(sel[0], sel[1]); } catch(_){} } }
+}
+
+// ---------- zaproszenie do instalacji ----------
+// Na telefonie w przeglądarce pokazujemy, jak dodać aplikację do ekranu początkowego:
+// zainstalowana działa offline na łodzi i nie gubi się w kartach. Bramka jest miękka —
+// „Użyję w przeglądarce" wyłącza ją na stałe (S.installSkip).
+const IOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+const ANDROID = /Android/.test(navigator.userAgent);
+// przeglądarki wbudowane w aplikacje nie mają „dodaj do ekranu" — tam trzeba najpierw wyjść do Safari/Chrome
+const INAPP = /FBAN|FBAV|Instagram|Messenger|LinkedIn|Twitter|Snapchat|Pinterest|TikTok|MicroMessenger/.test(navigator.userAgent);
+const standalone = () => ['standalone','fullscreen','minimal-ui'].some(m => matchMedia('(display-mode: ' + m + ')').matches) || navigator.standalone === true;
+let installPrompt = null;
+window.addEventListener('beforeinstallprompt', e => { e.preventDefault(); installPrompt = e; if (gateOn()) render(); });
+window.addEventListener('appinstalled', () => { installPrompt = null; render(); });
+const gateOn = () => (IOS || ANDROID) && !standalone() && !S.installSkip;
+// czy nurek ma już coś do stracenia — na iOS aplikacja z ekranu ma osobną pamięć niż Safari
+const hasData = () => P().onboarded || P().dives.length || P().wardrobe.length > 1 || S.profiles.length > 1;
+
+function viewGate(){
+  // kroki to nasz własny HTML (z ikoną Udostępnij), więc nie przechodzą przez esc()
+  const steps = INAPP
+    ? [tr('Tapnij menu tej przeglądarki i wybierz {x}', {x: IOS ? tr('„Otwórz w Safari”') : tr('„Otwórz w Chrome”')}),
+       tr('Tam otwórz ten sam adres i dodaj skrót do ekranu')]
+    : IOS
+      ? [ICON.share + tr('Tapnij Udostępnij na dolnym pasku Safari'),
+         tr('Przewiń listę i wybierz „Do ekranu początkowego”'),
+         tr('Potwierdź „Dodaj” — ikona stanie na ekranie telefonu')]
+      : [tr('Otwórz menu przeglądarki (⋮)'),
+         tr('Wybierz „Zainstaluj aplikację” albo „Dodaj do ekranu głównego”'),
+         tr('Potwierdź — ikona stanie na ekranie telefonu')];
+  return `<div class="stack">
+    <section class="card">
+      <h2>${tr('Dodaj do ekranu telefonu')}</h2>
+      <p style="margin:10px 0 0">${tr('Balast liczy się na łodzi i nad wodą, gdzie zasięgu zwykle nie ma. Dodana do ekranu aplikacja otwiera się jednym tapnięciem, działa bez internetu i nie ginie wśród kart przeglądarki.')}</p>
+      ${installPrompt ? `<div class="btnrow" style="margin-top:14px"><button class="primary" data-act="install">${tr('Zainstaluj')}</button></div>` : ''}
+      <ol class="steps">${steps.map(x => `<li>${x}</li>`).join('')}</ol>
+      ${IOS && hasData() ? `<div class="opt" style="grid-template-columns:1fr;margin-top:14px">
+        <div class="items">${tr('Najpierw zrób kopię zapasową')}</div>
+        <div class="desc">${tr('Na iPhonie aplikacja z ekranu początkowego ma osobną pamięć niż Safari, więc dane wpisane tutaj nie przejdą same. Zapisz plik i wczytaj go w Profilu zaraz po instalacji.')}</div>
+        <div class="btnrow" style="margin-top:6px"><button class="sm" data-act="export-file">${tr('Zapisz kopię zapasową')}</button></div></div>` : ''}
+      <div class="btnrow" style="margin-top:16px"><button class="ghost sm" data-act="gate-skip">${tr('Użyję w przeglądarce')}</button></div>
+    </section>
+  </div>`;
 }
 
 // ---------- klawiatura na telefonie ----------
@@ -797,6 +845,14 @@ view.addEventListener('click', e => {
     P().plan.items = P().wardrobe.reduce((list, w) => toggleItem(list, w.uid), []);
     ui.editGear = null;
     return finishWizard('calc');
+  }
+  if (a === 'gate-skip'){ S.installSkip = true; return commit(); }
+  if (a === 'gate-show'){ delete S.installSkip; window.scrollTo(0, 0); return commit(); }
+  if (a === 'install'){
+    if (!installPrompt) return;
+    const pr = installPrompt; installPrompt = null;
+    pr.prompt(); pr.userChoice.then(r => { if (r.outcome !== 'accepted'){ installPrompt = pr; render(); } });
+    return;
   }
   if (a === 'geo-on'){ S.geo = 'on'; save(); render(); return locateSite(false); }
   if (a === 'geo-off'){ S.geo = 'off'; save(); return render(); }
@@ -1017,4 +1073,4 @@ view.addEventListener('change', e => {
 });
 
 load(); recompute(); render();
-if (S.geo === 'on') locateSite(true);
+if (S.geo === 'on' && !gateOn()) locateSite(true);

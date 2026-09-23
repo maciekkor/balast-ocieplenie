@@ -44,6 +44,7 @@ S = {
   lang: 'pl' | 'en',            // wspólny dla wszystkich nurków
   activeId: 'p-xxxxxx',         // id nurka, którego dane są na ekranie
   geo?: 'on' | 'off',           // zgoda na pytanie telefonu o pozycję (brak = jeszcze nie pytaliśmy)
+  installSkip?: true,           // „Użyję w przeglądarce" — bramka instalacyjna już nie wraca
   sites: [ { id, name, rho /*kg/l*/, ts: [12 × °C powierzchnia], tb: [12 × °C dno], preset?: bool,
              lat?, lon?, r? /*przybliżony środek rejonu i promień w km — do rozpoznania akwenu z GPS*/ } ],
   profiles: [ {                 // każdy nurek osobno (B3)
@@ -194,6 +195,16 @@ Dwie rzeczy, których nie widać bez prawdziwego pliku:
 - **`Latitude`/`Longitude` są w radianach**, nie w stopniach.
 
 Szkic z importu dostaje `imported`, przez co formularz otwiera się z banerem mówiącym wprost, czego modelowi brakuje: sprzętu, ołowiu z oceną i komfortu cieplnego. W dzienniku nurkowanie bez ołowiu albo bez oceny balastu ma plakietkę „bez oceny balastu", a nad listą jest przypomnienie, że takie wpisy nie uczą modelu — uzupełnia się je przyciskiem Edytuj.
+
+**Bramka instalacyjna.** Na telefonie otwartym w przeglądarce (`IOS || ANDROID`, bez `display-mode: standalone` i bez `navigator.standalone`) zamiast zakładek pokazuje się `viewGate()`: po co instalować i jak to zrobić. Bramka jest **miękka** — „Użyję w przeglądarce" ustawia `S.installSkip` i więcej nie wraca, a wrócić do instrukcji można z Profilu („Na ekranie telefonu" → `gate-show`). Kroki zależą od tego, gdzie aplikacja stoi:
+
+| Gdzie | Co pokazujemy |
+| --- | --- |
+| Android | przycisk **Zainstaluj**, gdy przeglądarka dała `beforeinstallprompt`; zawsze też kroki przez menu ⋮ |
+| iOS (Safari) | Udostępnij → „Do ekranu początkowego" → Dodaj |
+| przeglądarka w aplikacji (Facebook, Instagram, …) | najpierw „Otwórz w Safari/Chrome" — tam „dodaj do ekranu" w ogóle nie istnieje |
+
+**Na iOS instalacja nie zabiera danych.** Aplikacja z ekranu początkowego ma magazyn odrębny od Safari — `localStorage`, ciasteczka i service worker nie są współdzielone. Dlatego bramka pojawia się od razu, zanim ktoś zacznie wypełniać kreator, a nurkowi, który **ma już dane** (`hasData()`), pokazuje najpierw przycisk zapisu kopii zapasowej wraz z wyjaśnieniem, że po instalacji trzeba ją wczytać. Bez tego sami wyprodukowalibyśmy zgłoszenia „aplikacja skasowała mi wszystko".
 
 **Akwen z lokalizacji telefonu.** Na karcie planu aplikacja pyta raz: „Ustawiać akwen po Twojej lokalizacji?". Odpowiedź siedzi w `S.geo` (`'on'` / `'off'`; brak = jeszcze nie pytaliśmy), a odmowa w samym telefonie też zapisuje `'off'`, żeby nie pytać w kółko. Przy `'on'` `locateSite()` pyta `navigator.geolocation` przy starcie aplikacji i po tapnięciu „Najbliższy akwen", wybiera akwen tą samą regułą `km / r` co import i mówi, który i z jakiej odległości. **Pozycja nie jest nigdzie zapisywana ani wysyłana** — służy wyłącznie do porównania z listą akwenów, która i tak leży w telefonie.
 
