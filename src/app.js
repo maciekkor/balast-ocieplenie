@@ -23,8 +23,8 @@ const wizardOn = () => !P().onboarded;
 function load(){
   let raw = null;
   try { raw = localStorage.getItem(KEY); } catch(e){ memOnly = true; }
-  try { S = migrate(raw ? JSON.parse(raw) : seedState()) || seedState(); }
-  catch(e){ S = seedState(); }
+  try { S = migrate(raw ? JSON.parse(raw) : freshState()) || freshState(); }
+  catch(e){ S = freshState(); }
   LANG = S.lang === 'en' ? 'en' : 'pl';
 }
 function save(){ try { localStorage.setItem(KEY, JSON.stringify(S)); memOnly = false; } catch(e){ memOnly = true; } }
@@ -81,7 +81,10 @@ const ICON = {
   warm1: SVG(flameIcon),
   ok: SVG('<path d="M4.5 12.5 9.5 17.5 19.5 6.5"/>'),
   edge: SVG('<path d="M3 15c2.2 0 2.2-3 4.5-3S9.7 15 12 15s2.2-3 4.5-3 2.2 3 4.5 3"/><path d="M12 3.5v3M12 19v2"/>'),
-  ask: SVG('<circle cx="12" cy="12" r="9"/><path d="M9.3 9.3a2.8 2.8 0 1 1 3.4 3.3c-.5.2-.7.6-.7 1.1v.6"/><path d="M12 17.4v.2"/>')
+  ask: SVG('<circle cx="12" cy="12" r="9"/><path d="M9.3 9.3a2.8 2.8 0 1 1 3.4 3.3c-.5.2-.7.6-.7 1.1v.6"/><path d="M12 17.4v.2"/>'),
+  geo: SVG('<circle cx="12" cy="12" r="6.2"/><circle cx="12" cy="12" r="1.6"/><path d="M12 2.2v2.6M12 19.2v2.6M2.2 12h2.6M19.2 12h2.6"/>'),
+  own: SVG('<path d="M3.5 10.5 12 3.8l8.5 6.7"/><path d="M6 10v9.5h12V10"/>'),
+  rent: SVG('<circle cx="10" cy="19.4" r="1.5"/><circle cx="17" cy="19.4" r="1.5"/><path d="M2.6 4h2.6l2.4 11h10l2.2-8.2H6.2"/>')
 };
 const THERM_ICON = {cold: ICON.cold1, cool: ICON.temp, ok: ICON.ok, warm: ICON.warm1};
 const FLAG = {
@@ -147,9 +150,12 @@ function chipsFor(selected, act){
   const groups = CAT_ORDER.map(c => ({c, items: P().wardrobe.filter(w => w.cat === c)})).filter(g => g.items.length);
   if (!groups.length) return `<p class="muted small">${tr('Szafa jest pusta. Dodaj sprzęt w zakładce Szafa.')}</p>`;
   return groups.map(g => `<div class="group"><div class="label">${catLabel(g.c)}</div><div class="chips">${
-    g.items.map(w => `<button class="chip" data-act="${act}" data-uid="${esc(w.uid)}" aria-pressed="${selected.includes(w.uid)}">${esc(nm(w))}${w.size ? ' · ' + esc(w.size) : ''}</button>`).join('')
-  }</div></div>`).join('');
+    g.items.map(w => `<button class="chip" data-act="${act}" data-uid="${esc(w.uid)}" aria-pressed="${selected.includes(w.uid)}" title="${tr(w.rental ? 'wypożyczony' : 'mój')}">${
+      w.rental ? ICON.rent : ICON.own}<span class="sr">${tr(w.rental ? 'wypożyczony' : 'mój')}: </span>${esc(bareName(w))}${w.size ? ' · ' + esc(w.size) : ''}</button>`).join('')
+  }</div></div>`).join('') + (P().wardrobe.some(w => w.rental) ? `<p class="small muted chip-key" style="margin:10px 0 0">${ICON.own}${tr('mój')} · ${ICON.rent}${tr('wypożyczony')}</p>` : '');
 }
+// nazwa bez dopisku o własności — tę niesie już ikona na chipie
+const bareName = w => nm(w).replace(/ \((wypożyczon[ay]|własny|rented|own)\)/, '');
 function siteMatches(q){
   const n = norm(q.trim());
   if (!n) return S.sites.slice();
@@ -258,6 +264,24 @@ function advisor(pl, curItems){
   return {tef, list: ok.slice(0, 3).concat(ok.length ? [] : no.slice(0, 3)), anyOk: ok.length > 0};
 }
 
+// Najbliższy akwen z pozycji telefonu. Pozycja nigdzie nie jest zapisywana ani wysyłana —
+// porównujemy ją tylko z listą akwenów, która i tak siedzi w pamięci telefonu.
+// S.geo: brak = jeszcze nie pytaliśmy, 'on' = wolno pytać telefon, 'off' = nurek wybiera sam.
+function locateSite(silent){
+  if (!navigator.geolocation) return silent || toast(tr('Ten telefon nie udostępnia lokalizacji'));
+  navigator.geolocation.getCurrentPosition(pos => {
+    const m = matchSite({lat: pos.coords.latitude, lon: pos.coords.longitude}, S.sites);
+    if (!m) return silent || toast(tr('Żaden akwen z listy nie leży blisko Ciebie'));
+    if (P().plan.siteId === m.id) return silent || toast(tr('Akwen już pasuje do Twojej pozycji'));
+    P().plan.siteId = m.id; fillTemps(P().plan);
+    toast(tr('Akwen z lokalizacji: {x} ({km} km)', {x: siteName(siteOf(m.id)), km: m.km}));
+    commit();
+  }, err => {
+    if (err && err.code === 1){ S.geo = 'off'; save(); render(); }   // odmowa w telefonie = nie pytamy więcej
+    if (!silent) toast(tr('Nie udało się ustalić lokalizacji'));
+  }, {timeout: 8000, maximumAge: 300000});
+}
+
 function quickAdd(){
   const qa = ui.quick, q = qa.q.trim().toLowerCase();
   const found = CATALOG.filter(c => (!qa.cat || c.cat === qa.cat) && (!q || (c.brand + ' ' + c.model + ' ' + frag(c.model) + ' ' + catOne(c.cat)).toLowerCase().includes(q)));
@@ -349,6 +373,11 @@ function viewCalc(){
   <section class="card"><div class="card-head"><h2>${tr('Planowane nurkowanie')}</h2>
       <button class="sb-q" data-act="plan-info" aria-expanded="${!!ui.planInfo}" title="${tr('Założenia')}" aria-label="${tr('Założenia')}">${ICON.ask}</button></div>
     ${planFields(pl, 'p-')}
+    ${S.geo == null ? `<div class="opt" style="margin-top:10px;grid-template-columns:1fr"><div class="items">${tr('Ustawiać akwen po Twojej lokalizacji?')}</div>
+      <div class="desc">${tr('Telefon zapyta o zgodę. Pozycja zostaje w telefonie — służy tylko do wskazania najbliższego akwenu z listy.')}</div>
+      <div class="btnrow" style="margin-top:6px"><button class="sm primary" data-act="geo-on">${ICON.geo}${tr('Tak, najbliższy akwen')}</button>
+        <button class="sm ghost" data-act="geo-off">${tr('Wybiorę sam')}</button></div></div>`
+      : S.geo === 'on' ? `<div class="btnrow" style="margin-top:8px"><button class="sm ghost" data-act="geo-now">${ICON.geo}${tr('Najbliższy akwen')}</button></div>` : ''}
     ${ui.planInfo ? `<p class="small muted" style="margin:10px 0 0">${tr('Temperaturę dna podpowiada akwen dla wybranego miesiąca; wpisz własną, jeśli znasz aktualną.')}
       ${tr('Komfort liczę ostrożnie — jak dla {n}. nurkowania w ciągu dnia i {t} min pod wodą, przy rezerwie {r} bar. Czas, kolejność i temperaturę powierzchni poprawisz przy zapisie w dzienniku.', {n: pl.nDay, t: pl.time, r: pl.reserve})}</p>` : ''}</section>
 
@@ -423,11 +452,23 @@ function paramEditor(w){
   const cat = CATALOG.find(c => c.id === w.catId);
   // rozmiar zapisany wcześniej zostawiamy na liście, nawet gdy katalog zmienił oznaczenia
   const sizes = cat ? (w.size && !cat.sizes.includes(w.size) ? cat.sizes.concat([w.size]) : cat.sizes) : null;
-  let h = `<div class="grid2">
-    <div class="f wide"><label for="g-name">${tr('Nazwa')}</label><input id="g-name" type="text" data-w="model" value="${esc(w.model)}"></div>
-    <div class="f"><label for="g-size">${tr('Rozmiar')}</label>${sizes && sizes.length > 1 ? `<select id="g-size" data-w="size"><option value="">—</option>${sizes.map(s => `<option${s === w.size ? ' selected' : ''}>${esc(s)}</option>`).join('')}</select>` : `<input id="g-size" type="text" data-w="size" value="${esc(w.size)}">`}</div>
-    <div class="f"><label for="g-year">${tr('Rok zakupu')}</label><input id="g-year" type="number" inputmode="numeric" data-w="year" value="${esc(w.year ?? '')}"></div>
-    <div class="f"><label for="g-rental">${tr('Własność')}</label><select id="g-rental" data-w="rental"><option value="0"${!w.rental ? ' selected' : ''}>${tr('Mój')}</option><option value="1"${w.rental ? ' selected' : ''}>${tr('Wypożyczony')}</option></select></div>`;
+  // własność i rozmiar to przyciski: jedno tapnięcie zamiast rozwijania listy
+  const own = fieldset(tr('Własność'), `<div class="seg" role="group" aria-label="${tr('Własność')}">
+      <button type="button" data-act="gear-own" data-v="0" aria-pressed="${!w.rental}">${tr('Mój')}</button>
+      <button type="button" data-act="gear-own" data-v="1" aria-pressed="${!!w.rental}">${tr('Wypożyczony')}</button></div>`);
+  const size = sizes && sizes.length > 1
+    ? fieldset(tr('Rozmiar'), tiles('gear-size', sizes.map(x => ({v: x, label: x})), o => o.v === w.size, 'compact'))
+    : `<div class="fieldset"><label class="label" for="g-size">${tr('Rozmiar')}</label><input id="g-size" type="text" data-w="size" value="${esc(w.size)}"></div>`;
+  // rok zakupu ma sens tylko dla własnego sprzętu — wypożyczony i tak jest z półki wypożyczalni
+  const year = w.rental ? '' : `<div class="fieldset"><label class="label" for="g-year">${tr('Rok zakupu')}</label><input id="g-year" type="number" inputmode="numeric" data-w="year" value="${esc(w.year ?? '')}"></div>`;
+  const foot = `<p class="small muted" style="margin:10px 0 0">${tr('Źródło wartości: {x}', {x: esc(frag(w.src || 'wpis własny'))})}</p>
+    <div class="btnrow"><button class="primary sm" data-act="close-gear">${tr('Gotowe')}</button><button class="danger sm" data-act="del-gear" data-uid="${esc(w.uid)}">${tr('Usuń z szafy')}</button></div>`;
+  // pozycja z katalogu ma parametry od producenta — zmieniać wolno tylko to, co zależy od egzemplarza
+  if (cat) return `<div class="editor">${own}${size}${year}
+    <p class="small muted" style="margin:10px 0 0">${tr('Grubość, krój i wyporność biorę z katalogu. Jeśli Twój sprzęt różni się od katalogowego, dodaj go jako pozycję własną.')}</p>${foot}</div>`;
+
+  let h = `${own}${size}${year}<div class="grid2">
+    <div class="f wide"><label for="g-name">${tr('Nazwa')}</label><input id="g-name" type="text" data-w="model" value="${esc(w.model)}"></div>`;
   if (NEO_CATS.includes(w.cat)) h += n('t', 'Grubość tułów (mm)', '0.5') + n('tl', 'Grubość kończyny (mm)', '0.5') + sel('cover', 'Krój', Object.entries(lbl().cover)) + chk('semi', 'Półsucha') + chk('hood', 'Kaptur');
   if (w.cat === 'dry') h += sel('shell', 'Materiał', [['trilam',tr('Trylaminat')],['membrane',tr('Membrana')],['crushed',tr('Neopren zgnieciony')],['neo',tr('Neopren')]]) + (p.shell === 'neo' ? n('t', 'Grubość (mm)', '0.5') : n('b', 'Wyporność (kg)'));
   if (w.cat === 'under') h += n('g', 'Gaz w skafandrze (kg wyporności)') + n('tmin', 'Komfort od (°C)', '1');
@@ -436,15 +477,23 @@ function paramEditor(w){
   if (w.cat === 'boots') h += n('mass', 'Masa pary (g)', '10');
   if (w.cat === 'wing') h += sel('plate', 'Płyta', [['alu',tr('Aluminium')],['steel',tr('Stal')],['soft',tr('Miękka / brak')]]);
   if (w.cat === 'tank') h += n('vol', 'Pojemność (l)') + n('be', 'Wyporność pusta, morze (kg)') + n('vd', 'Objętość zewnętrzna (l)');
-  h += `</div><p class="small muted" style="margin:10px 0 0">${tr('Źródło wartości: {x}', {x: esc(frag(w.src || 'wpis własny'))})}</p>
-    <div class="btnrow"><button class="primary sm" data-act="close-gear">${tr('Gotowe')}</button><button class="danger sm" data-act="del-gear" data-uid="${esc(w.uid)}">${tr('Usuń z szafy')}</button></div>`;
-  return `<div class="editor">${h}</div>`;
+  return `<div class="editor">${h}</div>${foot}</div>`;
+}
+
+// wyszukiwarka katalogu — ta sama w kreatorze i w Szafie
+function catalogPicker(){
+  const q = ui.addQ.trim().toLowerCase();
+  const found = CATALOG.filter(c => (!ui.addCat || c.cat === ui.addCat) && (!q || (c.brand + ' ' + c.model + ' ' + frag(c.model) + ' ' + catOne(c.cat)).toLowerCase().includes(q)));
+  return `<div class="grid2"><div class="f"><label for="q">${tr('Szukaj')}</label><input id="q" type="search" placeholder="${tr('np. Zeos, Flexa, 15 l')}" value="${esc(ui.addQ)}" data-act="q"></div>
+      <div class="f"><label for="qc">${tr('Kategoria')}</label><select id="qc" data-act="qc"><option value="">${tr('Wszystkie')}</option>${CAT_ORDER.map(c => `<option value="${c}"${ui.addCat === c ? ' selected' : ''}>${catLabel(c)}</option>`).join('')}</select></div></div>
+      <div class="list" style="margin-top:8px">${found.slice(0, q || ui.addCat ? 60 : 10).map(c => `<div class="li"><div class="main"><div class="t">${esc(frag(c.brand === 'Ogólne' ? c.model : c.brand + ' ' + c.model))}</div><div class="s">${catOne(c.cat)}${c.p.mass ? ' · ' + c.p.mass + ' g' : ''}${c.cat === 'fins' ? ' · ' + sgn(c.p.b) + ' kg' : ''} · ${esc(frag(c.src))}</div></div>
+        <div class="r"><button class="sm" data-act="add-cat" data-id="${esc(c.id)}">${tr('Dodaj')}</button></div></div>`).join('') || `<p class="muted small">${tr('Nic nie pasuje. Dodaj pozycję własną poniżej.')}</p>`}</div>
+      ${!q && !ui.addCat && found.length > 10 ? `<p class="small muted" style="margin:8px 0 0">${tr('Pokazuję 10 z {n} — wpisz markę lub wybierz kategorię.', {n: found.length})}</p>` : ''}
+      <div class="btnrow"><select id="custom-cat" aria-label="${tr('Kategoria pozycji własnej')}" style="width:auto">${CAT_ORDER.map(c => `<option value="${c}">${catOne(c)}</option>`).join('')}</select><button data-act="add-custom">${tr('Dodaj pozycję własną')}</button></div>`;
 }
 function viewGear(){
   const ctx = {rho:1.025, depth:5, reserve:50, year:new Date().getFullYear()};
   const groups = CAT_ORDER.map(c => ({c, items: P().wardrobe.filter(w => w.cat === c)})).filter(g => g.items.length);
-  const q = ui.addQ.trim().toLowerCase();
-  const found = CATALOG.filter(c => (!ui.addCat || c.cat === ui.addCat) && (!q || (c.brand + ' ' + c.model + ' ' + frag(c.model)).toLowerCase().includes(q)));
   return `<div class="stack">
     <section class="card"><h2>${tr('Moja szafa')} <small>${tr('wyporność na 5 m w morzu')}</small></h2>
     ${groups.map(g => `<div class="group" style="margin-top:12px"><div class="label">${catLabel(g.c)}</div><div class="list">${g.items.map(w => {
@@ -456,12 +505,7 @@ function viewGear(){
     }).join('')}</div></div>`).join('') || `<p class="muted">${tr('Szafa jest pusta.')}</p>`}
     </section>
     <section class="card"><h2>${tr('Dodaj z katalogu')} <small>${tr('{n} pozycji', {n: CATALOG.length})}</small></h2>
-      <div class="grid2"><div class="f"><label for="q">${tr('Szukaj')}</label><input id="q" type="search" placeholder="${tr('np. Zeos, Flexa, 15 l')}" value="${esc(ui.addQ)}" data-act="q"></div>
-      <div class="f"><label for="qc">${tr('Kategoria')}</label><select id="qc" data-act="qc"><option value="">${tr('Wszystkie')}</option>${CAT_ORDER.map(c => `<option value="${c}"${ui.addCat === c ? ' selected' : ''}>${catLabel(c)}</option>`).join('')}</select></div></div>
-      <div class="list" style="margin-top:8px">${found.slice(0, q || ui.addCat ? 60 : 10).map(c => `<div class="li"><div class="main"><div class="t">${esc(frag(c.brand === 'Ogólne' ? c.model : c.brand + ' ' + c.model))}</div><div class="s">${catOne(c.cat)}${c.p.mass ? ' · ' + c.p.mass + ' g' : ''}${c.cat === 'fins' ? ' · ' + sgn(c.p.b) + ' kg' : ''} · ${esc(frag(c.src))}</div></div>
-        <div class="r"><button class="sm" data-act="add-cat" data-id="${esc(c.id)}">${tr('Dodaj')}</button></div></div>`).join('') || `<p class="muted small">${tr('Nic nie pasuje. Dodaj pozycję własną poniżej.')}</p>`}</div>
-      ${!q && !ui.addCat && found.length > 10 ? `<p class="small muted" style="margin:8px 0 0">${tr('Pokazuję 10 z {n} — wpisz markę lub wybierz kategorię.', {n: found.length})}</p>` : ''}
-      <div class="btnrow"><select id="custom-cat" aria-label="${tr('Kategoria pozycji własnej')}" style="width:auto">${CAT_ORDER.map(c => `<option value="${c}">${catOne(c)}</option>`).join('')}</select><button data-act="add-custom">${tr('Dodaj pozycję własną')}</button></div>
+      ${catalogPicker()}
     </section></div>`;
 }
 
@@ -564,24 +608,34 @@ function viewWizard(){
     ${expTiles()}
     ${coldTiles(pr)}
     ${wizNav(true)}</section></div>`;
+  const miss = wizMissing();
   return `<div class="stack"><section class="card">
-    ${wizHead(4, tr('Twój sprzęt'), tr('Ostatnia decyzja: od czego zacząć szafę. Jedno i drugie zmienisz później w zakładce Szafa.'))}
-    <div class="stack" style="margin-top:12px;gap:8px">
-      <div class="opt"><div class="items">${tr('Przykładowy zestaw')}</div>
-        <button class="sm primary" data-act="wiz-gear" data-v="sample">${tr('Weź przykład')}</button>
-        <div class="desc">${tr('Pianka 3 mm, kamizelka, butla 12 l, płetwy i automat — podmienisz na swoje.')}</div></div>
-      <div class="opt"><div class="items">${tr('Pusta szafa')}</div>
-        <button class="sm" data-act="wiz-gear" data-v="empty">${tr('Zacznę od zera')}</button>
-        <div class="desc">${tr('Zostaje sam automat. Sprzęt dodasz z katalogu w zakładce Szafa.')}</div></div>
-    </div>
-    <div class="btnrow"><button class="ghost" data-act="wiz-back">${tr('Wstecz')}</button></div></section></div>`;
+    ${wizHead(4, tr('Twój sprzęt'), tr('To wyporność sprzętu decyduje o ołowiu, więc bez niego nie ma czego liczyć. Dodaj to, w czym nurkujesz — resztę uzupełnisz w Szafie.'))}
+    <div class="stack" style="margin-top:12px;gap:8px">${WIZ_NEED.map(n => {
+      const have = P().wardrobe.filter(w => n.cats.includes(w.cat));
+      return `<div class="opt${have.length ? ' best' : ''}"><div class="items">${have.length ? esc(have.map(nm).join(' + ')) : tr(n.label)}</div>
+        <span class="pill ${have.length ? 'good' : 'info'}">${tr(have.length ? 'jest' : 'brakuje')}</span></div>`;
+    }).join('')}</div>
+    ${P().wardrobe.length ? `<div class="list" style="margin-top:12px">${P().wardrobe.map(w => `<div class="li"><div class="main"><div class="t">${esc(nm(w))}</div>
+      <div class="s">${[catOne(w.cat), w.rental && tr('wypożyczony'), w.size && tr('rozm. {x}', {x: w.size})].filter(Boolean).map(esc).join(' · ')}</div></div>
+      <div class="r"><button class="sm ghost" data-act="edit-gear" data-uid="${esc(w.uid)}">${tr('Edytuj')}</button></div></div>
+      ${ui.editGear === w.uid ? paramEditor(w) : ''}`).join('')}</div>` : ''}
+    <div class="label" style="margin-top:14px">${tr('Dodaj z katalogu')}</div>
+    ${catalogPicker()}
+    <div class="btnrow" style="margin-top:14px"><button class="primary" data-act="wiz-done"${miss.length ? ' disabled' : ''}>${tr('Gotowe')}</button>
+      <button class="ghost" data-act="wiz-back">${tr('Wstecz')}</button></div>
+    ${miss.length ? `<p class="small muted" style="margin:8px 0 0">${tr('Brakuje jeszcze: {x}', {x: miss.map(n => tr(n.short)).join(', ')})}</p>` : ''}
+  </section></div>`;
 }
-function wizGear(kind){
-  const p = P();
-  if (kind === 'sample'){ const s = seedDiver(); p.wardrobe = s.wardrobe; p.plan.items = s.plan.items.slice(); return finishWizard('calc'); }
-  p.wardrobe = [fromCat('misc-reg')]; p.plan.items = ['misc-reg-1'];
-  finishWizard('gear', tr('Profil gotowy. Dodaj teraz swój sprzęt z katalogu.'));   // pusta szafa: od razu tam, gdzie jest co zrobić
-}
+// Minimum, bez którego wynik byłby zgadywaniem: coś, w czym nurkujesz, coś, czym oddychasz,
+// i to, co trzyma powietrze na plecach. Automat nurek dostaje od razu przy zakładaniu profilu.
+const WIZ_NEED = [
+  {cats:['wetsuit','dry'], label:'Pianka albo suchy skafander', short:'ocieplenie'},
+  {cats:['tank'], label:'Butla', short:'butla'},
+  {cats:['bcd','wing'], label:'Kamizelka albo skrzydło z płytą', short:'kamizelka'}
+];
+const wizMissing = () => WIZ_NEED.filter(n => !P().wardrobe.some(w => n.cats.includes(w.cat)));
+
 function finishWizard(goTab, msg){
   P().onboarded = true; ui.wiz = 0; tab = goTab || 'calc';
   toast(msg || tr('Gotowe. Wszystko zmienisz w Profilu i Szafie.'));
@@ -737,7 +791,16 @@ view.addEventListener('click', e => {
     if (ui.wiz === 2 && !profileOk(P().profile)){ toast(tr('Wpisz wiek, wzrost i wagę — bez nich nie policzę wyporności ciała.')); return; }
     ui.wiz = Math.min(WIZ_STEPS, ui.wiz + 1); render(); return window.scrollTo(0, 0); }
   if (a === 'wiz-back'){ ui.wiz = Math.max(0, ui.wiz - 1); render(); return window.scrollTo(0, 0); }
-  if (a === 'wiz-gear') return wizGear(b.dataset.v);
+  if (a === 'wiz-done'){
+    if (wizMissing().length) return toast(tr('Dodaj jeszcze: {x}', {x: wizMissing().map(n => tr(n.short)).join(', ')}));
+    // zestaw na start: to, co nurek właśnie zadeklarował — toggleItem pilnuje, żeby nie weszły dwie pianki
+    P().plan.items = P().wardrobe.reduce((list, w) => toggleItem(list, w.uid), []);
+    ui.editGear = null;
+    return finishWizard('calc');
+  }
+  if (a === 'geo-on'){ S.geo = 'on'; save(); render(); return locateSite(false); }
+  if (a === 'geo-off'){ S.geo = 'off'; save(); return render(); }
+  if (a === 'geo-now') return locateSite(false);
   if (a === 'diver-switch') return switchDiver(b.dataset.id);
   if (a === 'diver-add'){ const d = emptyDiver(); S.profiles.push(d); S.activeId = d.id; fillTemps(d.plan); ui.wiz = 1; ui.delDiver = null; ui.draft = null; commit(); return window.scrollTo(0, 0); }
   if (a === 'diver-del'){
@@ -768,6 +831,18 @@ view.addEventListener('click', e => {
   }
   if (a === 'edit-gear'){ ui.editGear = ui.editGear === b.dataset.uid ? null : b.dataset.uid; return render(); }
   if (a === 'close-gear'){ ui.editGear = null; return commit(); }
+  if (a === 'gear-own' || a === 'gear-size'){
+    const w = P().wardrobe.find(x => x.uid === ui.editGear); if (!w) return;
+    const v = b.dataset.v;
+    if (a === 'gear-size') w.size = w.size === v ? '' : v;
+    else {
+      const rental = v === '1';
+      if (rental === !!w.rental) return;
+      w.rental = rental;
+      w.year = rental ? null : new Date().getFullYear();   // rok zakupu dotyczy tylko własnego sprzętu
+    }
+    return commit();
+  }
   if (a === 'quick-open'){ ui.quick = ui.quick ? null : {q:'', cat:'', kind:'bought'}; ui.editGear = null; return render(); }
   if (a === 'quick-kind'){ ui.quick.kind = b.dataset.v; return render(); }
   if (a === 'quick-add'){ return quickItem(fromCat(b.dataset.id, {uid: newId(b.dataset.id)})); }
@@ -789,8 +864,9 @@ view.addEventListener('click', e => {
   if (a === 'export-file') return exportFile();
   if (a === 'import-file'){ const f = $('#bk-file'); f.value = ''; f.click(); return; }
   if (a === 'wipe'){ if (!ui.confirmWipe){ ui.confirmWipe = true; return render(); }
-    ui.confirmWipe = false; const d = emptyDiver();
-    S = {v:1, lang: LANG, sites: seedSites(), profiles:[d], activeId: d.id};
+    ui.confirmWipe = false;
+    S = Object.assign(freshState(), {lang: LANG});
+    const d = P();
     fillTemps(d.plan); tab = 'calc'; ui.wiz = 0; ui.delDiver = null; ui.draft = null;
     toast(tr('Wyczyszczono. Zacznij od profilu i szafy.')); return commit(); }
   if (a === 'seed'){ S = seedState(); S.lang = LANG; P().onboarded = true; tab = 'calc'; ui.wiz = 0; ui.draft = null; toast(tr('Wczytano przykład')); return commit(); }
@@ -941,3 +1017,4 @@ view.addEventListener('change', e => {
 });
 
 load(); recompute(); render();
+if (S.geo === 'on') locateSite(true);

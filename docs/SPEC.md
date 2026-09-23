@@ -43,6 +43,7 @@ S = {
   v: 1,                         // wersja schematu
   lang: 'pl' | 'en',            // wspólny dla wszystkich nurków
   activeId: 'p-xxxxxx',         // id nurka, którego dane są na ekranie
+  geo?: 'on' | 'off',           // zgoda na pytanie telefonu o pozycję (brak = jeszcze nie pytaliśmy)
   sites: [ { id, name, rho /*kg/l*/, ts: [12 × °C powierzchnia], tb: [12 × °C dno], preset?: bool,
              lat?, lon?, r? /*przybliżony środek rejonu i promień w km — do rozpoznania akwenu z GPS*/ } ],
   profiles: [ {                 // każdy nurek osobno (B3)
@@ -87,7 +88,7 @@ Wybór w zestawie: jedna pozycja z `wetsuit`, `dry`, `under`, `tank`, `fins` ora
 
 ## 4. Katalog sprzętu
 
-161 pozycji w 12 kategoriach. Marki: Mares, Cressi, Scubapro, Fourth Element, Bare, Aqualung, Tusa, Scubatech, Santi, Avatar, XDEEP, Tecline, Apeks, Hollis oraz pozycje ogólne.
+162 pozycje w 12 kategoriach. Marki: Mares, Cressi, Scubapro, Fourth Element, Bare, Aqualung, Tusa, Scubatech, Santi, Avatar, XDEEP, Tecline, Apeks, Hollis oraz pozycje ogólne.
 
 Pole `src` opisuje wiarygodność: `producent (…)`, `szacunek`, `szacunek z masy i materiału`, `grubość: producent; masa: szacunek`, `szacunek z wybranej płyty` (skrzydła). Producenci pianek, ocieplaczy i płetw nie publikują wyporności — dlatego katalog trzyma parametry fizyczne, a wyporność liczy model dla konkretnego nurka.
 
@@ -154,7 +155,7 @@ L_suchy = L_woda / (1 − ρ_w / 11,34)     → zaokrąglenie w górę do 0,5 kg
 
 ## 7. Ekrany
 
-0. **Kreator profilu (obowiązkowy)** — pokazuje się zamiast zakładek, gdy aktywny nurek ma `onboarded: false`: pierwsze uruchomienie, po „Wyczyść wszystkie dane" i po dodaniu nurka. Dolna nawigacja jest wtedy ukryta. Kroki: powitanie z wyborem języka, 1. imię, płeć, wiek; 2. wzrost, waga, budowa, opcjonalny % tłuszczu z podglądem wyporności ciała; 3. poziom doświadczenia i tolerancja zimna; 4. wybór startowej szafy (przykładowy zestaw albo sam automat). Krok 2 nie przepuszcza dalej bez sensownego wieku, wzrostu i wagi. **Kreatora nie można pominąć ani obejść** — bez danych ciała nie da się policzyć wyporności. Powitanie nie proponuje już wczytania przykładowego nurka: na pierwszym uruchomieniu cudzy profil niczego nie wyjaśnia, a podstawia dane, które i tak trzeba zaraz zastąpić. Przykład został tam, gdzie ma sens — w Profilu, obok czyszczenia danych — i w kroku 4, gdzie „Weź przykład" dotyczy samej szafy.
+0. **Kreator profilu (obowiązkowy)** — pokazuje się zamiast zakładek, gdy aktywny nurek ma `onboarded: false`: pierwsze uruchomienie, po „Wyczyść wszystkie dane" i po dodaniu nurka. Dolna nawigacja jest wtedy ukryta. Kroki: powitanie z wyborem języka, 1. imię, płeć, wiek; 2. wzrost, waga, budowa, opcjonalny % tłuszczu z podglądem wyporności ciała; 3. poziom doświadczenia i tolerancja zimna; 4. **sprzęt — obowiązkowy**. Krok 2 nie przepuszcza dalej bez sensownego wieku, wzrostu i wagi, a krok 4 bez sprzętu: „Gotowe” włącza się dopiero, gdy w szafie jest pianka albo suchy skafander, butla oraz kamizelka albo skrzydło (`WIZ_NEED`). Checklista u góry kroku pokazuje, czego brakuje, pod nią siedzi ta sama wyszukiwarka katalogu co w Szafie (`catalogPicker()`) i edytor dodanej pozycji, a „Gotowe” zapisuje zadeklarowany sprzęt wprost do zestawu (`toggleItem`). Pierwsze uruchomienie startuje z `freshState()` — pusty nurek, w szafie sam automat; przykładowy nurek (`seedState()`) został tylko pod „Wczytaj przykład” w Profilu. **Kreatora nie można pominąć ani obejść** — bez danych ciała nie da się policzyć wyporności. Powitanie nie proponuje już wczytania przykładowego nurka: na pierwszym uruchomieniu cudzy profil niczego nie wyjaśnia, a podstawia dane, które i tak trzeba zaraz zastąpić. Przykładowy nurek został tam, gdzie ma sens — w Profilu, obok czyszczenia danych.
 
 **Wybór zamiast wpisywania.** Płeć, wiek, budowa, tolerancja zimna, doświadczenie i język to kafelki z grafiką (`tiles()`, klasy `.picks`/`.pick`), a wzrost i waga to suwaki — z polem liczbowym obok, więc wartość można też wpisać z klawiatury numerycznej (`inputmode="decimal"`); suwak i pole trzymają tę samą wartość, a po wyjściu z pola obowiązuje zakres suwaka. Do wpisania zostają tylko imię i opcjonalny % tłuszczu. Te same komponenty obsługują kreator i zakładkę Profil, więc jedna zmiana działa w obu miejscach.
 
@@ -175,7 +176,9 @@ Czas, numer nurkowania dnia, rezerwa i temperatura powierzchni **nie mają pól 
 Karta planu trzyma te założenia pod przyciskiem **`?`** w nagłówku (`ui.planInfo`) — domyślnie nie zabierają miejsca, ale jednym tapnięciem widać, skąd bierze się wynik. `migrate()` normalizuje je w planie (rezerwa 50, `nDay` co najmniej 2), bo nie ma już UI, w którym dałoby się je zmienić. Wszystkie cztery są za to **opcjonalne w formularzu nurkowania** — w zwijanej sekcji „Szczegóły (opcjonalnie)" (`planFields(pl, pre, true)`), bo tam zapisuje się rzeczywistość, a nie plan.
 
 2. **Dziennik:** lista (najnowsze pierwsze) i formularz nurkowania w kolejności wpisywania po wyjściu z wody: **dane nurkowania** (to, co pokazuje komputer, plus zwijane szczegóły: czas, kolejność, temperatura powierzchni, rezerwa), **balast** z oceną, **komfort cieplny** z notatką, a na końcu **użyty zestaw** — sprzęt zwykle nie zmienia się między nurkowaniami, więc nie zasłania tego, co trzeba poprawić.
-3. **Szafa:** mój sprzęt z wyporności na 5 m w morzu i nauczoną korektą; edytor parametrów; katalog z wyszukiwaniem.
+3. **Szafa:** mój sprzęt z wypornością na 5 m w morzu i nauczoną korektą; edytor; katalog z wyszukiwaniem (`catalogPicker()`, ten sam co w kreatorze).
+
+**Co wolno zmienić w pozycji z katalogu.** Tylko to, co zależy od egzemplarza: **własność** (przyciski Mój / Wypożyczony), **rozmiar** (kafelki z rozmiarówki producenta) i **rok zakupu** — ten ostatni tylko dla własnego sprzętu, bo wypożyczony jest z półki wypożyczalni i przełączenie na „Wypożyczony" czyści rok. Grubość, krój, wyporność i reszta `p` pochodzą od producenta i nie mają tu pól; kto ma sprzęt inny niż katalogowy, dodaje **pozycję własną** — ta ma pełny edytor z nazwą i wszystkimi parametrami. Dzięki temu nikt nie „poprawia" katalogu przypadkiem, a `src` pozostaje prawdziwe.
 4. **Akweny:** presety i własne; gęstość wody i 12 miesięcy temperatur.
 5. **Profil:** te same kafelki i suwaki co w kreatorze (język z flagami, płeć, wiek w 5 zakresach, wzrost i waga suwakami, budowa jako sylwetki, tolerancja zimna w 5 stopniach z wartością w °C, doświadczenie w 4 poziomach), karta **Nurkowie** (lista z liczbą nurkowań i sprzętu, przełączanie, dodanie nurka przez kreator, usunięcie z potwierdzeniem — ostatniego nurka nie da się usunąć), język, dane ciała, tolerancja zimna, nurkowania poza dziennikiem, czego nauczył się model, reset nauki, kopia zapasowa (zapis i odczyt pliku `.json`, bez pokazywania danych na ekranie), czyszczenie, wczytanie przykładu.
 
@@ -191,6 +194,10 @@ Dwie rzeczy, których nie widać bez prawdziwego pliku:
 - **`Latitude`/`Longitude` są w radianach**, nie w stopniach.
 
 Szkic z importu dostaje `imported`, przez co formularz otwiera się z banerem mówiącym wprost, czego modelowi brakuje: sprzętu, ołowiu z oceną i komfortu cieplnego. W dzienniku nurkowanie bez ołowiu albo bez oceny balastu ma plakietkę „bez oceny balastu", a nad listą jest przypomnienie, że takie wpisy nie uczą modelu — uzupełnia się je przyciskiem Edytuj.
+
+**Akwen z lokalizacji telefonu.** Na karcie planu aplikacja pyta raz: „Ustawiać akwen po Twojej lokalizacji?". Odpowiedź siedzi w `S.geo` (`'on'` / `'off'`; brak = jeszcze nie pytaliśmy), a odmowa w samym telefonie też zapisuje `'off'`, żeby nie pytać w kółko. Przy `'on'` `locateSite()` pyta `navigator.geolocation` przy starcie aplikacji i po tapnięciu „Najbliższy akwen", wybiera akwen tą samą regułą `km / r` co import i mówi, który i z jakiej odległości. **Pozycja nie jest nigdzie zapisywana ani wysyłana** — służy wyłącznie do porównania z listą akwenów, która i tak leży w telefonie.
+
+**Ikony własności w zestawie.** Chipy zestawu niosą ikonę: domek = mój, wózek = wypożyczony (`bareName()` ucina wtedy dopisek „(wypożyczony)" z nazwy). Legenda pokazuje się tylko wtedy, gdy w szafie jest choć jedna pozycja z wypożyczalni.
 
 **Akwen z pozycji GPS.** Presety mają przybliżony środek rejonu (`lat`, `lon`) i promień `r` w km, w którym dopasowanie ma sens — „Chorwacja (Adriatyk)" to 350 km, kamieniołom 8 km, basen 5 km. `matchSite()` liczy odległość po wielkim kole i wybiera akwen o **najmniejszym ilorazie `km / r`**, czyli ten, w którego zasięgu pozycja siedzi najgłębiej; przy braku trafienia akwen zostaje bez zmian, a pozycja jest tylko pokazana. Porównywanie samych kilometrów nie działało: nurkowanie w Honoratce (52,3402 N 18,2686 E) trafiało na „Bałtyk" 278 km dalej, bo jego promień 400 km obejmuje pół Polski, a kamieniołom nie mieścił się w swoim ośmiokilometrowym, skoro preset miał współrzędne o 12 km obok. Jedno i drugie jest poprawione, a pozycja z tamtego pliku jest w testach. Akweny dopisane ręcznie nie mają współrzędnych, więc nie biorą udziału. Formularz zawsze mówi, co się stało („Akwen rozpoznany z pozycji … 139 km od środka rejonu — zmień, jeśli nie ten"), bo rejon to nie punkt i pomyłka jest możliwa. Współrzędnych nie da się edytować w aplikacji, więc `migrate()` bierze je zawsze z presetu po `id` — zapisane kopie dostają i brakujące, i poprawione wartości.
 

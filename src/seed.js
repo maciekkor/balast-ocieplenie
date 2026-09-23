@@ -39,6 +39,12 @@ function seedDiver(){
 }
 const seedSites = () => SITE_PRESETS.map(x => Object.assign({preset:true}, JSON.parse(JSON.stringify(x))));
 
+// Pierwsze uruchomienie: pusty nurek i pusta szafa — kreator dopyta o profil i sprzęt.
+// Przykładowy nurek zostaje tylko pod „Wczytaj przykład" w Profilu.
+function freshState(){
+  const d = emptyDiver();
+  return {v: 1, sites: seedSites(), profiles: [d], activeId: d.id};
+}
 function seedState(){
   const d = seedDiver();
   return {v: 1, sites: seedSites(), profiles: [d], activeId: d.id};
