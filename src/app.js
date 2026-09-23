@@ -1,6 +1,6 @@
 // ===== Aplikacja =====
 const KEY = 'balast-ocieplenie.v1';
-let S, L, T, memOnly = false, tab = 'calc', ui = {draft:null, editGear:null, editSite:null, addQ:'', addCat:'', confirmWipe:false, quick:null, siteQ:null, hl:0, wiz:0, delDiver:null, explain:false, planInfo:false, thermInfo:false, gateSteps:false};
+let S, L, T, memOnly = false, tab = 'calc', ui = {draft:null, editGear:null, editSite:null, addQ:'', addCat:'', confirmWipe:false, quick:null, siteQ:null, hl:0, wiz:0, delDiver:null, explain:false, planInfo:false, thermInfo:false, gateSteps:false, wizCat:0};
 const $ = s => document.querySelector(s);
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const fmt = (x, d = 1) => { const s = (Math.round(x * Math.pow(10, d)) / Math.pow(10, d)).toFixed(d); return LANG === 'en' ? s : s.replace('.', ','); };
@@ -457,8 +457,10 @@ function paramEditor(w){
   const own = fieldset(tr('Własność'), `<div class="seg" role="group" aria-label="${tr('Własność')}">
       <button type="button" data-act="gear-own" data-v="0" aria-pressed="${!w.rental}">${tr('Mój')}</button>
       <button type="button" data-act="gear-own" data-v="1" aria-pressed="${!!w.rental}">${tr('Wypożyczony')}</button></div>`);
+  // jednorozmiarowe pozycje (skrzydła, butle, drobne) nie mają czego wybierać — pole tylko myli
   const size = sizes && sizes.length > 1
     ? fieldset(tr('Rozmiar'), tiles('gear-size', sizes.map(x => ({v: x, label: x})), o => o.v === w.size, 'compact'))
+    : cat ? ''
     : `<div class="fieldset"><label class="label" for="g-size">${tr('Rozmiar')}</label><input id="g-size" type="text" data-w="size" value="${esc(w.size)}"></div>`;
   // rok zakupu ma sens tylko dla własnego sprzętu — wypożyczony i tak jest z półki wypożyczalni
   const year = w.rental ? '' : `<div class="fieldset"><label class="label" for="g-year">${tr('Rok zakupu')}</label><input id="g-year" type="number" inputmode="numeric" data-w="year" value="${esc(w.year ?? '')}"></div>`;
@@ -481,16 +483,18 @@ function paramEditor(w){
   return `<div class="editor">${h}</div>${foot}</div>`;
 }
 
-// wyszukiwarka katalogu — ta sama w kreatorze i w Szafie
-function catalogPicker(){
+// Wyszukiwarka katalogu. W Szafie przegląda cały katalog z listą kategorii,
+// w kreatorze dostaje gotowy zestaw kategorii i pokazuje tylko je — bez rozwijania listy.
+function catalogPicker(cats){
   const q = ui.addQ.trim().toLowerCase();
-  const found = CATALOG.filter(c => (!ui.addCat || c.cat === ui.addCat) && (!q || (c.brand + ' ' + c.model + ' ' + frag(c.model) + ' ' + catOne(c.cat)).toLowerCase().includes(q)));
-  return `<div class="grid2"><div class="f"><label for="q">${tr('Szukaj')}</label><input id="q" type="search" placeholder="${tr('np. Zeos, Flexa, 15 l')}" value="${esc(ui.addQ)}" data-act="q"></div>
-      <div class="f"><label for="qc">${tr('Kategoria')}</label><select id="qc" data-act="qc"><option value="">${tr('Wszystkie')}</option>${CAT_ORDER.map(c => `<option value="${c}"${ui.addCat === c ? ' selected' : ''}>${catLabel(c)}</option>`).join('')}</select></div></div>
-      <div class="list" style="margin-top:8px">${found.slice(0, q || ui.addCat ? 60 : 10).map(c => `<div class="li"><div class="main"><div class="t">${esc(frag(c.brand === 'Ogólne' ? c.model : c.brand + ' ' + c.model))}</div><div class="s">${catOne(c.cat)}${c.p.mass ? ' · ' + c.p.mass + ' g' : ''}${c.cat === 'fins' ? ' · ' + sgn(c.p.b) + ' kg' : ''} · ${esc(frag(c.src))}</div></div>
+  const inCat = c => cats ? cats.includes(c.cat) : (!ui.addCat || c.cat === ui.addCat);
+  const found = CATALOG.filter(c => inCat(c) && (!q || (c.brand + ' ' + c.model + ' ' + frag(c.model) + ' ' + catOne(c.cat)).toLowerCase().includes(q)));
+  return `<div class="${cats ? 'f' : 'grid2'}" style="margin-top:12px">${cats ? '' : '<div class="f">'}<label for="q">${tr('Szukaj')}</label><input id="q" type="search" placeholder="${tr('np. Zeos, Flexa, 15 l')}" value="${esc(ui.addQ)}" data-act="q">${cats ? '' : `</div>
+      <div class="f"><label for="qc">${tr('Kategoria')}</label><select id="qc" data-act="qc"><option value="">${tr('Wszystkie')}</option>${CAT_ORDER.map(c => `<option value="${c}"${ui.addCat === c ? ' selected' : ''}>${catLabel(c)}</option>`).join('')}</select></div>`}</div>
+      <div class="list" style="margin-top:8px">${found.slice(0, cats ? 99 : q || ui.addCat ? 60 : 10).map(c => `<div class="li"><div class="main"><div class="t">${esc(frag(c.brand === 'Ogólne' ? c.model : c.brand + ' ' + c.model))}</div><div class="s">${catOne(c.cat)}${c.p.mass ? ' · ' + c.p.mass + ' g' : ''}${c.cat === 'fins' ? ' · ' + sgn(c.p.b) + ' kg' : ''} · ${esc(frag(c.src))}</div></div>
         <div class="r"><button class="sm" data-act="add-cat" data-id="${esc(c.id)}">${tr('Dodaj')}</button></div></div>`).join('') || `<p class="muted small">${tr('Nic nie pasuje. Dodaj pozycję własną poniżej.')}</p>`}</div>
-      ${!q && !ui.addCat && found.length > 10 ? `<p class="small muted" style="margin:8px 0 0">${tr('Pokazuję 10 z {n} — wpisz markę lub wybierz kategorię.', {n: found.length})}</p>` : ''}
-      <div class="btnrow"><select id="custom-cat" aria-label="${tr('Kategoria pozycji własnej')}" style="width:auto">${CAT_ORDER.map(c => `<option value="${c}">${catOne(c)}</option>`).join('')}</select><button data-act="add-custom">${tr('Dodaj pozycję własną')}</button></div>`;
+      ${!cats && !q && !ui.addCat && found.length > 10 ? `<p class="small muted" style="margin:8px 0 0">${tr('Pokazuję 10 z {n} — wpisz markę lub wybierz kategorię.', {n: found.length})}</p>` : ''}
+      <div class="btnrow"><select id="custom-cat" aria-label="${tr('Kategoria pozycji własnej')}" style="width:auto">${(cats || CAT_ORDER).map(c => `<option value="${c}">${catOne(c)}</option>`).join('')}</select><button data-act="add-custom">${tr('Dodaj pozycję własną')}</button></div>`;
 }
 function viewGear(){
   const ctx = {rho:1.025, depth:5, reserve:50, year:new Date().getFullYear()};
@@ -613,34 +617,52 @@ function viewWizard(){
     ${expTiles()}
     ${coldTiles(pr)}
     ${wizNav(true)}</section></div>`;
-  const miss = wizMissing();
-  return `<div class="stack"><section class="card">
-    ${wizHead(4, tr('Twój sprzęt'), tr('To wyporność sprzętu decyduje o ołowiu, więc bez niego nie ma czego liczyć. Dodaj to, w czym nurkujesz — resztę uzupełnisz w Szafie.'))}
-    <div class="stack" style="margin-top:12px;gap:8px">${WIZ_NEED.map(n => {
-      const have = P().wardrobe.filter(w => n.cats.includes(w.cat));
-      return `<div class="opt${have.length ? ' best' : ''}"><div class="items">${have.length ? esc(have.map(nm).join(' + ')) : tr(n.label)}</div>
-        <span class="pill ${have.length ? 'good' : 'info'}">${tr(have.length ? 'jest' : 'brakuje')}</span></div>`;
-    }).join('')}</div>
-    ${P().wardrobe.length ? `<div class="list" style="margin-top:12px">${P().wardrobe.map(w => `<div class="li"><div class="main"><div class="t">${esc(nm(w))}</div>
-      <div class="s">${[catOne(w.cat), w.rental && tr('wypożyczony'), w.size && tr('rozm. {x}', {x: w.size})].filter(Boolean).map(esc).join(' · ')}</div></div>
-      <div class="r"><button class="sm ghost" data-act="edit-gear" data-uid="${esc(w.uid)}">${tr('Edytuj')}</button></div></div>
-      ${ui.editGear === w.uid ? paramEditor(w) : ''}`).join('')}</div>` : ''}
-    <div class="label" style="margin-top:14px">${tr('Dodaj z katalogu')}</div>
-    ${catalogPicker()}
-    <div class="btnrow" style="margin-top:14px"><button class="primary" data-act="wiz-done"${miss.length ? ' disabled' : ''}>${tr('Gotowe')}</button>
-      <button class="ghost" data-act="wiz-back">${tr('Wstecz')}</button></div>
-    ${miss.length ? `<p class="small muted" style="margin:8px 0 0">${tr('Brakuje jeszcze: {x}', {x: miss.map(n => tr(n.short)).join(', ')})}</p>` : ''}
-  </section></div>`;
+  const i = Math.min(ui.wizCat, WIZ_CATS.length - 1), c = WIZ_CATS[i], last = i === WIZ_CATS.length - 1;
+  const have = P().wardrobe.filter(w => c.cats.includes(w.cat));
+  const groups = CAT_ORDER.map(k => ({k, items: P().wardrobe.filter(w => w.cat === k)})).filter(g => g.items.length);
+  return `<div class="stack">
+    <section class="card">
+      ${wizHead(4, tr('Twój sprzęt'), tr('Przejdziemy przez kategorie po kolei. Dodaj to, w czym nurkujesz — resztę uzupełnisz później w Szafie.'))}
+      <div class="wiz-top" style="margin-top:16px"><span class="label">${tr('Sprzęt {n} z {m}', {n: i + 1, m: WIZ_CATS.length})}</span>
+        <div class="wiz-bar"><i style="width:${((i + 1) / WIZ_CATS.length * 100).toFixed(0)}%"></i></div></div>
+      <h3 style="font-size:20px">${tr(c.label)}${c.need ? ` <small class="req">${tr('wymagane')}</small>` : ''}</h3>
+      <p class="small muted" style="margin:6px 0 0">${tr(c.hint)}</p>
+      ${have.length ? `<div class="chips" style="margin-top:10px">${have.map(w => `<span class="chip" aria-pressed="true">${esc(nm(w))}${w.size ? ' · ' + esc(w.size) : ''}</span>`).join('')}</div>` : ''}
+      ${catalogPicker(c.cats)}
+      <div class="btnrow" style="margin-top:16px"><button class="primary" data-act="wiz-cat-next">${tr(last ? 'Gotowe' : have.length || c.need ? 'Dalej' : 'Pomiń')}</button>
+        <button class="ghost" data-act="wiz-cat-back">${tr('Wstecz')}</button></div>
+      ${c.need && !have.length ? `<p class="small muted" style="margin:8px 0 0">${tr('Bez tego nie policzę ołowiu — wybierz jedną pozycję.')}</p>` : ''}
+    </section>
+    ${groups.length ? `<section class="card"><h2>${tr('Moja szafa')} <small>${tr('{n} pozycji', {n: P().wardrobe.length})}</small></h2>
+      ${groups.map(g => `<div class="group" style="margin-top:12px"><div class="label">${catLabel(g.k)}</div><div class="list">${g.items.map(w => `<div class="li"><div class="main"><div class="t">${esc(nm(w))}</div>
+        <div class="s">${[w.rental && tr('wypożyczony'), w.size && tr('rozm. {x}', {x: w.size})].filter(Boolean).map(esc).join(' · ') || tr('rozmiar i własność ustawisz w edytorze')}</div></div>
+        <div class="r"><button class="sm ghost" data-act="edit-gear" data-uid="${esc(w.uid)}">${tr('Edytuj')}</button></div></div>
+        ${ui.editGear === w.uid ? paramEditor(w) : ''}`).join('')}</div></div>`).join('')}
+    </section>` : ''}
+  </div>`;
 }
-// Minimum, bez którego wynik byłby zgadywaniem: coś, w czym nurkujesz, coś, czym oddychasz,
-// i to, co trzyma powietrze na plecach. Automat nurek dostaje od razu przy zakładaniu profilu.
-const WIZ_NEED = [
-  {cats:['wetsuit','dry'], label:'Pianka albo suchy skafander', short:'ocieplenie'},
-  {cats:['tank'], label:'Butla', short:'butla'},
-  {cats:['bcd','wing'], label:'Kamizelka albo skrzydło z płytą', short:'kamizelka'}
+// Sprzęt zbieramy kategoriami, w kolejności, w jakiej nurek się ubiera. Obowiązkowe są tylko te,
+// bez których nie ma czego liczyć: coś, w czym nurkujesz, i to, co trzyma powietrze na plecach.
+// Butla obowiązkowa nie jest — na ekranie Oblicz wybiera się ją jednym tapnięciem ze standardowych.
+const WIZ_CATS = [
+  {cats:['wetsuit','dry'], label:'Skafander', need:true, hint:'Pianka albo suchy — to on najmocniej zmienia ołów.'},
+  {cats:['over','under'], label:'Ocieplacze', hint:'Kamizelka pod piankę albo ocieplacz pod suchy skafander. Nie masz — pomiń.'},
+  {cats:['hood','gloves','boots'], label:'Kaptur, rękawice, buty', hint:'Drobiazgi, które dokładają trochę wyporności i sporo komfortu.'},
+  {cats:['bcd','wing'], label:'Kamizelka albo skrzydło', need:true, hint:'Jacket, skrzydło z płytą — wybierz to, na czym nurkujesz.'},
+  {cats:['fins'], label:'Płetwy', hint:'Gumowe ciągną w dół mocniej niż plastikowe.'},
+  {cats:['tank'], label:'Butla', hint:'Możesz pominąć: na ekranie Oblicz wybierzesz butlę jednym tapnięciem spośród standardowych.'},
+  {cats:['misc'], label:'Reszta', hint:'Latarka, aparat. Automat masz już w szafie.'}
 ];
-const wizMissing = () => WIZ_NEED.filter(n => !P().wardrobe.some(w => n.cats.includes(w.cat)));
+const wizMissing = () => WIZ_CATS.filter(c => c.need && !P().wardrobe.some(w => c.cats.includes(w.cat)));
 
+function wizDone(){
+  const miss = wizMissing();
+  if (miss.length) return toast(tr('Dodaj jeszcze: {x}', {x: miss.map(c => tr(c.label)).join(', ')}));
+  // zestaw na start: to, co nurek właśnie zadeklarował — toggleItem pilnuje, żeby nie weszły dwie pianki
+  P().plan.items = P().wardrobe.reduce((list, w) => toggleItem(list, w.uid), []);
+  ui.editGear = null; ui.addQ = '';
+  finishWizard('calc');
+}
 function finishWizard(goTab, msg){
   P().onboarded = true; ui.wiz = 0; tab = goTab || 'calc';
   toast(msg || tr('Gotowe. Wszystko zmienisz w Profilu i Szafie.'));
@@ -859,15 +881,20 @@ view.addEventListener('click', e => {
   }
   if (a === 'wiz-next'){
     if (ui.wiz === 2 && !profileOk(P().profile)){ toast(tr('Wpisz wiek, wzrost i wagę — bez nich nie policzę wyporności ciała.')); return; }
+    if (ui.wiz === 3){ ui.wizCat = 0; ui.addQ = ''; }           // sprzęt zaczynamy od pierwszej kategorii
     ui.wiz = Math.min(WIZ_STEPS, ui.wiz + 1); render(); return window.scrollTo(0, 0); }
-  if (a === 'wiz-back'){ ui.wiz = Math.max(0, ui.wiz - 1); render(); return window.scrollTo(0, 0); }
-  if (a === 'wiz-done'){
-    if (wizMissing().length) return toast(tr('Dodaj jeszcze: {x}', {x: wizMissing().map(n => tr(n.short)).join(', ')}));
-    // zestaw na start: to, co nurek właśnie zadeklarował — toggleItem pilnuje, żeby nie weszły dwie pianki
-    P().plan.items = P().wardrobe.reduce((list, w) => toggleItem(list, w.uid), []);
-    ui.editGear = null;
-    return finishWizard('calc');
+  if (a === 'wiz-cat-next'){
+    const c = WIZ_CATS[Math.min(ui.wizCat, WIZ_CATS.length - 1)];
+    if (c.need && !P().wardrobe.some(w => c.cats.includes(w.cat))) return toast(tr('Wybierz jedną pozycję — bez tego nie policzę ołowiu.'));
+    if (ui.wizCat >= WIZ_CATS.length - 1) return wizDone();
+    ui.wizCat++; ui.addQ = ''; ui.editGear = null; render(); return window.scrollTo(0, 0);
   }
+  if (a === 'wiz-cat-back'){
+    if (ui.wizCat <= 0){ ui.wiz = 3; render(); return window.scrollTo(0, 0); }
+    ui.wizCat--; ui.addQ = ''; ui.editGear = null; render(); return window.scrollTo(0, 0);
+  }
+  if (a === 'wiz-back'){ ui.wiz = Math.max(0, ui.wiz - 1); render(); return window.scrollTo(0, 0); }
+  if (a === 'wiz-done') return wizDone();
   if (a === 'gate-skip'){ S.installSkip = true; return commit(); }
   if (a === 'gate-steps'){ ui.gateSteps = true; return render(); }
   if (a === 'gate-show'){ delete S.installSkip; ui.gateSteps = false; window.scrollTo(0, 0); return commit(); }
@@ -927,7 +954,13 @@ view.addEventListener('click', e => {
   if (a === 'quick-add'){ return quickItem(fromCat(b.dataset.id, {uid: newId(b.dataset.id)})); }
   if (a === 'quick-own'){ const cat = $('#qq-own').value; return quickItem({uid: newId('own'), catId: null, cat, brand: 'Własne', model: catOne(cat), size: '', year: null, p: JSON.parse(JSON.stringify(OWN_DEFAULTS[cat])), src: 'wpis własny'}); }
   if (a === 'del-gear'){ const u = b.dataset.uid; P().wardrobe = P().wardrobe.filter(w => w.uid !== u); P().plan.items = P().plan.items.filter(x => x !== u); ui.editGear = null; toast(tr('Usunięto z szafy')); return commit(); }
-  if (a === 'add-cat'){ const w = fromCat(b.dataset.id, {uid: newId(b.dataset.id), year: new Date().getFullYear()}); P().wardrobe.push(w); ui.editGear = w.uid; toast(tr('Dodano — ustaw rozmiar')); return commit(); }
+  if (a === 'add-cat'){
+    const w = fromCat(b.dataset.id, {uid: newId(b.dataset.id), year: new Date().getFullYear()});
+    P().wardrobe.push(w);
+    ui.editGear = wizardOn() ? null : w.uid;          // w kreatorze nie przerywamy przechodzenia kategorii
+    toast(tr(wizardOn() ? 'Dodano do szafy' : 'Dodano — ustaw rozmiar'));
+    return commit();
+  }
   if (a === 'add-custom'){
     const cat = $('#custom-cat').value;
     const w = {uid: newId('own'), catId: null, cat, brand: 'Własne', model: catOne(cat) + ' ' + tr('(własny)'), size: '', year: new Date().getFullYear(), p: JSON.parse(JSON.stringify(OWN_DEFAULTS[cat])), src: 'wpis własny'};
