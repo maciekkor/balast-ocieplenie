@@ -1,6 +1,6 @@
 // ===== Aplikacja =====
 const KEY = 'balast-ocieplenie.v1';
-let S, L, T, memOnly = false, tab = 'calc', ui = {draft:null, editGear:null, editSite:null, addQ:'', addCat:'', confirmWipe:false, quick:null, siteQ:null, hl:0, wiz:0, delDiver:null, explain:false, planInfo:false, thermInfo:false};
+let S, L, T, memOnly = false, tab = 'calc', ui = {draft:null, editGear:null, editSite:null, addQ:'', addCat:'', confirmWipe:false, quick:null, siteQ:null, hl:0, wiz:0, delDiver:null, explain:false, planInfo:false, thermInfo:false, gateSteps:false};
 const $ = s => document.querySelector(s);
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const fmt = (x, d = 1) => { const s = (Math.round(x * Math.pow(10, d)) / Math.pow(10, d)).toFixed(d); return LANG === 'en' ? s : s.replace('.', ','); };
@@ -714,7 +714,17 @@ const ANDROID = /Android/.test(navigator.userAgent);
 // przeglądarki wbudowane w aplikacje nie mają „dodaj do ekranu" — tam trzeba najpierw wyjść do Safari/Chrome
 const INAPP = /FBAN|FBAV|Instagram|Messenger|LinkedIn|Twitter|Snapchat|Pinterest|TikTok|MicroMessenger/.test(navigator.userAgent);
 const standalone = () => ['standalone','fullscreen','minimal-ui'].some(m => matchMedia('(display-mode: ' + m + ')').matches) || navigator.standalone === true;
-let installPrompt = null;
+let installPrompt = null, installedApp = false;
+// Czy aplikacja stoi już na ekranie telefonu? Na Androidzie mówi to wprost przeglądarka
+// (getInstalledRelatedApps, Chrome 84+); na iOS żadne API tego nie zdradza, więc zostaje poszlaka:
+// instrukcję instalacji ktoś tu już widział, a w tej przeglądarce nie ma żadnych danych.
+let gateSeenBefore = false;
+function checkInstalled(){
+  if (!navigator.getInstalledRelatedApps) return;
+  navigator.getInstalledRelatedApps().then(list => {
+    if (list && list.length){ installedApp = true; render(); }
+  }, () => {});
+}
 window.addEventListener('beforeinstallprompt', e => { e.preventDefault(); installPrompt = e; if (gateOn()) render(); });
 window.addEventListener('appinstalled', () => { installPrompt = null; render(); });
 const gateOn = () => (IOS || ANDROID) && !standalone() && !S.installSkip;
@@ -733,6 +743,18 @@ function viewGate(){
       : [tr('Otwórz menu przeglądarki (⋮)'),
          tr('Wybierz „Zainstaluj aplikację” albo „Dodaj do ekranu głównego”'),
          tr('Potwierdź — ikona stanie na ekranie telefonu')];
+  // ktoś, kto ma już ikonę na ekranie, a wszedł z przeglądarki, przede wszystkim powinien wrócić do aplikacji
+  if ((installedApp || (gateSeenBefore && !hasData())) && !ui.gateSteps) return `<div class="stack">
+    <section class="card">
+      <h2>${tr('Otwórz z ekranu telefonu')}</h2>
+      <p style="margin:10px 0 0">${tr(installedApp ? 'Ta aplikacja jest już zainstalowana na tym telefonie.' : 'Wygląda na to, że masz ją już na ekranie telefonu: instrukcja instalacji pojawiała się tu wcześniej, a w tej przeglądarce nie ma żadnych danych.')}</p>
+      <p style="margin:10px 0 0">${tr(IOS
+        ? 'Na iPhonie wersja z ekranu początkowego i ta w Safari mają osobne dane: nurkowania, szafa i profil wpisane w aplikacji nie są tu widoczne, a to, co wpiszesz tutaj, nie trafi do aplikacji. Zamknij tę kartę i otwórz ikonę z ekranu.'
+        : 'Aplikacja z ekranu otwiera się jednym tapnięciem i działa bez internetu — na łodzi to bywa jedyna różnica między policzeniem balastu a nie. Dane masz te same, więc niczego nie stracisz.')}</p>
+      <div class="btnrow" style="margin-top:16px"><button class="sm" data-act="gate-steps">${tr('Nie mam jej — pokaż, jak dodać')}</button>
+        <button class="ghost sm" data-act="gate-skip">${tr('Użyję w przeglądarce')}</button></div>
+    </section>
+  </div>`;
   return `<div class="stack">
     <section class="card">
       <h2>${tr('Dodaj do ekranu telefonu')}</h2>
@@ -847,7 +869,8 @@ view.addEventListener('click', e => {
     return finishWizard('calc');
   }
   if (a === 'gate-skip'){ S.installSkip = true; return commit(); }
-  if (a === 'gate-show'){ delete S.installSkip; window.scrollTo(0, 0); return commit(); }
+  if (a === 'gate-steps'){ ui.gateSteps = true; return render(); }
+  if (a === 'gate-show'){ delete S.installSkip; ui.gateSteps = false; window.scrollTo(0, 0); return commit(); }
   if (a === 'install'){
     if (!installPrompt) return;
     const pr = installPrompt; installPrompt = null;
@@ -1073,4 +1096,10 @@ view.addEventListener('change', e => {
 });
 
 load(); recompute(); render();
+if (gateOn()){
+  gateSeenBefore = !!S.gateSeen;          // poszlaka działa dopiero przy kolejnym wejściu
+  if (!S.gateSeen){ S.gateSeen = true; save(); }
+  else render();
+  checkInstalled();
+}
 if (S.geo === 'on' && !gateOn()) locateSite(true);

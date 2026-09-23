@@ -45,6 +45,7 @@ S = {
   activeId: 'p-xxxxxx',         // id nurka, którego dane są na ekranie
   geo?: 'on' | 'off',           // zgoda na pytanie telefonu o pozycję (brak = jeszcze nie pytaliśmy)
   installSkip?: true,           // „Użyję w przeglądarce" — bramka instalacyjna już nie wraca
+  gateSeen?: true,              // instrukcja instalacji już się w tej przeglądarce pokazywała
   sites: [ { id, name, rho /*kg/l*/, ts: [12 × °C powierzchnia], tb: [12 × °C dno], preset?: bool,
              lat?, lon?, r? /*przybliżony środek rejonu i promień w km — do rozpoznania akwenu z GPS*/ } ],
   profiles: [ {                 // każdy nurek osobno (B3)
@@ -203,6 +204,13 @@ Szkic z importu dostaje `imported`, przez co formularz otwiera się z banerem m�
 | Android | przycisk **Zainstaluj**, gdy przeglądarka dała `beforeinstallprompt`; zawsze też kroki przez menu ⋮ |
 | iOS (Safari) | Udostępnij → „Do ekranu początkowego" → Dodaj |
 | przeglądarka w aplikacji (Facebook, Instagram, …) | najpierw „Otwórz w Safari/Chrome" — tam „dodaj do ekranu" w ogóle nie istnieje |
+
+**„Masz ją już na ekranie".** Gdy aplikacja jest zainstalowana, a ktoś otworzy adres w przeglądarce, bramka nie namawia do instalacji, tylko odsyła do ikony — bo **na iOS w przeglądarce nie widać danych z aplikacji** (i odwrotnie). Skąd wiemy, że jest zainstalowana:
+
+- **Android:** `navigator.getInstalledRelatedApps()` (Chrome 84+) odpowiada wprost. Wymaga wpisu o sobie samej w manifeście (`related_applications: [{platform:'webapp', url:'manifest.webmanifest'}]` oraz `id`); wpis jest względny, więc na pulpitach, gdzie API wymaga bezwzględnego `id`, detekcja nie zadziała — i nie musi, bo bramki tam nie ma.
+- **iOS:** żadne API tego nie zdradza, zostaje poszlaka. `S.gateSeen` zapisuje, że instrukcja już się tu pokazywała; przy kolejnym wejściu **bez żadnych danych w tej przeglądarce** przyjmujemy, że nurek zainstalował aplikację i używa jej z ekranu. Komunikat mówi to jako przypuszczenie, a przycisk „Nie mam jej — pokaż, jak dodać" (`ui.gateSteps`) wraca do instrukcji, więc pomyłka nic nie kosztuje.
+
+Na Androidzie zainstalowana aplikacja dzieli magazyn z przeglądarką, więc tam ten sam komunikat mówi tylko o wygodzie i pracy offline — nie o utracie danych, bo żadnej nie ma.
 
 **Na iOS instalacja nie zabiera danych.** Aplikacja z ekranu początkowego ma magazyn odrębny od Safari — `localStorage`, ciasteczka i service worker nie są współdzielone. Dlatego bramka pojawia się od razu, zanim ktoś zacznie wypełniać kreator, a nurkowi, który **ma już dane** (`hasData()`), pokazuje najpierw przycisk zapisu kopii zapasowej wraz z wyjaśnieniem, że po instalacji trzeba ją wczytać. Bez tego sami wyprodukowalibyśmy zgłoszenia „aplikacja skasowała mi wszystko".
 
