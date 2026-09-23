@@ -181,7 +181,7 @@ Trzy rzeczy, które trzeba pamiętać przy zmianach:
 - **Kroki celują selektorami** (`#summary .sb`, `#plan-card`, `#thermal-card`, `#set-card`, `[data-act="log-from-plan"]`, `nav.tabs`). Zmiana struktury tych kart wymaga poprawienia `TOUR`; krok bez celu jest po cichu pomijany, więc zepsuty selektor nie wywali aplikacji, tylko zgubi krok.
 - **Pozycje liczymy z `getBoundingClientRect()`** przy każdym kroku i przy `resize`, bo dymek przypięty na sztywno rozjeżdża się po obrocie telefonu.
 
-`S.tourDone` pilnuje, żeby samouczek poszedł raz — także wtedy, gdy ktoś doda drugiego nurka. Powtórzyć go można z Profilu („Samouczek → Pokaż jeszcze raz"). Na telefonie w przeglądarce pierwszeństwo ma bramka instalacyjna (`gateOn()`), więc samouczek poczeka do instalacji.
+Koniec samouczka — „Zaczynamy", „Pomiń" i Escape tak samo — wraca na **Oblicz** i przewija na górę, bo szósty krok zostawia nurka w Dzienniku, a zacząć ma od liczenia. `S.tourDone` pilnuje, żeby samouczek poszedł raz — także wtedy, gdy ktoś doda drugiego nurka. Powtórzyć go można z Profilu („Samouczek → Pokaż jeszcze raz"). Na telefonie w przeglądarce pierwszeństwo ma bramka instalacyjna (`gateOn()`), więc samouczek poczeka do instalacji.
 
 ### Założenia planu zamiast pól
 
