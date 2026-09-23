@@ -337,7 +337,7 @@ function tankPicker(selected, act){
   // do zestawu i można mieć kilka, więc siedzi w osobnym rzędzie, żeby nikt nie szukał, czemu nic nie zniknęło.
   return tankRow(STD_TANKS, tr('Butla standardowa'), tr('bez dodawania do szafy'), selected, act) +
     `${mine ? `<p class="small muted" style="margin:6px 0 0">${tr('Wybrana jest Twoja butla z szafy — tapnięcie standardowej ją zastąpi.')}</p>` : ''}</div>` +
-    tankRow(STD_STAGES, tr('Butla stage'), tr('dokładana do podstawowej'), selected, act) + '</div>';
+    tankRow(STD_STAGES, tr('Butla stage'), tr('bez dodawania do szafy, dokładana do podstawowej'), selected, act) + '</div>';
 }
 
 // ---------- widoki ----------

@@ -41,7 +41,7 @@ const EN = {
   'komfort od {c} °C · zapas {m} °C':'comfort from {c} °C · margin {m} °C',
   'brak danych':'no data','Dodaj {x} — bez tego nie policzę ołowiu.':'Add {x} — without it there is no ballast to compute.',
   'kamizelkę albo skrzydło':'a BCD or a wing','butlę':'a cylinder',
-  'Butla stage':'Stage cylinder','dokładana do podstawowej':'added to the main one, not instead of it',
+  'Butla stage':'Stage cylinder','bez dodawania do szafy, dokładana do podstawowej':'without adding it to your wardrobe, on top of the main cylinder',
   'Możesz pominąć: na ekranie Oblicz wybierzesz butlę jednym tapnięciem spośród standardowych. Stage dokłada się do podstawowej, nie zamiast niej.':'You can skip this: on the Calculate screen you pick a standard cylinder with one tap. A stage is added to the main cylinder, not instead of it.',
   'Gotowe — ikona jest na ekranie':'Done — the icon is on your screen',
   'Zamknij tę kartę i otwieraj aplikację z ekranu telefonu: startuje jednym tapnięciem, działa bez internetu i nie ginie wśród kart przeglądarki.':'Close this tab and open the app from your home screen: one tap to start, works offline, and never gets lost among browser tabs.',
