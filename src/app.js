@@ -62,12 +62,16 @@ function toggleItem(list, uid){
   if (it.cat === 'wetsuit' || it.cat === 'over') drop(['dry','under']);
   out.push(uid); return out;
 }
-function setIssues(items){
-  const iss = [];
-  if (!items.some(i => i.cat === 'bcd' || i.cat === 'wing')) iss.push(tr('kamizelki lub skrzydła'));
-  if (!items.some(i => i.cat === 'tank')) iss.push(tr('butli'));
-  return iss;
-}
+// Bez butli i bez kamizelki/skrzydła nie ma czego liczyć — to one dźwigają największą część
+// wyporności zestawu. Zamiast pokazywać liczbę, która zaraz się zmieni o kilka kilogramów,
+// mówimy wprost, czego brakuje. Dwie formy, bo raz mówimy „Brak butli", a raz „Dodaj butlę".
+const SET_NEED = [
+  {has: i => i.cat === 'bcd' || i.cat === 'wing', gen: 'kamizelki lub skrzydła', acc: 'kamizelkę albo skrzydło'},
+  {has: i => i.cat === 'tank', gen: 'butli', acc: 'butlę'}
+];
+const setIssues = items => SET_NEED.filter(n => !items.some(n.has));
+const issGen = iss => iss.map(n => tr(n.gen)).join(tr(' i '));
+const issAcc = iss => iss.map(n => tr(n.acc)).join(tr(' i '));
 
 // ---------- ikony i kafelki wyboru (mniej wpisywania, więcej klikania) ----------
 const SVG = (inner, vb) => `<svg viewBox="${vb || '0 0 24 24'}" aria-hidden="true">${inner}</svg>`;
@@ -332,10 +336,11 @@ function tankPicker(selected, act){
 // ---------- widoki ----------
 function leadDetailHtml(pl, items, p){
   const iss = setIssues(items), site = siteOf(pl.siteId);
+  if (iss.length) return `<section class="card" id="lead-detail"><h2>${tr('Balast')}</h2>
+    <p style="margin:10px 0 0">${tr('Najpierw dodaj {x} do zestawu. To one ważą najwięcej w bilansie wyporności, więc liczba bez nich byłaby zgadywaniem.', {x: issAcc(iss)})}</p></section>`;
   return `<section class="card" id="lead-detail"><h2>${tr('Balast')} <small>${tr('zakres 80%: {a}–{b} kg', {a: fmt(Math.max(0, p.lo)), b: fmt(p.hi)})}</small></h2>
     <div class="small muted">${esc(siteName(site))} · ${L.n ? tr('nauka z {n} nurk. w dzienniku', {n: L.n}) : tr('bez nauki, tylko fizyka')} · ${tr('doświadczenie: {n} nurk. ({l})', {n: L.total, l: tr(L.exp.label)})}</div>
     ${scaleHtml(p)}
-    ${iss.length ? `<div class="banner" style="margin-top:28px">${tr('Zestaw nie ma {x} — wynik jest niepełny.', {x: iss.join(tr(' ani '))})}</div>` : ''}
     <div class="note">${esc(distribution(p, items))} ${tr('Przy pierwszym nurkowaniu w tej konfiguracji zrób kontrolę na 5 m z rezerwą i pustą kamizelką.')}</div>
   </section>
 
@@ -355,7 +360,9 @@ function thermalCardHtml(pl, items){
       ${adv.list.map(r => { const on = sameSet(r.c, curExpo); return `<div class="opt${on ? ' best' : ''}">
         <div class="items">${r.c.map(x => esc(nm(x))).join(' + ')}</div>
         ${on ? `<span class="pill info" style="align-self:start">${tr('Wybrany')}</span>` : `<button class="sm" data-act="use-combo" data-uids="${esc(r.c.map(x => x.uid).join(','))}">${tr('Użyj')}</button>`}
-        <div class="meta">${tr('komfort od {c} °C · zapas {m} °C · ołów {l} kg', {c: fmt(r.th.comfort - delta), m: sgn(r.m), l: fmt(r.lead)})}</div>
+        <div class="meta">${setIssues(items).length
+          ? tr('komfort od {c} °C · zapas {m} °C', {c: fmt(r.th.comfort - delta), m: sgn(r.m)})
+          : tr('komfort od {c} °C · zapas {m} °C · ołów {l} kg', {c: fmt(r.th.comfort - delta), m: sgn(r.m), l: fmt(r.lead)})}</div>
       </div>`; }).join('') || `<p class="muted small">${tr('Dodaj piankę lub suchy skafander do szafy.')}</p>`}
       ${!adv.anyOk && adv.list.length ? `<p class="small muted">${tr('Brakuje cieplejszej warstwy: grubszej pianki, ocieplacza z kapturem albo suchego skafandra.')}</p>` : ''}
     </div>
@@ -716,12 +723,13 @@ function summaryHtml(){
   const shown = items.filter(i => order.includes(i.cat)).sort((a, b) => order.indexOf(a.cat) - order.indexOf(b.cat));
   return `<div class="sb" role="status" aria-live="polite">
     <div class="sb-lead"><div class="sb-head"><span class="label">${tr('Ołów')}</span>
-        <button class="sb-q" data-act="explain" aria-expanded="${!!ui.explain}" aria-controls="lead-detail" title="${tr('Wyjaśnij')}" aria-label="${tr('Wyjaśnij')}">${ICON.ask}</button></div>
-      <div class="sb-big">${fmt(p.rec)}<small>kg</small></div><div class="range">${fmt(Math.max(0, p.lo))}–${fmt(p.hi)}</div></div>
+        ${iss.length ? '' : `<button class="sb-q" data-act="explain" aria-expanded="${!!ui.explain}" aria-controls="lead-detail" title="${tr('Wyjaśnij')}" aria-label="${tr('Wyjaśnij')}">${ICON.ask}</button>`}</div>
+      ${iss.length ? `<div class="sb-big none">—</div><div class="range">${tr('brak danych')}</div>`
+        : `<div class="sb-big">${fmt(p.rec)}<small>kg</small></div><div class="range">${fmt(Math.max(0, p.lo))}–${fmt(p.hi)}</div>`}</div>
     <div class="sb-set"><div class="label">${tr('Zestaw')}</div>
       <div class="sb-items">${shown.map(i => esc(short(i))).join(' · ') || tr('Nic nie wybrano')}</div>
       <div class="sb-therm"><span>${tr('woda')} <b class="mono">${fmt(tBreak(pl).t)}°</b> · ${tr('komfort od')} <b class="mono">${fmt(th.comfort - delta)}°</b></span>${thermalVerdict(tef - th.comfort)}</div>
-      ${iss.length ? `<div class="sb-warn">${tr('Brak')} ${iss.join(tr(' i '))}</div>` : ''}</div></div>`;
+      ${iss.length ? `<div class="sb-warn">${tr('Dodaj {x} — bez tego nie policzę ołowiu.', {x: issAcc(iss)})}</div>` : ''}</div></div>`;
 }
 function render(){
   const ae = document.activeElement, fid = ae && ae.id && view.contains(ae) ? ae.id : null;
@@ -918,7 +926,7 @@ window.addEventListener('resize', kbCheck);
 const view = document.getElementById('view');
 function draftFromPlan(){
   const p = predictLead(resolveItems(P().plan.items, P()), dst(), planCtx(P().plan), L);
-  return Object.assign(JSON.parse(JSON.stringify(P().plan)), {id: newId('d'), lead: p.rec, leadFb: null, leadAdj: 1, thermal: null, note: '', date: today()});                    // plan trzyma już tylko miesiąc; dzień poprawisz w formularzu
+  return Object.assign(JSON.parse(JSON.stringify(P().plan)), {id: newId('d'), lead: setIssues(resolveItems(P().plan.items, P())).length ? '' : p.rec, leadFb: null, leadAdj: 1, thermal: null, note: '', date: today()});                    // plan trzyma już tylko miesiąc; dzień poprawisz w formularzu
 }
 function setLang(l){ LANG = l; S.lang = l; save(); render(); }
 $('#lang').addEventListener('click', () => setLang(LANG === 'pl' ? 'en' : 'pl'));

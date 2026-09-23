@@ -32,6 +32,7 @@ Brak zależności npm. Wymagany Node ≥ 20.
 - **Samouczek:** `TOUR` celuje selektorami w prawdziwe elementy (`#summary .sb`, `#plan-card`, `#thermal-card`, `#set-card`, `[data-act="log-from-plan"]`, `nav.tabs`) — zmieniasz te karty, popraw kroki. `#tour` leży poza `#view` i ma własny nasłuch kliknięć; `S.tourDone` pilnuje, żeby poszedł raz.
 - **Prawa autorskie:** licencja jest zastrzeżona (`LICENSE`). Nagłówki w `src/*.js`, baner wstawiany przez `build.mjs` do `dist/index.html` i `dist/sw.js` oraz `public/robots.txt` mają zostać — to ślad autorstwa, nie ozdoba.
 - **Model:** zmiana wzoru lub stałej → test z konkretną liczbą w `tests/model.test.js` + opis w `docs/SPEC.md` (sekcje 5–6). Punkt kontrolny balastu to zawsze 5 m, rezerwa, pusta kamizelka.
+- **Ołów tylko z kompletnym zestawem:** bez butli i bez kamizelki/skrzydła (`setIssues()`) nie pokazujemy liczby nigdzie — ani w pasku, ani w karcie Balast, ani przy propozycjach doradcy, ani jako podpowiedź w dzienniku. Zamiast tego komunikat, czego dodać.
 - **Bezpieczeństwo nurka:** zostaw komunikat o kontroli pływalności na 5 m; nie przedstawiaj szacunków jako pewnych.
 - **Klawiatura:** pole tekstowe na niskim ekranie włącza `body.kb` (chowa nawigację i pasek, przewija pole na górę). Nowe pola tekstowe testuj przy wysokości ~420 px.
 - **UI:** format daty `rrrr-mm-dd`; przecinek dziesiętny w PL; ołów w górę do 0,5 kg; układ działa na 390 px bez poziomego przewijania, w jasnym i ciemnym motywie; kolory tylko z tokenów CSS.
