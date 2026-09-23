@@ -757,8 +757,10 @@ function render(){
   let sel = null; try { sel = fid && ae.selectionStart != null ? [ae.selectionStart, ae.selectionEnd] : null; } catch(_){}
   document.documentElement.lang = LANG;
   document.querySelectorAll('[data-t]').forEach(e => e.textContent = tr(e.dataset.t));
-  $('#lang').textContent = LANG === 'pl' ? 'EN' : 'PL';
+  // przycisk pokazuje flagę języka, na który przełącza — nazwa dla czytnika ekranu mówi to samo słowami
+  $('#lang').innerHTML = LANG === 'pl' ? FLAG.en : FLAG.pl;
   $('#lang').setAttribute('aria-label', LANG === 'pl' ? 'Switch to English' : 'Przełącz na polski');
+  $('#lang').setAttribute('title', LANG === 'pl' ? 'English' : 'Polski');
   const gate = gateOn(), wiz = !gate && wizardOn();
   $('#summary').innerHTML = !gate && !wiz && tab === 'calc' ? summaryHtml() : '';
   document.querySelector('nav.tabs').hidden = gate || wiz;

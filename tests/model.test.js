@@ -226,7 +226,10 @@ test('najbliższy akwen z przycisku: liczy się dystans, nie zasięg rejonu', ()
   assert.equal(A.matchSite({lat: 52.2297, lon: 21.0122}, sites), null, 'reguła rejonowa nie ma z Warszawy żadnego trafienia — bo nikt tam nie nurkuje');
   assert.equal(near(52.22, 18.25), 'honoratka', 'spod Konina najbliżej Honoratka');
   assert.equal(near(54.52, 18.53), 'baltic', 'z Gdyni najbliżej Bałtyk');
-  assert.equal(near(50.06, 19.94), 'koparki', 'z Krakowa najbliżej kamieniołom w Jaworznie');
+  assert.equal(near(50.06, 19.94), 'zakrzowek', 'z Krakowa najbliżej Zakrzówek — leży w samym mieście');
+  assert.equal(near(50.20, 19.28), 'koparki', 'z Jaworzna najbliżej Koparki');
+  assert.equal(near(50.57, 21.68), 'tarnobrzeskie', 'z Tarnobrzega najbliżej Jezioro Tarnobrzeskie');
+  assert.equal(near(53.75, 21.30), 'pilakno', 'spod Mrągowa najbliżej Piłakno');
   assert.equal(near(35.68, 139.69), null, 'z Tokio żaden akwen nie jest blisko');
   assert.equal(A.nearestSite(null, sites), null);
 });

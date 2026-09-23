@@ -221,7 +221,7 @@ const LBL = {
       cover:{full:'Full', longjohn:'Long john', shorty:'Shorty', overhood:'Hooded overlayer', vest:'Vest', hood:'Hood', gloves:'Gloves', boots:'Boots'},
       water:{'1.029':'Red Sea · 40‰','1.028':'Mediterranean · 38‰','1.025':'Ocean · 35‰','1.005':'Baltic · 7‰','1':'Fresh water'}}
 };
-const SITE_EN = {marsaalam:'Marsa Alam', dahab:'Dahab', redsea:'Red Sea (other spots)', malta:'Malta', gozo:'Gozo, Comino', croatia:'Croatia (Adriatic)', cyprus:'Cyprus', baltic:'Baltic Sea', piechcin:'Piechcin (quarry)', deepspot:'Deepspot (pool)'};
+const SITE_EN = {marsaalam:'Marsa Alam', dahab:'Dahab', redsea:'Red Sea (other spots)', malta:'Malta', gozo:'Gozo, Comino', croatia:'Croatia (Adriatic)', cyprus:'Cyprus', baltic:'Baltic Sea', piechcin:'Piechcin (quarry)', zakrzowek:'Zakrzówek (Kraków quarry)', tarnobrzeskie:'Tarnobrzeg Lake', pilakno:'Piłakno Lake (Masuria)', deepspot:'Deepspot (pool)'};
 // fragmenty nazw katalogowych i źródeł
 const FRAG_EN = [
   ['(stal)','(steel)'],['(aluminium)','(aluminium)'],['(stage)','(stage)'],
