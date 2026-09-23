@@ -105,12 +105,12 @@ function tiles(act, opts, on, cls){
     `<button type="button" class="pick${o.cls ? ' ' + o.cls : ''}" data-act="${act}" data-v="${esc(o.v)}" aria-pressed="${on(o)}">${o.icon || ''}<span>${esc(o.label)}</span>${o.sub ? `<small>${esc(o.sub)}</small>` : ''}</button>`).join('')}</div>`;
 }
 const fieldset = (lab, body, hint) => `<div class="fieldset"><span class="label">${lab}</span>${body}${hint ? `<p class="small muted" style="margin:6px 0 0">${hint}</p>` : ''}</div>`;
-const SLIDE_RANGE = {height:[130, 210, 1, 'cm'], weight:[35, 180, 0.5, 'kg']};
+const SLIDE_RANGE = {height:[130, 210, 2.5, 'cm'], weight:[35, 180, 2.5, 'kg']};
 function slider(k, lab){
   const [min, max, step, unit] = SLIDE_RANGE[k], val = P().profile[k];
   return `<div class="fieldset"><label class="label" for="num-${k}">${lab}</label><div class="slider">
     <input type="range" id="pr-${k}" min="${min}" max="${max}" step="${step}" value="${esc(val)}" data-act="slide" data-k="${k}" aria-label="${lab}">
-    <span class="val"><input id="num-${k}" type="number" inputmode="decimal" step="${step}" min="${min}" max="${max}" value="${esc(val)}" data-act="typed" data-k="${k}"><small>${unit}</small></span>
+    <span class="val"><input id="num-${k}" type="number" inputmode="decimal" step="any" min="${min}" max="${max}" value="${esc(val)}" data-act="typed" data-k="${k}"><small>${unit}</small></span>
   </div></div>`;
 }
 // suwak i pole trzymają tę samą wartość; drugie pole tylko odświeżamy, żeby nie przerywać wpisywania
