@@ -1,3 +1,6 @@
+// Balast i Ocieplenie — fizyka balastu, komfort cieplny i nauka z ocen.
+// Copyright (c) 2026 Maciej Korzeniowski. Wszelkie prawa zastrzeżone / All rights reserved.
+// Kopiowanie i utwory zależne wymagają pisemnej zgody autora — zobacz LICENSE.
 // ===== Model obliczeniowy =====
 const RHO_PB = 11.34, RHO_NEO = 0.38, AIR = 0.00123; // kg/l
 const COV = {full:0.90, longjohn:0.65, shorty:0.55, overhood:0.60, vest:0.40, hood:0.06, gloves:0.025, boots:0.035};

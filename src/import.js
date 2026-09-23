@@ -1,3 +1,6 @@
+// Balast i Ocieplenie — wczytywanie nurkowania z komputera i dopasowanie akwenu.
+// Copyright (c) 2026 Maciej Korzeniowski. Wszelkie prawa zastrzeżone / All rights reserved.
+// Kopiowanie i utwory zależne wymagają pisemnej zgody autora — zobacz LICENSE.
 // ===== Import nurkowania z komputera =====
 // Na razie jeden format: JSON z aplikacji Suunto (Ocean, Nautic, Nautic S — jeden plik = jedno nurkowanie).
 // Czysta funkcja, bez DOM: dostaje tekst pliku, oddaje dane do formularza albo opis błędu.

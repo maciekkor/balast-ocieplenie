@@ -9,10 +9,25 @@ const [head, rest] = shell.split('</style>');
 const js = ['data.js', 'model.js', 'import.js', 'seed.js', 'i18n.js', 'app.js'].map(f => r('./src/' + f)).join('\n');
 const body = rest.replace(/<script>[\s\S]*<\/script>\s*$/, '<script>\n' + js + '\n</script>');
 
+// Nagłówek z prawami autorskimi jedzie w każdym zbudowanym pliku: zbudowaną stronę
+// dostaje każda przeglądarka, więc warunki muszą jechać razem z nią.
+const YEAR = new Date().getFullYear();
+const BANNER = `Balast i Ocieplenie — kalkulator balastu i ocieplenia dla nurków.
+  Copyright (c) ${YEAR} Maciej Korzeniowski. Wszelkie prawa zastrzeżone / All rights reserved.
+  Kopiowanie, tworzenie utworów zależnych i wykorzystanie katalogu sprzętu wymagają pisemnej zgody autora.
+  Copying, derivative works and reuse of the equipment catalogue require the author's written permission.
+  Warunki / terms: https://github.com/maciekkor/balast-ocieplenie/blob/main/LICENSE`;
+
 const html = `<!doctype html>
 <html lang="pl">
+<!--
+  ${BANNER}
+-->
 <head>
 <meta charset="utf-8">
+<meta name="copyright" content="© ${YEAR} Maciej Korzeniowski">
+<meta name="author" content="Maciej Korzeniowski">
+<meta name="robots" content="noai, noimageai">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="description" content="Kalkulator balastu i ocieplenia dla nurków. Dane zostają w telefonie.">
 <link rel="manifest" href="manifest.webmanifest">
@@ -40,5 +55,5 @@ rmSync(new URL('./dist', import.meta.url), {recursive: true, force: true});
 mkdirSync(new URL('./dist', import.meta.url));
 cpSync(new URL('./public', import.meta.url), new URL('./dist', import.meta.url), {recursive: true});
 writeFileSync(new URL('./dist/index.html', import.meta.url), html);
-writeFileSync(new URL('./dist/sw.js', import.meta.url), r('./src/sw.template.js').replace('__VER__', ver));
+writeFileSync(new URL('./dist/sw.js', import.meta.url), '/*\n  ' + BANNER + '\n*/\n' + r('./src/sw.template.js').replace('__VER__', ver));
 console.log(`dist/ gotowe — wersja ${ver}, index.html ${(html.length / 1024).toFixed(0)} KB`);

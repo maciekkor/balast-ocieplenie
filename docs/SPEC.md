@@ -252,7 +252,19 @@ Tokeny w `:root` (jasny) i nadpisanie dla ciemnego (`prefers-color-scheme` oraz 
 - Przy zmianie modelu dopisz test z konkretną liczbą (np. komfort pianki, wynik balastu dla znanego przypadku).
 - Ręcznie w przeglądarce (szerokość ~390 px): pasek przypięty, brak poziomego przewijania, oba języki, tryb ciemny, działanie offline po instalacji.
 
-## 10. Backlog
+## 10. Prawa i ślady autorstwa
+
+Licencja jest zastrzeżona (`LICENSE`, dwujęzycznie): kod wolno czytać, nie wolno kopiować ani przepisywać bez pisemnej zgody, a katalog sprzętu jest dodatkowo bazą danych chronioną prawem sui generis. Ślad autorstwa jedzie w trzech miejscach, bo każde trafia do kogoś innego:
+
+| Gdzie | Co niesie | Dla kogo |
+| --- | --- | --- |
+| nagłówki w `src/*.js` | dwie linijki o prawach | ten, kto czyta repozytorium |
+| baner w `dist/index.html` i `dist/sw.js` (wstawia `build.mjs`) | pełne warunki + link do LICENSE | ten, kto otworzy „pokaż źródło" na gotowej stronie |
+| `public/robots.txt` | brak zgody na trenowanie modeli | roboty, które to honorują |
+
+**Czego to nie robi.** `robots.txt`, `<meta name="robots" content="noai">` i baner nie są zabezpieczeniem technicznym — aplikacja jest statyczną stroną, więc cały kod i tak trafia do przeglądarki każdego użytkownika. To sygnały i dowody: robią z ewentualnej kopii jednoznaczne naruszenie zamiast szarej strefy, co wystarcza do zgłoszenia do hostingu czy sklepu z aplikacjami. Instrukcje wpisane „dla agentów AI" nie wiążą cudzego narzędzia — wygrywa polecenie jego operatora — więc nie udajemy, że wiążą.
+
+## 11. Backlog
 
 Rozpoznanie na przyszłość — zbieranie danych do globalnego modelu i monetyzacja — leży w **`docs/POMYSLY.md`**. Nic z tego nie jest zdecydowane; obie drogi ruszają zasadę „dane tylko lokalnie", więc wymagają świadomej decyzji, a nie cichego wdrożenia.
 

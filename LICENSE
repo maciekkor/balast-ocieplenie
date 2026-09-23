@@ -1,0 +1,99 @@
+Copyright © 2026 Maciej Korzeniowski. Wszelkie prawa zastrzeżone.
+Copyright © 2026 Maciej Korzeniowski. All rights reserved.
+
+================================================================================
+POLSKI
+================================================================================
+
+Niniejsze oprogramowanie — „Balast i Ocieplenie" — wraz z kodem źródłowym,
+katalogiem sprzętu nurkowego, danymi akwenów, tekstami interfejsu, dokumentacją
+i szatą graficzną, jest utworem chronionym prawem autorskim. Autorem i
+podmiotem praw jest Maciej Korzeniowski.
+
+CO JEST DOZWOLONE
+
+  1. Korzystanie z aplikacji pod adresem, pod którym autor ją opublikował.
+  2. Czytanie kodu źródłowego w celach poznawczych i przeglądanie go na
+     GitHubie, w zakresie, na jaki pozwala regulamin tego serwisu.
+  3. Zgłaszanie błędów i propozycji zmian.
+
+CO WYMAGA PISEMNEJ ZGODY AUTORA
+
+  1. Kopiowanie, zwielokrotnianie i rozpowszechnianie kodu w całości lub
+     w części, w tym wersji zbudowanej (dist/), w innym miejscu niż serwis,
+     w którym autor go opublikował.
+  2. Tworzenie utworów zależnych: przeróbek, tłumaczeń, portów na inne
+     platformy oraz aplikacji powstałych przez przepisanie tego kodu — także
+     wtedy, gdy przepisania dokonuje narzędzie działające na tym kodzie,
+     na zbudowanej stronie albo na jej zrzutach.
+  3. Wykorzystanie katalogu sprzętu i danych akwenów w innym oprogramowaniu,
+     usłudze lub zbiorze danych.
+  4. Wykorzystanie komercyjne w jakiejkolwiek formie.
+
+Zgodę uzyskuje się, pisząc do autora. Brak odpowiedzi nie oznacza zgody.
+
+KATALOG SPRZĘTU JAKO BAZA DANYCH
+
+Katalog sprzętu nurkowego i dane akwenów są bazą danych w rozumieniu ustawy
+z 27 lipca 2001 r. o ochronie baz danych oraz dyrektywy 96/9/WE. Ich zebranie,
+weryfikacja u producentów i opisanie wiarygodności każdej wartości wymagały
+istotnego nakładu pracy, a autorowi przysługuje wobec nich prawo sui generis
+niezależne od praw autorskich do kodu. Pobieranie i wtórne wykorzystanie
+całości lub istotnej części tych danych jest zabronione.
+
+BRAK GWARANCJI I ODPOWIEDZIALNOŚCI
+
+Oprogramowanie udostępniane jest „tak jak jest", bez jakiejkolwiek gwarancji.
+Wyniki obliczeń są szacunkami i punktem startowym, a nie zaleceniem: przy każdej
+nowej konfiguracji sprzętu nurek ma obowiązek wykonać kontrolę pływalności
+na 5 metrach. Autor nie ponosi odpowiedzialności za skutki korzystania
+z aplikacji ani za decyzje podjęte na podstawie jej wskazań.
+
+================================================================================
+ENGLISH
+================================================================================
+
+This software — "Balast i Ocieplenie" (Ballast & Thermal) — together with its
+source code, dive equipment catalogue, dive site data, interface texts,
+documentation and visual design, is a copyrighted work. The author and rights
+holder is Maciej Korzeniowski.
+
+PERMITTED
+
+  1. Using the application at the address where the author published it.
+  2. Reading the source code for learning purposes and browsing it on GitHub,
+     to the extent that platform's terms allow.
+  3. Reporting bugs and suggesting changes.
+
+REQUIRES THE AUTHOR'S WRITTEN PERMISSION
+
+  1. Copying, reproducing or distributing the code in whole or in part,
+     including the built version (dist/), anywhere other than the service
+     where the author published it.
+  2. Creating derivative works: adaptations, translations, ports to other
+     platforms, and applications produced by rewriting this code — including
+     rewriting performed by a tool operating on this code, on the built page,
+     or on screenshots of it.
+  3. Using the equipment catalogue or dive site data in any other software,
+     service or dataset.
+  4. Any commercial use.
+
+Permission is obtained by writing to the author. Silence is not consent.
+
+THE CATALOGUE AS A DATABASE
+
+The dive equipment catalogue and dive site data constitute a database within
+the meaning of Directive 96/9/EC and the Polish Database Protection Act of
+27 July 2001. Collecting them, verifying them against manufacturers' sources
+and documenting the reliability of each value required substantial investment,
+and the author holds a sui generis right in them, separate from copyright in
+the code. Extraction and re-utilisation of the whole or a substantial part of
+this data is prohibited.
+
+NO WARRANTY, NO LIABILITY
+
+The software is provided "as is", without warranty of any kind. Its results
+are estimates and a starting point, not a recommendation: with every new gear
+configuration the diver must perform a buoyancy check at 5 metres. The author
+accepts no liability for the consequences of using the application or for
+decisions made on the basis of its output.

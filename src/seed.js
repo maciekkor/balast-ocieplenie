@@ -1,3 +1,6 @@
+// Balast i Ocieplenie — dane startowe i migracje zapisanego stanu.
+// Copyright (c) 2026 Maciej Korzeniowski. Wszelkie prawa zastrzeżone / All rights reserved.
+// Kopiowanie i utwory zależne wymagają pisemnej zgody autora — zobacz LICENSE.
 // ===== Dane startowe wersji publicznej: przykładowy nurek, bez nurkowań =====
 function fromCat(id, extra){
   const c = CATALOG.find(x => x.id === id);

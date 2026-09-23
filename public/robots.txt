@@ -1,0 +1,22 @@
+# Balast i Ocieplenie — © 2026 Maciej Korzeniowski, wszelkie prawa zastrzeżone.
+# Warunki: https://github.com/maciekkor/balast-ocieplenie/blob/main/LICENSE
+#
+# Poniższe reguły są prośbą, nie zabezpieczeniem: honoruje je tylko ten,
+# kto chce. Zapis istnieje po to, żeby brak zgody był wyrażony wprost.
+User-agent: *
+Allow: /
+
+# Bez zgody autora nie wolno używać tej strony do trenowania modeli
+# ani do wytwarzania utworów zależnych.
+User-agent: GPTBot
+Disallow: /
+User-agent: CCBot
+Disallow: /
+User-agent: Google-Extended
+Disallow: /
+User-agent: Applebot-Extended
+Disallow: /
+User-agent: Bytespider
+Disallow: /
+User-agent: meta-externalagent
+Disallow: /
