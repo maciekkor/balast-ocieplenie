@@ -74,6 +74,40 @@ test('nauka: nurkowanie „za lekko” podnosi prognozę', () => {
   assert.ok(after > before + 0.5, `${before} -> ${after}`);
 });
 
+test('zasolenie akwenu: gęstość wody zmienia wyporność każdej kategorii', () => {
+  const pr = A.diverState(A.seedState()).profile;
+  const at = (id, rho) => A.itemBuoy(A.fromCat(id), pr, {rho, depth:5, reserve:50, year:2026});
+  // 1.025 to punkt kalibracji: w morzu pozycja ma dokładnie tyle, ile mówi katalog
+  assert.ok(Math.abs(at('santi-elite', 1.025) - 0.3) < 1e-9, 'suchy skafander w morzu = wartość z katalogu');
+  assert.ok(Math.abs(at('mares-prestige', 1.025) - 1.0) < 1e-9, 'kamizelka w morzu = wartość z katalogu');
+  assert.ok(Math.abs(at('xdeep-zeos28', 1.025) + 0.2) < 1e-9, 'skrzydło w morzu = wartość z płyty');
+  assert.ok(Math.abs(at('misc-reg', 1.025) + 0.9) < 1e-9, 'automat w morzu = wartość z katalogu');
+  // w wodzie słodkiej ta sama rzecz wypiera tyle samo litrów, ale mniej kilogramów
+  for (const id of ['santi-elite','santi-bz400x','mares-prestige','xdeep-zeos28','fin-mares-aq-plus','misc-reg','sp-everflex-75','st-12-232'])
+    assert.ok(at(id, 1.000) < at(id, 1.029) - 0.02, id + ': wyporność nie reaguje na zasolenie');
+  // konkretne liczby: suchy skafander 0,188 kg w słodkiej wobec 0,300 w morzu (V ≈ 4,5 l × 0,025)
+  assert.ok(Math.abs(at('santi-elite', 1.000) - 0.188) < 0.005, 'suchy skafander w słodkiej wodzie: ' + at('santi-elite', 1.000));
+  assert.ok(Math.abs(at('mares-prestige', 1.000) - 0.888) < 0.005, 'kamizelka w słodkiej wodzie: ' + at('mares-prestige', 1.000));
+});
+
+test('zasolenie akwenu: w Bałtyku mniej ołowiu niż w Morzu Czerwonym', () => {
+  const pr = A.diverState(A.seedState()).profile;
+  const lead = rho => {
+    const items = ['santi-elite','santi-bz400x','xdeep-zeos28','fin-mares-aq-plus','misc-reg','st-12-232'].map(A.fromCat);
+    return A.roundUpHalf(A.toDry(A.physics(items, pr, {rho, depth:5, reserve:50, year:2026}).total, rho));
+  };
+  const fresh = lead(1.000), baltic = lead(1.005), red = lead(1.029);
+  assert.ok(fresh < baltic, `słodka ${fresh} nie jest lżejsza od Bałtyku ${baltic}`);
+  assert.ok(baltic < red, `Bałtyk ${baltic} nie jest lżejszy od Morza Czerwonego ${red}`);
+  // różnica jest duża — kilka kilogramów, nie zaokrąglenie
+  assert.ok(red - fresh >= 2.5, `różnica słodka→Czerwone tylko ${red - fresh} kg`);
+  // gęstości w presetach są ułożone tak, jak w rzeczywistości
+  const rho = id => A.SITE_PRESETS.find(s => s.id === id).rho;
+  assert.ok(rho('deepspot') < rho('baltic'), 'basen musi być słodszy od Bałtyku');
+  assert.ok(rho('baltic') < rho('croatia'), 'Bałtyk musi być słodszy od Adriatyku');
+  assert.ok(rho('croatia') < rho('marsaalam'), 'Adriatyk musi być słodszy od Morza Czerwonego');
+});
+
 test('płetwy i buty z masą: wyporność liczona', () => {
   const pr = A.diverState(A.seedState()).profile;
   assert.ok(A.itemBuoy(A.fromCat('fin-sp-jet'), pr, ctx) < -0.5);

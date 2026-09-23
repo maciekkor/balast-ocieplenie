@@ -42,6 +42,12 @@ function siteName(s){
   return s.name;
 }
 const waterLabel = rho => lbl().water[String(rho)] || tr('gęstość {x}', {x: rho});
+// Woda obok nazwy akwenu: „Bałtyk · Bałtyk · 7‰” wygląda jak błąd, więc gdy etykieta wody
+// zaczyna się od nazwy akwenu, zostaje z niej sama część o zasoleniu.
+function waterNote(site){
+  const w = waterLabel(site.rho), n = siteName(site);
+  return w.startsWith(n) ? w.slice(n.length).replace(/^\s*·\s*/, '') : w;
+}
 const monthOf = date => Math.max(0, Math.min(11, (+String(date).slice(5, 7) || 1) - 1));
 function planCtx(pl){ return {rho: siteOf(pl.siteId).rho, depth: 5, reserve: pl.reserve ?? 50, year: +String(pl.date).slice(0, 4) || new Date().getFullYear()}; }
 function fillTemps(pl){
@@ -351,7 +357,7 @@ function leadDetailHtml(pl, items, p){
   if (iss.length) return `<section class="card" id="lead-detail"><h2>${tr('Balast')}</h2>
     <p style="margin:10px 0 0">${tr('Najpierw dodaj {x} do zestawu. To one ważą najwięcej w bilansie wyporności, więc liczba bez nich byłaby zgadywaniem.', {x: issAcc(iss)})}</p></section>`;
   return `<section class="card" id="lead-detail"><h2>${tr('Balast')} <small>${tr('zakres 80%: {a}–{b} kg', {a: fmt(Math.max(0, p.lo)), b: fmt(p.hi)})}</small></h2>
-    <div class="small muted">${esc(siteName(site))} · ${L.n ? tr('nauka z {n} nurk. w dzienniku', {n: L.n}) : tr('bez nauki, tylko fizyka')} · ${tr('doświadczenie: {n} nurk. ({l})', {n: L.total, l: tr(L.exp.label)})}</div>
+    <div class="small muted">${esc(siteName(site))} · ${esc(waterNote(site))} · ${L.n ? tr('nauka z {n} nurk. w dzienniku', {n: L.n}) : tr('bez nauki, tylko fizyka')} · ${tr('doświadczenie: {n} nurk. ({l})', {n: L.total, l: tr(L.exp.label)})}</div>
     ${scaleHtml(p)}
     <div class="note">${esc(distribution(p, items))} ${tr('Przy pierwszym nurkowaniu w tej konfiguracji zrób kontrolę na 5 m z rezerwą i pustą kamizelką.')}</div>
   </section>

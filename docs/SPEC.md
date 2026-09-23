@@ -142,12 +142,16 @@ L_suchy = L_woda / (1 − ρ_w / 11,34)     → zaokrąglenie w górę do 0,5 kg
 
 - **Ciało:** % tłuszczu z BMI (Deurenberg: `1,2·BMI + 0,23·wiek − 10,8·[M] − 5,4 + k_budowa`, k: szczupła −3, wysportowana −6, umięśniona −10, przeciętna 0, pełniejsza +3, otyła +5) lub podany; gęstość (Siri); `B = m(ρ_w/ρ_ciała − 1) + V_płuc·ρ_w`, `V_płuc = (M 3,0 / K 2,5 l)·wzrost/175`.
 - **Neopren:** `V = BSA(Du Bois) × pokrycie × grubość`, `B = V(ρ_w − 0,38)(1 − c(d))·k_wiek`, `c(d) = 0,6(1 − 1/(1 + d/10))`, `k_wiek`: ≤0 lat 1,0; 1–3 lata 0,9; >3 lata 0,8. Buty z masą: dodatkowo podeszwa `−0,00008 × masa[g]`.
-- **Suchy:** skorupa `b` lub neopren 4 mm (kompresja ×0,5); ocieplacz `g × BSA/1,9`.
+- **Suchy:** skorupa `b` lub neopren 4 mm (kompresja ×0,5); ocieplacz `g × BSA/1,9 × ρ_w/1,025` (to gaz: ta sama objętość, inna gęstość wody).
 - **Butla:** `be + vd(ρ_w − 1,025) − vol × rezerwa × 0,00123`.
 - **Skrzydło:** `0,3 + płyta` (stal −1,9, alu −0,5, miękka +0,5) lub `b`.
+- **Zasolenie (ρ_w z akwenu):** wyporności wpisane w katalogu w kilogramach obowiązują w **morzu 1,025** — to punkt kalibracji. W innej wodzie ta sama rzecz wypiera tyle samo litrów, ale inaczej przelicza się to na kilogramy, więc `B(ρ_w) = b + V(ρ_w − 1,025)` dla kategorii suchy, kamizelka, skrzydło, płetwy i drobne. Objętość `V`: `p.vd`, gdy podana (butle); `(masa[g]/1000 + b)/1,025`, gdy znamy masę (płetwy); w pozostałych typowa — suchy 4,5 l (zgnieciony neopren 8,5), kamizelka 4,5, skrzydło 4,0, płetwy 1,5, drobne 1,6. Ciało, neopren i butle liczą ρ_w wprost we własnych wzorach.
+  Rząd wielkości: dla suchego zestawu (E.Lite+, BZ400X, Zeos 28, Quattro+, automat, stal 12 l) 3,5 kg w wodzie słodkiej, 4,0 w Bałtyku i 7,0 w Morzu Czerwonym. Poprawka za zasolenie samych tych pięciu kategorii to około 0,5 kg między słodką a morzem — dokładnie jeden krok zaokrąglenia, więc pomijanie jej było widoczne.
 - **Doświadczenie** (`divesBefore` + nurkowania w dzienniku): <25 → μ +1,0 kg, σ 2,5; 25–99 → +0,5, σ 2,0; 100–299 → 0, σ 1,6; ≥300 → −0,5, σ 1,4. Użytkownik nie podaje liczby nurkowań, tylko klika poziom; kafelek zapisuje `divesBefore = max(0, dolna granica poziomu − liczba nurkowań w dzienniku)`, więc **poziom podnosi się sam**, gdy dziennik urośnie ponad próg.
 - **Uczenie:** regresja grzbietowa. Cel `y = ołów_idealny_w_wodzie − fizyka − μ`, gdzie ołów idealny = użyty ± `leadAdj` wg oceny. Cechy: wyraz wolny θ0 (prior N(0, σ_dośw²)) + wskaźnik każdej sztuki sprzętu (prior σ wg kategorii: pianka/ocieplacz 0,8, suchy 1,0, ocieplacz do suchego 1,2, kamizelka/skrzydło 0,5, butla 0,4, płetwy 0,3, kaptur 0,3, rękawice/buty 0,2). Szum σ = 0,7 kg. Waga nurkowania `0,5^(ranga/30)` (najnowsze najważniejsze). Przedział 80%: `±1,28·√(xᵀΣx + 0,25)`.
 - Nauka pomija nurkowania bez `leadFb` lub bez `lead`, oraz sprzed `learnSince`.
+
+Gęstości akwenów (`rho`, `WATER_TYPES`): Morze Czerwone 1,029 (≈40‰), Morze Śródziemne i Adriatyk 1,028 (≈38‰), ocean 1,025 (35‰), Bałtyk 1,005 (≈7‰), woda słodka 1,000. Wartość jest polem akwenu i zmienia się ją w Akwenach; karta „Balast" pokazuje ją obok nazwy akwenu, żeby było widać, skąd bierze się różnica między jeziorem a morzem.
 
 ## 6. Model ocieplenia
 
