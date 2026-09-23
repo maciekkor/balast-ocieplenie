@@ -185,10 +185,13 @@ function hlName(name, q){
   for (let k = 0; k < nn.length; k++){ if ((k === 0 || /[\s(),\-]/.test(nn[k - 1])) && nn.startsWith(n, k)){ i = k; break; } }
   return i < 0 ? esc(name) : esc(name.slice(0, i)) + '<b>' + esc(name.slice(i, i + n.length)) + '</b>' + esc(name.slice(i + n.length));
 }
-function siteCombo(pl, pre){
+function siteCombo(pl, pre, geo){
   const open = ui.siteQ && ui.siteQ.pre === pre, q = open ? ui.siteQ.q : '';
   const list = open ? siteMatches(q) : [];
-  return `<div class="f wide combo"><label for="${pre}site">${tr('Akwen')}</label>
+  // „Najbliższy akwen" stoi przy etykiecie, a nie pod kartą: to skrót do wypełnienia tego jednego pola
+  const near = geo && S.geo === 'on'
+    ? `<button type="button" class="sm ghost near" data-act="geo-now">${ICON.geo}${tr('Najbliższy')}</button>` : '';
+  return `<div class="f wide combo"><div class="lab-row"><label for="${pre}site">${tr('Akwen')}</label>${near}</div>
     <input id="${pre}site" type="text" autocomplete="off" spellcheck="false" role="combobox" aria-autocomplete="list" aria-expanded="${open}" aria-controls="${pre}site-list"
       data-act="siteq" data-pre="${pre}" placeholder="${tr('Wpisz pierwsze litery')}" value="${esc(open ? q : siteName(siteOf(pl.siteId)))}">
     ${open ? `<ul class="combo-list" id="${pre}site-list" role="listbox">${list.map((s, i) => `<li role="option" aria-selected="${i === ui.hl}"><button type="button" tabindex="-1" class="${i === ui.hl ? 'hl' : ''}" data-act="site-pick" data-pre="${pre}" data-id="${esc(s.id)}">${hlName(siteName(s), q)}${siteKm(s) != null ? `<small class="km">${tr('{n} km', {n: siteKm(s)})}</small>` : ''}</button></li>`).join('')
@@ -209,7 +212,7 @@ function planFields(pl, pre, full){
   // W planie data służy tylko do podania temperatur z akwenu, więc wystarczy miesiąc — jedno tapnięcie
   // zamiast wpisywania rrrr-mm-dd i walki z kalendarzem. Dziennik dostaje pełną datę, bo tam liczy się dzień.
   return `<div class="grid2">
-    ${siteCombo(pl, pre)}${full ? '' : '</div>' + fieldset(tr('Miesiąc'), tiles('set-month', lbl().months.map((lab, i) => ({v: i, label: lab})), o => +o.v === monthOf(pl.date), 'compact')) + '<div class="grid2">'}
+    ${siteCombo(pl, pre, !full)}${full ? '' : '</div>' + fieldset(tr('Miesiąc'), tiles('set-month', lbl().months.map((lab, i) => ({v: i, label: lab})), o => +o.v === monthOf(pl.date), 'compact')) + '<div class="grid2">'}
     ${full ? `<div class="f wide"><label for="${pre}date">${tr('Data')}</label><div class="datebox">
       <input id="${pre}date" type="text" inputmode="numeric" maxlength="10" placeholder="${tr('rrrr-mm-dd')}" data-f="date" data-date="1" value="${esc(pl.date)}">
       <button type="button" class="calbtn" data-act="cal" data-pre="${pre}" aria-label="${tr('Kalendarz')}"><svg viewBox="0 0 24 24"><rect x="4" y="5" width="16" height="15" rx="2"/><path d="M4 10h16M9 3v4M15 3v4"/></svg></button>
@@ -407,8 +410,7 @@ function viewCalc(){
     ${S.geo == null ? `<div class="opt" style="margin-top:10px;grid-template-columns:1fr"><div class="items">${tr('Ustawiać akwen po Twojej lokalizacji?')}</div>
       <div class="desc">${tr('Telefon zapyta o zgodę. Pozycja zostaje w telefonie — służy tylko do wskazania najbliższego akwenu z listy.')}</div>
       <div class="btnrow" style="margin-top:6px"><button class="sm primary" data-act="geo-on">${ICON.geo}${tr('Tak, najbliższy akwen')}</button>
-        <button class="sm ghost" data-act="geo-off">${tr('Wybiorę sam')}</button></div></div>`
-      : S.geo === 'on' ? `<div class="btnrow" style="margin-top:8px"><button class="sm ghost" data-act="geo-now">${ICON.geo}${tr('Najbliższy akwen')}</button></div>` : ''}
+        <button class="sm ghost" data-act="geo-off">${tr('Wybiorę sam')}</button></div></div>` : ''}
     ${ui.planInfo ? `<p class="small muted" style="margin:10px 0 0">${tr('Temperaturę dna podpowiada akwen dla wybranego miesiąca; wpisz własną, jeśli znasz aktualną.')}
       ${tr('Komfort liczę ostrożnie — jak dla {n}. nurkowania w ciągu dnia i {t} min pod wodą, przy rezerwie {r} bar. Czas, kolejność i temperaturę powierzchni poprawisz przy zapisie w dzienniku.', {n: pl.nDay, t: pl.time, r: pl.reserve})}</p>` : ''}</section>
 
