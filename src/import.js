@@ -77,4 +77,19 @@ function matchSite(gps, sites){
   return best && {id: best.id, km: best.km};
 }
 
-if (typeof module !== 'undefined') module.exports = {parseSuuntoJson, kelvinToC, matchSite, distanceKm};
+// Dwa różne pytania, więc dwie funkcje. matchSite(): „w którym rejonie jestem" — pozycja
+// z komputera pada nad samym akwenem, więc liczy się zasięg rejonu. nearestSite(): „który akwen
+// mam najbliżej" — nurek stoi w domu albo w drodze, więc zasięg nie ma znaczenia, liczy się dystans.
+// Bez tego rozróżnienia Warszawa dostawała Bałtyk (368 km, ale w promieniu 400) zamiast Deepspotu (45 km).
+function nearestSite(gps, sites, maxKm){
+  if (!gps || !Array.isArray(sites)) return null;
+  let best = null;
+  for (const s of sites){
+    if (typeof s.lat !== 'number' || typeof s.lon !== 'number') continue;
+    const km = distanceKm(gps.lat, gps.lon, s.lat, s.lon);
+    if (km <= (maxKm || 500) && (!best || km < best.km)) best = {id: s.id, km: Math.round(km)};
+  }
+  return best;
+}
+
+if (typeof module !== 'undefined') module.exports = {parseSuuntoJson, kelvinToC, matchSite, nearestSite, distanceKm};

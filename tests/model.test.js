@@ -184,6 +184,19 @@ test('import Suunto: bez próbek liczy z nagłówka, śmieci odrzuca', () => {
   assert.equal(A.kelvinToC(273.15), 0);
 });
 
+test('najbliższy akwen z przycisku: liczy się dystans, nie zasięg rejonu', () => {
+  const sites = A.seedSites();
+  const near = (lat, lon) => { const m = A.nearestSite({lat, lon}, sites); return m && m.id; };
+  // zgłoszone z Warszawy: Deepspot 45 km, ale poza swoim promieniem 8 km; Bałtyk 368 km, za to w promieniu 400
+  assert.equal(near(52.2297, 21.0122), 'deepspot', 'z Warszawy najbliżej jest Deepspot, nie Bałtyk');
+  assert.equal(A.matchSite({lat: 52.2297, lon: 21.0122}, sites).id, 'baltic', 'reguła rejonowa dalej mówi „Bałtyk" — i tak ma być przy imporcie');
+  assert.equal(near(52.22, 18.25), 'honoratka', 'spod Konina najbliżej Honoratka');
+  assert.equal(near(54.52, 18.53), 'baltic', 'z Gdyni najbliżej Bałtyk');
+  assert.equal(near(50.06, 19.94), 'koparki', 'z Krakowa najbliżej kamieniołom w Jaworznie');
+  assert.equal(near(35.68, 139.69), null, 'z Tokio żaden akwen nie jest blisko');
+  assert.equal(A.nearestSite(null, sites), null);
+});
+
 test('dopasowanie akwenu do pozycji z komputera', () => {
   const sites = A.seedSites();
   const at = (lat, lon) => { const m = A.matchSite({lat, lon}, sites); return m && m.id; };

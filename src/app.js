@@ -280,7 +280,7 @@ function advisor(pl, curItems){
 function locateSite(silent){
   if (!navigator.geolocation) return silent || toast(tr('Ten telefon nie udostępnia lokalizacji'));
   navigator.geolocation.getCurrentPosition(pos => {
-    const m = matchSite({lat: pos.coords.latitude, lon: pos.coords.longitude}, S.sites);
+    const m = nearestSite({lat: pos.coords.latitude, lon: pos.coords.longitude}, S.sites);
     if (!m) return silent || toast(tr('Żaden akwen z listy nie leży blisko Ciebie'));
     if (P().plan.siteId === m.id) return silent || toast(tr('Akwen już pasuje do Twojej pozycji'));
     P().plan.siteId = m.id; fillTemps(P().plan);
