@@ -83,6 +83,8 @@ function migrate(o){
     p.wardrobe.forEach(w => { if (w.rental == null && /wypożycz/i.test(w.model)) w.rental = true; });
     p.wardrobe.forEach(w => { if (w.catId && /^misc-fins/.test(w.catId)) w.cat = 'fins'; });
   });
+  // motyw: nowe pole, stare kopie go nie mają — brak i wartość spoza listy znaczą „jak w telefonie"
+  if (!['auto', 'light', 'dark'].includes(S.theme)) S.theme = 'auto';
   if (!Array.isArray(S.sites) || !S.sites.length) S.sites = seedSites();
   // współrzędne akwenów z listy bierzemy zawsze z presetu: nie ma ich w edytorze,
   // a zapisane kopie mogą nieść stare lub brakujące wartości (Honoratka była o 12 km obok)

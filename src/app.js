@@ -98,7 +98,10 @@ const ICON = {
   geo: SVG('<circle cx="12" cy="12" r="6.2"/><circle cx="12" cy="12" r="1.6"/><path d="M12 2.2v2.6M12 19.2v2.6M2.2 12h2.6M19.2 12h2.6"/>'),
   own: SVG('<path d="M3.5 10.5 12 3.8l8.5 6.7"/><path d="M6 10v9.5h12V10"/>'),
   rent: SVG('<circle cx="10" cy="19.4" r="1.5"/><circle cx="17" cy="19.4" r="1.5"/><path d="M2.6 4h2.6l2.4 11h10l2.2-8.2H6.2"/>'),
-  share: SVG('<path d="M12 3.2v11"/><path d="M8.4 6.8 12 3.2l3.6 3.6"/><path d="M7 10.5H5.2v9.3h13.6v-9.3H17"/>')
+  share: SVG('<path d="M12 3.2v11"/><path d="M8.4 6.8 12 3.2l3.6 3.6"/><path d="M7 10.5H5.2v9.3h13.6v-9.3H17"/>'),
+  sun: SVG('<circle cx="12" cy="12" r="4.4"/><path d="M12 2.4v2.6M12 19v2.6M4.2 12H1.6M22.4 12h-2.6M6.5 6.5 4.7 4.7M19.3 19.3l-1.8-1.8M17.5 6.5l1.8-1.8M4.7 19.3l1.8-1.8"/>'),
+  moon: SVG('<path d="M20 14.4A8.5 8.5 0 0 1 9.6 4 8.6 8.6 0 1 0 20 14.4z"/>'),
+  autoTheme: SVG('<circle cx="12" cy="12" r="8.6"/><path d="M12 3.4a8.6 8.6 0 0 1 0 17.2z" fill="currentColor" stroke="none"/>')
 };
 const THERM_ICON = {cold: ICON.cold1, cool: ICON.temp, ok: ICON.ok, warm: ICON.warm1};
 const FLAG = {
@@ -134,6 +137,25 @@ const COLD_LEVELS = [{v:-2, label:'Bardzo marznę', icon:ICON.cold1}, {v:-1, lab
   {v:0, label:'Przeciętnie', icon:ICON.temp}, {v:1, label:'Odporny', icon:ICON.warm1}, {v:2, label:'Bardzo odporny', icon:ICON.warm1}];
 const EXP_BANDS = [{v:0, key:'beg', label:'początkujący', sub:'< 25'}, {v:25, key:'mid', label:'średnio zaawansowany', sub:'25–99'}, {v:100, key:'exp', label:'doświadczony', sub:'100–299'}, {v:300, key:'pro', label:'bardzo doświadczony', sub:'300+'}];
 
+// Motyw: 'auto' idzie za ustawieniem telefonu (media query w CSS), 'light'/'dark' wymusza
+// atrybutem data-theme, który arkusz już rozpoznaje. Zapisany w S, bo to ustawienie urządzenia,
+// nie nurka — jak język.
+const THEMES = ['auto', 'light', 'dark'];
+const DARK_MQ = window.matchMedia ? window.matchMedia('(prefers-color-scheme: dark)') : null;
+const themeOf = () => THEMES.includes(S.theme) ? S.theme : 'auto';
+const darkNow = () => themeOf() === 'dark' || (themeOf() === 'auto' && !!(DARK_MQ && DARK_MQ.matches));
+function applyTheme(){
+  const t = themeOf();
+  if (t === 'auto') delete document.documentElement.dataset.theme; else document.documentElement.dataset.theme = t;
+  // pasek stanu telefonu ma iść za motywem — inaczej ciemna aplikacja siedzi pod jasnym paskiem
+  const meta = document.querySelector('meta[name="theme-color"]');
+  if (meta) meta.setAttribute('content', darkNow() ? '#0E2227' : '#E9EFEE');
+}
+if (DARK_MQ && DARK_MQ.addEventListener) DARK_MQ.addEventListener('change', () => { if (themeOf() === 'auto') applyTheme(); });
+const themeTiles = () => fieldset(tr('Motyw'), tiles('theme-pick', [
+  {v:'auto', label: tr('Jak w telefonie'), icon: ICON.autoTheme},
+  {v:'light', label: tr('Jasny'), icon: ICON.sun},
+  {v:'dark', label: tr('Ciemny'), icon: ICON.moon}], o => o.v === themeOf(), 'three'));
 const langTiles = () => fieldset(tr('Język'), tiles('lang-pick', [{v:'pl', label:'Polski', icon:FLAG.pl}, {v:'en', label:'English', icon:FLAG.en}], o => o.v === LANG, 'two'));
 const sexTiles = pr => fieldset(tr('Płeć'), tiles('pick-sex', [{v:'M', label:tr('Mężczyzna'), icon:ICON.male}, {v:'K', label:tr('Kobieta'), icon:ICON.female}], o => o.v === pr.sex, 'two'));
 const ageTiles = pr => fieldset(tr('Wiek'), tiles('pick-age', AGE_BANDS.map(a => ({v:a.v, label:tr(a.label)})), o => { const a = AGE_BANDS.find(x => x.v === o.v); return pr.age >= a.lo && pr.age <= a.hi; }, 'compact'));
@@ -185,10 +207,13 @@ function hlName(name, q){
   for (let k = 0; k < nn.length; k++){ if ((k === 0 || /[\s(),\-]/.test(nn[k - 1])) && nn.startsWith(n, k)){ i = k; break; } }
   return i < 0 ? esc(name) : esc(name.slice(0, i)) + '<b>' + esc(name.slice(i, i + n.length)) + '</b>' + esc(name.slice(i + n.length));
 }
-function siteCombo(pl, pre){
+function siteCombo(pl, pre, geo){
   const open = ui.siteQ && ui.siteQ.pre === pre, q = open ? ui.siteQ.q : '';
   const list = open ? siteMatches(q) : [];
-  return `<div class="f wide combo"><label for="${pre}site">${tr('Akwen')}</label>
+  // „Najbliższy akwen" stoi przy etykiecie, a nie pod kartą: to skrót do wypełnienia tego jednego pola
+  const near = geo && S.geo === 'on'
+    ? `<button type="button" class="sm ghost near" data-act="geo-now">${ICON.geo}${tr('Najbliższy')}</button>` : '';
+  return `<div class="f wide combo"><div class="lab-row"><label for="${pre}site">${tr('Akwen')}</label>${near}</div>
     <input id="${pre}site" type="text" autocomplete="off" spellcheck="false" role="combobox" aria-autocomplete="list" aria-expanded="${open}" aria-controls="${pre}site-list"
       data-act="siteq" data-pre="${pre}" placeholder="${tr('Wpisz pierwsze litery')}" value="${esc(open ? q : siteName(siteOf(pl.siteId)))}">
     ${open ? `<ul class="combo-list" id="${pre}site-list" role="listbox">${list.map((s, i) => `<li role="option" aria-selected="${i === ui.hl}"><button type="button" tabindex="-1" class="${i === ui.hl ? 'hl' : ''}" data-act="site-pick" data-pre="${pre}" data-id="${esc(s.id)}">${hlName(siteName(s), q)}${siteKm(s) != null ? `<small class="km">${tr('{n} km', {n: siteKm(s)})}</small>` : ''}</button></li>`).join('')
@@ -209,7 +234,7 @@ function planFields(pl, pre, full){
   // W planie data służy tylko do podania temperatur z akwenu, więc wystarczy miesiąc — jedno tapnięcie
   // zamiast wpisywania rrrr-mm-dd i walki z kalendarzem. Dziennik dostaje pełną datę, bo tam liczy się dzień.
   return `<div class="grid2">
-    ${siteCombo(pl, pre)}${full ? '' : '</div>' + fieldset(tr('Miesiąc'), tiles('set-month', lbl().months.map((lab, i) => ({v: i, label: lab})), o => +o.v === monthOf(pl.date), 'compact')) + '<div class="grid2">'}
+    ${siteCombo(pl, pre, !full)}${full ? '' : '</div>' + fieldset(tr('Miesiąc'), tiles('set-month', lbl().months.map((lab, i) => ({v: i, label: lab})), o => +o.v === monthOf(pl.date), 'compact')) + '<div class="grid2">'}
     ${full ? `<div class="f wide"><label for="${pre}date">${tr('Data')}</label><div class="datebox">
       <input id="${pre}date" type="text" inputmode="numeric" maxlength="10" placeholder="${tr('rrrr-mm-dd')}" data-f="date" data-date="1" value="${esc(pl.date)}">
       <button type="button" class="calbtn" data-act="cal" data-pre="${pre}" aria-label="${tr('Kalendarz')}"><svg viewBox="0 0 24 24"><rect x="4" y="5" width="16" height="15" rx="2"/><path d="M4 10h16M9 3v4M15 3v4"/></svg></button>
@@ -407,8 +432,7 @@ function viewCalc(){
     ${S.geo == null ? `<div class="opt" style="margin-top:10px;grid-template-columns:1fr"><div class="items">${tr('Ustawiać akwen po Twojej lokalizacji?')}</div>
       <div class="desc">${tr('Telefon zapyta o zgodę. Pozycja zostaje w telefonie — służy tylko do wskazania najbliższego akwenu z listy.')}</div>
       <div class="btnrow" style="margin-top:6px"><button class="sm primary" data-act="geo-on">${ICON.geo}${tr('Tak, najbliższy akwen')}</button>
-        <button class="sm ghost" data-act="geo-off">${tr('Wybiorę sam')}</button></div></div>`
-      : S.geo === 'on' ? `<div class="btnrow" style="margin-top:8px"><button class="sm ghost" data-act="geo-now">${ICON.geo}${tr('Najbliższy akwen')}</button></div>` : ''}
+        <button class="sm ghost" data-act="geo-off">${tr('Wybiorę sam')}</button></div></div>` : ''}
     ${ui.planInfo ? `<p class="small muted" style="margin:10px 0 0">${tr('Temperaturę dna podpowiada akwen dla wybranego miesiąca; wpisz własną, jeśli znasz aktualną.')}
       ${tr('Komfort liczę ostrożnie — jak dla {n}. nurkowania w ciągu dnia i {t} min pod wodą, przy rezerwie {r} bar. Czas, kolejność i temperaturę powierzchni poprawisz przy zapisie w dzienniku.', {n: pl.nDay, t: pl.time, r: pl.reserve})}</p>` : ''}</section>
 
@@ -571,6 +595,7 @@ function viewProfile(){
   ${diversCard()}
   <section class="card"><h2>${tr('Profil nurka')}</h2>
     ${langTiles()}
+    ${themeTiles()}
     <div class="fieldset">${nameField(pr)}</div>
     ${sexTiles(pr)}
     ${ageTiles(pr)}
@@ -724,7 +749,7 @@ function diversCard(){
         ${S.profiles.length > 1 ? `<button class="sm danger" style="margin-top:6px" data-act="diver-del" data-id="${esc(p.id)}">${tr(ui.delDiver === p.id ? 'Na pewno?' : 'Usuń')}</button>` : ''}</div></div>`;
     }).join('')}</div>
     <div class="btnrow"><button class="sm" data-act="diver-add">${tr('Dodaj nurka')}</button></div>
-    <p class="small muted" style="margin:8px 0 0">${tr('Każdy nurek ma własny profil, szafę, dziennik i naukę modelu. Akweny i język są wspólne.')}</p></section>`;
+    <p class="small muted" style="margin:8px 0 0">${tr('Każdy nurek ma własny profil, szafę, dziennik i naukę modelu. Akweny, język i motyw są wspólne.')}</p></section>`;
 }
 function whoHtml(){
   if (wizardOn()) return '';
@@ -756,6 +781,7 @@ function render(){
   const ae = document.activeElement, fid = ae && ae.id && view.contains(ae) ? ae.id : null;
   let sel = null; try { sel = fid && ae.selectionStart != null ? [ae.selectionStart, ae.selectionEnd] : null; } catch(_){}
   document.documentElement.lang = LANG;
+  applyTheme();
   document.querySelectorAll('[data-t]').forEach(e => e.textContent = tr(e.dataset.t));
   // przycisk pokazuje flagę języka, na który przełącza — nazwa dla czytnika ekranu mówi to samo słowami
   $('#lang').innerHTML = LANG === 'pl' ? FLAG.en : FLAG.pl;
@@ -1003,6 +1029,7 @@ view.addEventListener('click', e => {
   const b = e.target.closest('[data-act]'); if (!b || b.tagName === 'INPUT' || b.tagName === 'SELECT') return;
   const a = b.dataset.act;
   if (a === 'lang-pick') return setLang(b.dataset.v);
+  if (a === 'theme-pick'){ S.theme = THEMES.includes(b.dataset.v) ? b.dataset.v : 'auto'; applyTheme(); return commit(); }
   if (a.startsWith('pick-')){
     const pr = P().profile, v = b.dataset.v;
     if (a === 'pick-sex') pr.sex = v;
@@ -1268,7 +1295,7 @@ view.addEventListener('change', e => {
   }
 });
 
-load(); recompute(); render();
+load(); applyTheme(); recompute(); render();
 if (gateOn()){
   gateSeenBefore = !!S.gateSeen;          // poszlaka działa dopiero przy kolejnym wejściu
   if (!S.gateSeen){ S.gateSeen = true; save(); }

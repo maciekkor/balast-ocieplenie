@@ -108,6 +108,9 @@ h1,h2,h3{font-family:var(--f-display);font-weight:600;letter-spacing:.01em;margi
 .f{display:flex;flex-direction:column;gap:4px;min-width:0}
 .f.wide{grid-column:1/-1}
 .f label{font-size:12px;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);font-weight:600}
+.lab-row{display:flex;align-items:center;justify-content:space-between;gap:8px;min-height:22px}
+button.near{padding:2px 8px;font-size:12px;border-radius:6px;flex-shrink:0}
+button.near svg{width:13px;height:13px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;vertical-align:-2px;margin-right:4px}
 input,select,textarea{font:16px var(--f-body);color:var(--ink);background:var(--sunk);border:1px solid var(--line);border-radius:7px;padding:9px 10px;width:100%;min-width:0}
 input[type=number]{font-family:var(--f-mono);font-variant-numeric:tabular-nums}
 textarea{font:13px/1.4 var(--f-mono);min-height:120px}
@@ -174,6 +177,7 @@ nav.tabs button[aria-current="page"]{color:var(--accent)}
 .fieldset .f{gap:4px}
 .picks{display:grid;grid-template-columns:repeat(auto-fit,minmax(88px,1fr));gap:8px}
 .picks.two{grid-template-columns:repeat(2,1fr)}
+.picks.three{grid-template-columns:repeat(3,1fr)}
 .picks.compact .pick{min-height:0;justify-content:center;padding:12px 6px}   /* kafelki bez ikony nie potrzebują wysokości na grafikę */
 .picks.rows{grid-template-columns:1fr}
 .picks.rows .pick{flex-direction:row;align-items:center;justify-content:flex-start;gap:10px;text-align:left;padding:9px 12px;min-height:0}
