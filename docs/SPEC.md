@@ -45,6 +45,7 @@ S = {
   activeId: 'p-xxxxxx',         // id nurka, którego dane są na ekranie
   geo?: 'on' | 'off',           // zgoda na pytanie telefonu o pozycję (brak = jeszcze nie pytaliśmy)
   installSkip?: true,           // „Użyję w przeglądarce" — bramka instalacyjna już nie wraca
+  tourDone?: true,              // samouczek już przeszedł — po kreatorze nie startuje drugi raz
   gateSeen?: true,              // instrukcja instalacji już się w tej przeglądarce pokazywała
   sites: [ { id, name, rho /*kg/l*/, ts: [12 × °C powierzchnia], tb: [12 × °C dno], preset?: bool,
              lat?, lon?, r? /*przybliżony środek rejonu i promień w km — do rozpoznania akwenu z GPS*/ } ],
@@ -168,6 +169,18 @@ Edycja profilu **nie przebudowuje widoku**: suwak i pola tekstowe zapisują stan
 
 **Pełna data zostaje w dzienniku**, gdzie liczy się dzień: formularz nurkowania (`planFields(pl, pre, true)`) ma pole `rrrr-mm-dd` i ikonę kalendarza obsługiwaną na `pointerdown` z `preventDefault()`, żeby dotknięcie po wpisaniu daty nie przepadło przez przebudowę widoku. Nurkowanie zakładane przyciskiem „Po nurkowaniu" dostaje **dzisiejszą datę**, bo plan niesie już tylko miesiąc.
 
+### Samouczek na żywym ekranie
+
+Po kreatorze (`finishWizard`, z opóźnieniem 400 ms) rusza sześciokrokowe oprowadzanie: pasek z wynikiem → karta planu → ocieplenie → zestaw → „Po nurkowaniu: zapisz i oceń" → dolna nawigacja. Nie ma zrzutów ekranu ani osobnego widoku — **podświetlamy prawdziwe elementy** na danych nurka: `.tour-hole` to `position: fixed` z `box-shadow: 0 0 0 9999px` przyciemniającym resztę, a `.tour-box` to dymek stawiany nad albo pod celem. Cel wyższy niż pół ekranu (karta planu, karta zestawu) i tak nie zmieści dymka obok, więc wtedy dymek siada nad nawigacją — inaczej zasłaniałby to, o czym właśnie opowiada.
+
+Trzy rzeczy, które trzeba pamiętać przy zmianach:
+
+- **`#tour` żyje poza `#view`**, bo `render()` podmienia całe wnętrze widoku. Ma własny nasłuch kliknięć — główny go nie obejmuje.
+- **Kroki celują selektorami** (`#summary .sb`, `#plan-card`, `#thermal-card`, `#set-card`, `[data-act="log-from-plan"]`, `nav.tabs`). Zmiana struktury tych kart wymaga poprawienia `TOUR`; krok bez celu jest po cichu pomijany, więc zepsuty selektor nie wywali aplikacji, tylko zgubi krok.
+- **Pozycje liczymy z `getBoundingClientRect()`** przy każdym kroku i przy `resize`, bo dymek przypięty na sztywno rozjeżdża się po obrocie telefonu.
+
+`S.tourDone` pilnuje, żeby samouczek poszedł raz — także wtedy, gdy ktoś doda drugiego nurka. Powtórzyć go można z Profilu („Samouczek → Pokaż jeszcze raz"). Na telefonie w przeglądarce pierwszeństwo ma bramka instalacyjna (`gateOn()`), więc samouczek poczeka do instalacji.
+
 ### Założenia planu zamiast pól
 
 Czas, numer nurkowania dnia, rezerwa i temperatura powierzchni **nie mają pól w planie** — zostają w danych z ostrożnymi założeniami, bo plan ma być szybki do ustawienia:
@@ -217,6 +230,8 @@ Szkic z importu dostaje `imported`, przez co formularz otwiera się z banerem m�
 - **iOS:** żadne API tego nie zdradza, zostaje poszlaka. `S.gateSeen` zapisuje, że instrukcja już się tu pokazywała; przy kolejnym wejściu **bez żadnych danych w tej przeglądarce** przyjmujemy, że nurek zainstalował aplikację i używa jej z ekranu. Komunikat mówi to jako przypuszczenie, a przycisk „Nie mam jej — pokaż, jak dodać" (`ui.gateSteps`) wraca do instrukcji, więc pomyłka nic nie kosztuje.
 
 Na Androidzie zainstalowana aplikacja dzieli magazyn z przeglądarką, więc tam ten sam komunikat mówi tylko o wygodzie i pracy offline — nie o utracie danych, bo żadnej nie ma.
+
+**Po instalacji: wróć do ikony.** Android zgłasza instalację zdarzeniem `appinstalled` — bramka zamienia wtedy instrukcję na „Gotowe — ikona jest na ekranie" z prośbą o zamknięcie karty. iOS takiego zdarzenia nie ma, więc tę samą myśl mówimy z góry, pod krokami instalacji. W obu przypadkach pokazujemy **podgląd ikony** (`homeIcon()`: `icons/icon-192.png` z podpisem „Balast", czyli `short_name` z manifestu) — bo „otwórz z ekranu" jest bezużyteczne, dopóki nurek nie wie, czego szuka wśród kilkudziesięciu ikon. Ten sam podgląd wchodzi do wariantu „Otwórz z ekranu telefonu".
 
 **Na iOS instalacja nie zabiera danych.** Aplikacja z ekranu początkowego ma magazyn odrębny od Safari — `localStorage`, ciasteczka i service worker nie są współdzielone. Dlatego bramka pojawia się od razu, zanim ktoś zacznie wypełniać kreator, a nurkowi, który **ma już dane** (`hasData()`), pokazuje najpierw przycisk zapisu kopii zapasowej wraz z wyjaśnieniem, że po instalacji trzeba ją wczytać. Bez tego sami wyprodukowalibyśmy zgłoszenia „aplikacja skasowała mi wszystko".
 

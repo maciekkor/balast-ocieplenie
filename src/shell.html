@@ -192,6 +192,18 @@ nav.tabs button[aria-current="page"]{color:var(--accent)}
 .slider .val input::-webkit-outer-spin-button,.slider .val input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
 .slider .val input:focus{border-color:var(--teal);background:var(--surface);outline:none;border-radius:6px}
 .slider .val small{font:600 13px var(--f-body);color:var(--muted)}
+/* podgląd ikony, która stanie na ekranie telefonu */
+.home-icon{margin:16px 0 0;display:flex;flex-direction:column;align-items:center;gap:7px}
+.home-icon img{width:64px;height:64px;border-radius:15px;box-shadow:var(--shadow);background:var(--surface)}
+.home-icon figcaption{font:600 12px var(--f-body);color:var(--ink)}
+/* samouczek: podświetlenie prawdziwego elementu na ekranie + dymek obok niego */
+#tour[hidden]{display:none}
+.tour-hole{position:fixed;border-radius:12px;border:2px solid var(--accent);box-shadow:0 0 0 9999px rgba(7,23,27,.74);pointer-events:none;z-index:40;transition:top .18s,left .18s,width .18s,height .18s}
+.tour-box{position:fixed;z-index:41;background:var(--surface);border:1px solid var(--line);border-radius:12px;box-shadow:var(--shadow);padding:14px 16px;max-width:330px}
+.tour-box h3{font-family:var(--f-display);font-size:19px;text-transform:uppercase;letter-spacing:.03em;margin:0}
+.tour-box p{margin:8px 0 0;font-size:15px;line-height:1.45}
+.tour-box .btnrow{margin-top:12px;align-items:center}
+.tour-step{font:600 12px var(--f-mono);color:var(--muted);margin-left:auto}
 .credit{margin:2px 0 0;text-align:center;font:400 13px var(--f-body);color:var(--muted)}
 .req{font:600 11px var(--f-body);text-transform:uppercase;letter-spacing:.07em;color:var(--accent);margin-left:6px;vertical-align:1px}
 .steps{margin:16px 0 0;padding-left:26px;display:flex;flex-direction:column;gap:10px}
@@ -241,6 +253,7 @@ body.kb .combo-list{max-height:min(260px,40vh)}
   </div>
   <main id="view"></main>
 </div>
+<div id="tour" hidden></div>
 <nav class="tabs" aria-label="Sekcje / Sections">
   <div class="in">
     <button data-tab="calc" aria-current="page"><svg viewBox="0 0 24 24"><rect x="5" y="3" width="14" height="18" rx="2"/><path d="M8 7h8M8 12h2M12 12h2M8 16h2M12 16h4"/></svg><span data-t="Oblicz">Oblicz</span></button>
