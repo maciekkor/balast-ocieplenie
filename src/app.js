@@ -655,6 +655,7 @@ function viewWizard(){
     <p style="margin:8px 0 0">${tr('Policzę, ile ołowiu zabrać i jaki zestaw ocieplenia założyć, a po każdym nurkowaniu nauczę się z Twojej oceny. Najpierw kilka pytań o Ciebie — bez nich wynik byłby zgadywaniem.')}</p>
     <p class="small muted" style="margin:8px 0 0">${tr('Dane zostają w tym telefonie: bez konta, bez serwera, bez wysyłania czegokolwiek.')}</p>
     ${langTiles()}
+    ${themeTiles()}
     <p class="small muted" style="margin:10px 0 0">${tr('Bez danych o Tobie nie da się policzyć wyporności ciała, a to podstawa całego wyniku — dlatego kreatora nie można pominąć. Zajmie minutę, wszystko zmienisz później.')}</p>
     <div class="btnrow"><button class="primary" data-act="wiz-next">${tr('Wypełnij profil')}</button></div>
   </section></div>`;
