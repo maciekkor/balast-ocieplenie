@@ -164,11 +164,15 @@ function chipsFor(selected, act){
 }
 // nazwa bez dopisku o własności — tę niesie już ikona na chipie
 const bareName = w => nm(w).replace(/ \((wypożyczon[ay]|własny|rented|own)\)/, '');
+// Bez wpisanego tekstu lista idzie od najbliższego akwenu — nurek zwykle wybiera to, co ma pod nosem.
+// Gdy ktoś szuka po nazwie, kolejność zostaje alfabetyczna (czyli katalogowa), bo wtedy wie, czego chce.
 function siteMatches(q){
   const n = norm(q.trim());
-  if (!n) return S.sites.slice();
-  return S.sites.filter(s => { const name = norm(siteName(s)); return name.startsWith(n) || name.split(/[\s(),\-]+/).some(w => w.startsWith(n)); });
+  if (n) return S.sites.filter(s => { const name = norm(siteName(s)); return name.startsWith(n) || name.split(/[\s(),\-]+/).some(w => w.startsWith(n)); });
+  if (!lastPos) return S.sites.slice();
+  return S.sites.map(s => ({s, km: siteDistKm(lastPos, s)})).sort((a, b) => a.km - b.km).map(x => x.s);
 }
+const siteKm = s => lastPos ? Math.round(siteDistKm(lastPos, s)) : null;
 function hlName(name, q){
   const n = norm(q.trim()); if (!n) return esc(name);
   const nn = norm(name); let i = -1;
@@ -181,7 +185,7 @@ function siteCombo(pl, pre){
   return `<div class="f wide combo"><label for="${pre}site">${tr('Akwen')}</label>
     <input id="${pre}site" type="text" autocomplete="off" spellcheck="false" role="combobox" aria-autocomplete="list" aria-expanded="${open}" aria-controls="${pre}site-list"
       data-act="siteq" data-pre="${pre}" placeholder="${tr('Wpisz pierwsze litery')}" value="${esc(open ? q : siteName(siteOf(pl.siteId)))}">
-    ${open ? `<ul class="combo-list" id="${pre}site-list" role="listbox">${list.map((s, i) => `<li role="option" aria-selected="${i === ui.hl}"><button type="button" tabindex="-1" class="${i === ui.hl ? 'hl' : ''}" data-act="site-pick" data-pre="${pre}" data-id="${esc(s.id)}">${hlName(siteName(s), q)}</button></li>`).join('')
+    ${open ? `<ul class="combo-list" id="${pre}site-list" role="listbox">${list.map((s, i) => `<li role="option" aria-selected="${i === ui.hl}"><button type="button" tabindex="-1" class="${i === ui.hl ? 'hl' : ''}" data-act="site-pick" data-pre="${pre}" data-id="${esc(s.id)}">${hlName(siteName(s), q)}${siteKm(s) != null ? `<small class="km">${tr('{n} km', {n: siteKm(s)})}</small>` : ''}</button></li>`).join('')
       || `<li class="none">${tr('Brak akwenu zaczynającego się od „{q}”', {q: esc(q)})}</li>`}</ul>` : ''}
   </div>`;
 }
@@ -280,7 +284,8 @@ function advisor(pl, curItems){
 function locateSite(silent){
   if (!navigator.geolocation) return silent || toast(tr('Ten telefon nie udostępnia lokalizacji'));
   navigator.geolocation.getCurrentPosition(pos => {
-    const m = nearestSite({lat: pos.coords.latitude, lon: pos.coords.longitude}, S.sites);
+    lastPos = {lat: pos.coords.latitude, lon: pos.coords.longitude};
+    const m = nearestSite(lastPos, S.sites);
     if (!m) return silent || toast(tr('Żaden akwen z listy nie leży blisko Ciebie'));
     if (P().plan.siteId === m.id) return silent || toast(tr('Akwen już pasuje do Twojej pozycji'));
     P().plan.siteId = m.id; fillTemps(P().plan);
@@ -843,6 +848,7 @@ const ANDROID = /Android/.test(navigator.userAgent);
 const INAPP = /FBAN|FBAV|Instagram|Messenger|LinkedIn|Twitter|Snapchat|Pinterest|TikTok|MicroMessenger/.test(navigator.userAgent);
 const standalone = () => ['standalone','fullscreen','minimal-ui'].some(m => matchMedia('(display-mode: ' + m + ')').matches) || navigator.standalone === true;
 let installPrompt = null, installedApp = false, installedNow = false;
+let lastPos = null;          // ostatnia pozycja z telefonu — żyje tylko w pamięci karty, nie trafia do S
 // Czy aplikacja stoi już na ekranie telefonu? Na Androidzie mówi to wprost przeglądarka
 // (getInstalledRelatedApps, Chrome 84+); na iOS żadne API tego nie zdradza, więc zostaje poszlaka:
 // instrukcję instalacji ktoś tu już widział, a w tej przeglądarce nie ma żadnych danych.

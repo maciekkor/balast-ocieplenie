@@ -65,13 +65,24 @@ function distanceKm(a, b, c, d){
 // Porównujemy odległość mierzoną promieniem akwenu (km / r), a nie w kilometrach:
 // inaczej wielkie rejony („Bałtyk”, promień 400 km) wygrywałyby z kamieniołomem,
 // nad którym nurek właśnie stoi — tak Honoratka wychodziła jako Bałtyk.
+// Odległość do akwenu = odległość do najbliższego z jego punktów. Akwen bez listy punktów
+// ma jeden: swój środek. Dzięki temu „Bałtyk" to pas wybrzeża, a nie koło o promieniu 400 km.
+function siteDistKm(gps, s){
+  const pts = Array.isArray(s.pts) && s.pts.length ? s.pts : [[s.lat, s.lon]];
+  let best = Infinity;
+  for (const [la, lo] of pts){
+    if (typeof la !== 'number' || typeof lo !== 'number') continue;
+    const km = distanceKm(gps.lat, gps.lon, la, lo);
+    if (km < best) best = km;
+  }
+  return best;
+}
 function matchSite(gps, sites){
   if (!gps || !Array.isArray(sites)) return null;
   let best = null;
   for (const s of sites){
     if (typeof s.lat !== 'number' || typeof s.lon !== 'number') continue;
-    const r = s.r || 25;
-    const km = distanceKm(gps.lat, gps.lon, s.lat, s.lon);
+    const r = s.r || 25, km = siteDistKm(gps, s);
     if (km <= r && (!best || km / r < best.score)) best = {id: s.id, km: Math.round(km), score: km / r};
   }
   return best && {id: best.id, km: best.km};
@@ -86,10 +97,10 @@ function nearestSite(gps, sites, maxKm){
   let best = null;
   for (const s of sites){
     if (typeof s.lat !== 'number' || typeof s.lon !== 'number') continue;
-    const km = distanceKm(gps.lat, gps.lon, s.lat, s.lon);
+    const km = siteDistKm(gps, s);
     if (km <= (maxKm || 500) && (!best || km < best.km)) best = {id: s.id, km: Math.round(km)};
   }
   return best;
 }
 
-if (typeof module !== 'undefined') module.exports = {parseSuuntoJson, kelvinToC, matchSite, nearestSite, distanceKm};
+if (typeof module !== 'undefined') module.exports = {parseSuuntoJson, kelvinToC, matchSite, nearestSite, siteDistKm, distanceKm};

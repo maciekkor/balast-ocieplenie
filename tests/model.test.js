@@ -187,14 +187,26 @@ test('import Suunto: bez próbek liczy z nagłówka, śmieci odrzuca', () => {
 test('najbliższy akwen z przycisku: liczy się dystans, nie zasięg rejonu', () => {
   const sites = A.seedSites();
   const near = (lat, lon) => { const m = A.nearestSite({lat, lon}, sites); return m && m.id; };
-  // zgłoszone z Warszawy: Deepspot 45 km, ale poza swoim promieniem 8 km; Bałtyk 368 km, za to w promieniu 400
+  // zgłoszone z Warszawy: Deepspot 45 km, ale poza swoim promieniem — a Bałtyk to teraz pas wybrzeża, nie koło o promieniu 400 km
   assert.equal(near(52.2297, 21.0122), 'deepspot', 'z Warszawy najbliżej jest Deepspot, nie Bałtyk');
-  assert.equal(A.matchSite({lat: 52.2297, lon: 21.0122}, sites).id, 'baltic', 'reguła rejonowa dalej mówi „Bałtyk" — i tak ma być przy imporcie');
+  assert.equal(A.matchSite({lat: 52.2297, lon: 21.0122}, sites), null, 'reguła rejonowa nie ma z Warszawy żadnego trafienia — bo nikt tam nie nurkuje');
   assert.equal(near(52.22, 18.25), 'honoratka', 'spod Konina najbliżej Honoratka');
   assert.equal(near(54.52, 18.53), 'baltic', 'z Gdyni najbliżej Bałtyk');
   assert.equal(near(50.06, 19.94), 'koparki', 'z Krakowa najbliżej kamieniołom w Jaworznie');
   assert.equal(near(35.68, 139.69), null, 'z Tokio żaden akwen nie jest blisko');
   assert.equal(A.nearestSite(null, sites), null);
+});
+
+test('akwen z listy punktów: odległość do najbliższego nurkowiska', () => {
+  const sites = A.seedSites(), baltic = sites.find(s => s.id === 'baltic');
+  assert.ok(baltic.pts.length <= 10, 'najwyżej 10 punktów na akwen');
+  // Gdynia: środek Bałtyku z jednym punktem leżał 180 km dalej, lista punktów daje kilka km
+  const km = A.siteDistKm({lat: 54.52, lon: 18.53}, baltic);
+  assert.ok(km < 10, `z Gdyni do Bałtyku powinno być kilka km, jest ${Math.round(km)}`);
+  // akwen bez listy punktów liczy się od swojego środka
+  const deep = sites.find(s => s.id === 'deepspot');
+  assert.ok(Math.abs(A.siteDistKm({lat: deep.lat, lon: deep.lon}, deep)) < 0.1);
+  for (const s of sites) assert.ok(!s.pts || s.pts.length <= 10, s.id + ': za dużo punktów');
 });
 
 test('dopasowanie akwenu do pozycji z komputera', () => {

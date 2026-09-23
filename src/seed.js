@@ -88,7 +88,7 @@ function migrate(o){
   // a zapisane kopie mogą nieść stare lub brakujące wartości (Honoratka była o 12 km obok)
   S.sites.forEach(s => {
     const pre = SITE_PRESETS.find(x => x.id === s.id);
-    if (pre){ s.lat = pre.lat; s.lon = pre.lon; s.r = pre.r; }
+    if (pre){ s.lat = pre.lat; s.lon = pre.lon; s.r = pre.r; if (pre.pts) s.pts = JSON.parse(JSON.stringify(pre.pts)); else delete s.pts; }
   });
   // nowe presety (np. Marsa Alam i Dahab osobno) dokładamy do list założonych wcześniej
   SITE_PRESETS.forEach(pre => {

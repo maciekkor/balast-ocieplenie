@@ -37,6 +37,7 @@ const EN = {
   'Dane zostają w tym telefonie: bez konta, bez serwera, bez wysyłania czegokolwiek.':'Your data stays on this phone: no account, no server, nothing sent anywhere.',
   'Bez danych o Tobie nie da się policzyć wyporności ciała, a to podstawa całego wyniku — dlatego kreatora nie można pominąć. Zajmie minutę, wszystko zmienisz później.':'Without your details I cannot work out your body buoyancy, and that is the basis of the whole result — so the setup cannot be skipped. It takes a minute, and you can change everything later.',
   'Wypełnij profil':'Fill in my profile',
+  '{n} km':'{n} km',
   'Najpierw dodaj {x} do zestawu. To one ważą najwięcej w bilansie wyporności, więc liczba bez nich byłaby zgadywaniem.':'First add {x} to the set. They carry the most weight in the buoyancy balance, so a number without them would be guesswork.',
   'komfort od {c} °C · zapas {m} °C':'comfort from {c} °C · margin {m} °C',
   'brak danych':'no data','Dodaj {x} — bez tego nie policzę ołowiu.':'Add {x} — without it there is no ballast to compute.',
