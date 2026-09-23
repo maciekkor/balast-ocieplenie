@@ -115,7 +115,7 @@ const EN = {
   'Nie udało się ustalić lokalizacji':'Could not get your location',
   'Ustawiać akwen po Twojej lokalizacji?':'Pick the site from your location?',
   'Telefon zapyta o zgodę. Pozycja zostaje w telefonie — służy tylko do wskazania najbliższego akwenu z listy.':'Your phone will ask for permission. The position stays on the phone — it only points at the nearest site on the list.',
-  'Wybiorę sam':'I will pick it myself','Najbliższy akwen':'Nearest site','Najbliższy':'Nearest','Tak, najbliższy akwen':'Yes, nearest site',
+  'Wybiorę sam':'I will pick it myself','Najbliższy akwen':'Nearest site','Najbliższy':'Nearest','Motyw':'Theme','Jak w telefonie':'Match phone','Jasny':'Light','Ciemny':'Dark','Tak, najbliższy akwen':'Yes, nearest site',
   'Dodano — ustaw rozmiar':'Added — pick the size',
   'To wyporność sprzętu decyduje o ołowiu, więc bez niego nie ma czego liczyć. Dodaj to, w czym nurkujesz — resztę uzupełnisz w Szafie.':'Ballast follows the buoyancy of your gear, so there is nothing to compute without it. Add what you dive in — the rest goes into the Wardrobe later.',
   'Dodaj jeszcze: {x}':'Add one more thing: {x}',
@@ -136,7 +136,7 @@ const EN = {
   'Gotowe. Wszystko zmienisz w Profilu i Szafie.':'Done. You can change everything in Profile and Gear.',
   'Nurkowie':'Divers','{n} na tym telefonie':'{n} on this phone','aktywny':'active','{n} nurk. w dzienniku':'{n} dives logged','{n} w szafie':'{n} gear items','profil niedokończony':'profile unfinished',
   'Przełącz':'Switch','Dodaj nurka':'Add diver','Nurek usunięty':'Diver deleted',
-  'Każdy nurek ma własny profil, szafę, dziennik i naukę modelu. Akweny i język są wspólne.':'Each diver has their own profile, gear, log and learned corrections. Sites and language are shared.',
+  'Każdy nurek ma własny profil, szafę, dziennik i naukę modelu. Akweny, język i motyw są wspólne.':'Each diver has their own profile, gear, log and learned corrections. Sites, language and theme are shared.',
   // nawigacja i nagłówek
   'Oblicz':'Calculate','Dziennik':'Log','Szafa':'Gear','Akweny':'Sites','Profil':'Profile','Nurek':'Diver','nurk.':'dives',
   // wspólne

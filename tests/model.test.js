@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
+import vm from 'node:vm';
 import {loadApp} from './load.js';
 const A = loadApp();
 const ctx = {rho: 1.025, depth: 5, reserve: 50, year: 2026};
@@ -112,6 +113,30 @@ test('płetwy i buty z masą: wyporność liczona', () => {
   const pr = A.diverState(A.seedState()).profile;
   assert.ok(A.itemBuoy(A.fromCat('fin-sp-jet'), pr, ctx) < -0.5);
   assert.ok(A.itemBuoy(A.fromCat('st-boots-titan-7'), pr, ctx) > 0);
+});
+
+test('motyw: migracja normalizuje pole, a arkusz zna oba wymuszenia', () => {
+  // stare kopie nie mają pola — mają dostać „jak w telefonie", a nie undefined
+  assert.equal(A.migrate(A.seedState()).theme, 'auto');
+  const brudny = Object.assign(A.seedState(), {theme: 'różowy'});
+  assert.equal(A.migrate(brudny).theme, 'auto', 'wartość spoza listy wraca do auto');
+  for (const t of ['light', 'dark']){
+    const st = Object.assign(A.seedState(), {theme: t});
+    assert.equal(A.migrate(st).theme, t, t + ' ma przetrwać migrację');
+  }
+  // wymuszenie działa tylko wtedy, gdy CSS rozpoznaje oba atrybuty
+  const css = readFileSync(new URL('../src/shell.html', import.meta.url), 'utf8');
+  assert.ok(css.includes(':root[data-theme="dark"]'), 'brak reguły dla wymuszonego ciemnego');
+  assert.ok(css.includes(':root:not([data-theme="light"])'), 'jasny nie przebija systemowego ciemnego');
+});
+
+test('app.js i sw.template.js parsują się', () => {
+  // Reszta testów ładuje data/model/import/seed/i18n — app.js tylko czyta jako tekst,
+  // więc literówka w składni przechodziła przez cały zestaw aż do przeglądarki.
+  for (const f of ['app.js', 'sw.template.js']){
+    const src = readFileSync(new URL('../src/' + f, import.meta.url), 'utf8');
+    assert.doesNotThrow(() => new vm.Script(src, {filename: f}), f + ' ma błąd składni');
+  }
 });
 
 test('i18n: każdy tekst w tr(...) w app.js ma tłumaczenie EN', () => {
