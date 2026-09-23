@@ -112,6 +112,18 @@ const CATALOG = [
   {id:'al-s80', cat:'tank', brand:'Aluminium', model:'S80 11,1 l / 207 bar', p:{vol:11.1, mat:'alu', be:1.8, vd:15.7}, sizes:SZ.one, src:'wypiera ~15,6 l, masa ~14,3 kg'},
   {id:'al-s100', cat:'tank', brand:'Aluminium', model:'S100 13,2 l / 232 bar', p:{vol:13.2, mat:'alu', be:1.4, vd:18.5}, sizes:SZ.one, src:'szacunek'},
   {id:'al-15', cat:'tank', brand:'Aluminium', model:'15 l / 200 bar', p:{vol:15, mat:'alu', be:2.2, vd:20.5}, sizes:SZ.one, src:'szacunek'},
+  // Twinset = dwie butle + manifold i obejmy (~3 kg stali, która sama wypiera ~0,4 l),
+  // więc pusty ciągnie w dół wyraźnie mocniej niż suma dwóch pojedynczych.
+  {id:'tw-2x10-232', cat:'tank', brand:'Twinset', model:'2 × 10 l / 232 bar (stal)', p:{n:2, vol:20, mat:'stal', be:-4.6, vd:23.8}, sizes:SZ.one, src:'szacunek (dwie butle, manifold i obejmy)'},
+  {id:'tw-2x12-232', cat:'tank', brand:'Twinset', model:'2 × 12 l / 232 bar (stal)', p:{n:2, vol:24, mat:'stal', be:-5.4, vd:28.0}, sizes:SZ.one, src:'szacunek (dwie butle, manifold i obejmy)'},
+  {id:'tw-2x12-300', cat:'tank', brand:'Twinset', model:'2 × 12 l / 300 bar (stal)', p:{n:2, vol:24, mat:'stal', be:-8.4, vd:29.0}, sizes:SZ.one, src:'szacunek (dwie butle, manifold i obejmy)'},
+  {id:'tw-2x7-300', cat:'tank', brand:'Twinset', model:'2 × 7 l / 300 bar (stal)', p:{n:2, vol:14, mat:'stal', be:-5.2, vd:17.4}, sizes:SZ.one, src:'szacunek (dwie butle, manifold i obejmy)'},
+  {id:'tw-2xs80', cat:'tank', brand:'Twinset', model:'2 × S80 11,1 l / 207 bar (aluminium)', p:{n:2, vol:22.2, mat:'alu', be:0.8, vd:32.0}, sizes:SZ.one, src:'szacunek (dwie butle, manifold i obejmy)'},
+  // --- Butle stage: dokładane do podstawowej, nie zamiast niej ---
+  {id:'stg-al-s80', cat:'stage', brand:'Aluminium', model:'S80 11,1 l / 207 bar (stage)', p:{vol:11.1, mat:'alu', be:1.5, vd:15.7}, sizes:SZ.one, src:'szacunek (butla z zaczepami)'},
+  {id:'stg-al-57', cat:'stage', brand:'Aluminium', model:'5,7 l / 207 bar (stage)', p:{vol:5.7, mat:'alu', be:0.6, vd:8.4}, sizes:SZ.one, src:'szacunek (butla z zaczepami)'},
+  {id:'stg-al-7', cat:'stage', brand:'Aluminium', model:'7 l / 200 bar (stage)', p:{vol:7, mat:'alu', be:0.7, vd:10.2}, sizes:SZ.one, src:'szacunek (butla z zaczepami)'},
+  {id:'stg-st-7', cat:'stage', brand:'Stal', model:'7 l / 232 bar (stage)', p:{vol:7, mat:'stal', be:-1.2, vd:8.6}, sizes:SZ.one, src:'szacunek (butla z zaczepami)'},
 
   {id:'mares-flexa-hood-65', cat:'hood', brand:'Mares', model:'Kaptur Flexa 6.5 mm', p:{t:6.5, cover:'hood', hood:true}, sizes:SZ.hood, src:'producent (grubość)'},
   {id:'mares-flexa-gloves-5', cat:'gloves', brand:'Mares', model:'Rękawice Flexa Fit 5 mm', p:{t:5, cover:'gloves'}, sizes:SZ.maresGlove, src:'producent (grubość)'},
@@ -217,10 +229,11 @@ const CATS = {
   bcd:{label:'Kamizelki', one:'Kamizelka'},
   wing:{label:'Skrzydła', one:'Skrzydło'},
   tank:{label:'Butle', one:'Butla'},
+  stage:{label:'Butle stage', one:'Butla stage'},
   fins:{label:'Płetwy', one:'Płetwy'},
   misc:{label:'Drobne', one:'Drobne'}
 };
-const CAT_ORDER = ['wetsuit','over','hood','gloves','boots','dry','under','bcd','wing','tank','fins','misc'];
+const CAT_ORDER = ['wetsuit','over','hood','gloves','boots','dry','under','bcd','wing','tank','stage','fins','misc'];
 
 // ===== Akweny: temperatury orientacyjne [sty..gru] =====
 const SITE_PRESETS = [

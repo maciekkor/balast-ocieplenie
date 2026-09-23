@@ -41,6 +41,8 @@ const EN = {
   'komfort od {c} °C · zapas {m} °C':'comfort from {c} °C · margin {m} °C',
   'brak danych':'no data','Dodaj {x} — bez tego nie policzę ołowiu.':'Add {x} — without it there is no ballast to compute.',
   'kamizelkę albo skrzydło':'a BCD or a wing','butlę':'a cylinder',
+  'Butla stage':'Stage cylinder','dokładana do podstawowej':'added to the main one, not instead of it',
+  'Możesz pominąć: na ekranie Oblicz wybierzesz butlę jednym tapnięciem spośród standardowych. Stage dokłada się do podstawowej, nie zamiast niej.':'You can skip this: on the Calculate screen you pick a standard cylinder with one tap. A stage is added to the main cylinder, not instead of it.',
   'Gotowe — ikona jest na ekranie':'Done — the icon is on your screen',
   'Zamknij tę kartę i otwieraj aplikację z ekranu telefonu: startuje jednym tapnięciem, działa bez internetu i nie ginie wśród kart przeglądarki.':'Close this tab and open the app from your home screen: one tap to start, works offline, and never gets lost among browser tabs.',
   'Zostanę w przeglądarce':'I will stay in the browser',
@@ -77,7 +79,6 @@ const EN = {
   'Drobiazgi, które dokładają trochę wyporności i sporo komfortu.':'Small pieces that add a little buoyancy and a lot of comfort.',
   'Jacket, skrzydło z płytą — wybierz to, na czym nurkujesz.':'A jacket or a wing with a backplate — pick what you dive.',
   'Gumowe ciągną w dół mocniej niż plastikowe.':'Rubber ones pull down harder than plastic ones.',
-  'Możesz pominąć: na ekranie Oblicz wybierzesz butlę jednym tapnięciem spośród standardowych.':'You can skip this: on the Calculate screen you pick a standard cylinder with one tap.',
   'Latarka, aparat. Automat masz już w szafie.':'A torch, a camera. The regulator is already in your wardrobe.',
   'Otwórz z ekranu telefonu':'Open it from your home screen',
   'Ta aplikacja jest już zainstalowana na tym telefonie.':'This app is already installed on this phone.',
@@ -206,12 +207,12 @@ const EN = {
   'Wyczyszczono. Zacznij od profilu i szafy.':'Cleared. Start with your profile and gear.','Wczytano przykład':'Example loaded','Zestaw podmieniony':'Kit swapped'
 };
 const LBL = {
-  pl:{cats:{wetsuit:['Pianki','Pianka'],over:['Ocieplacze mokre','Ocieplacz'],hood:['Kaptury','Kaptur'],gloves:['Rękawice','Rękawice'],boots:['Buty','Buty'],dry:['Suche skafandry','Suchy skafander'],under:['Ocieplacze do suchego','Ocieplacz do suchego'],bcd:['Kamizelki','Kamizelka'],wing:['Skrzydła','Skrzydło'],tank:['Butle','Butla'],fins:['Płetwy','Płetwy'],misc:['Drobne','Drobne']},
+  pl:{cats:{wetsuit:['Pianki','Pianka'],over:['Ocieplacze mokre','Ocieplacz'],hood:['Kaptury','Kaptur'],gloves:['Rękawice','Rękawice'],boots:['Buty','Buty'],dry:['Suche skafandry','Suchy skafander'],under:['Ocieplacze do suchego','Ocieplacz do suchego'],bcd:['Kamizelki','Kamizelka'],wing:['Skrzydła','Skrzydło'],tank:['Butle','Butla'],stage:['Butle stage','Butla stage'],fins:['Płetwy','Płetwy'],misc:['Drobne','Drobne']},
       months:['sty','lut','mar','kwi','maj','cze','lip','sie','wrz','paź','lis','gru'],
       build:{slim:'Szczupła', athletic:'Wysportowana', muscular:'Umięśniona', average:'Przeciętna', fuller:'Pełniejsza', obese:'Otyła'},
       cover:{full:'Pełna', longjohn:'Long john', shorty:'Shorty', overhood:'Ocieplacz z kapturem', vest:'Kamizelka', hood:'Kaptur', gloves:'Rękawice', boots:'Buty'},
       water:{'1.029':'Morze Czerwone · 40‰','1.028':'Morze Śródziemne · 38‰','1.025':'Ocean · 35‰','1.005':'Bałtyk · 7‰','1':'Woda słodka'}},
-  en:{cats:{wetsuit:['Wetsuits','Wetsuit'],over:['Wet overlayers','Overlayer'],hood:['Hoods','Hood'],gloves:['Gloves','Gloves'],boots:['Boots','Boots'],dry:['Drysuits','Drysuit'],under:['Drysuit undergarments','Undergarment'],bcd:['BCDs','BCD'],wing:['Wings','Wing'],tank:['Cylinders','Cylinder'],fins:['Fins','Fins'],misc:['Accessories','Accessory']},
+  en:{cats:{wetsuit:['Wetsuits','Wetsuit'],over:['Wet overlayers','Overlayer'],hood:['Hoods','Hood'],gloves:['Gloves','Gloves'],boots:['Boots','Boots'],dry:['Drysuits','Drysuit'],under:['Drysuit undergarments','Undergarment'],bcd:['BCDs','BCD'],wing:['Wings','Wing'],tank:['Cylinders','Cylinder'],stage:['Stage cylinders','Stage cylinder'],fins:['Fins','Fins'],misc:['Accessories','Accessory']},
       months:['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'],
       build:{slim:'Slim', athletic:'Athletic', muscular:'Muscular', average:'Average', fuller:'Fuller', obese:'Obese'},
       cover:{full:'Full', longjohn:'Long john', shorty:'Shorty', overhood:'Hooded overlayer', vest:'Vest', hood:'Hood', gloves:'Gloves', boots:'Boots'},
@@ -220,6 +221,7 @@ const LBL = {
 const SITE_EN = {marsaalam:'Marsa Alam', dahab:'Dahab', redsea:'Red Sea (other spots)', malta:'Malta', gozo:'Gozo, Comino', croatia:'Croatia (Adriatic)', cyprus:'Cyprus', baltic:'Baltic Sea', piechcin:'Piechcin (quarry)', deepspot:'Deepspot (pool)'};
 // fragmenty nazw katalogowych i źródeł
 const FRAG_EN = [
+  ['(stal)','(steel)'],['(aluminium)','(aluminium)'],['(stage)','(stage)'],
   ['półsucha, kaptur','semi-dry, hood'],['półsucha','semi-dry'],['(dwuczęściowa)','(two-piece)'],['Kamizelka z kapturem','Hooded vest'],['z kapturem','with hood'],
   ['Shorty ocieplacz','Shorty overlayer'],['Kaptur','Hood'],['Rękawice','Gloves'],['Buty Imprex Slipper','Imprex slipper'],['Buty Imprex','Imprex boots'],['Buty Flexa','Flexa boots'],['Buty','Boots'],['Rękawice Super Stretch','Super Stretch gloves'],
   ['(trylaminat)','(trilaminate)'],['(membrana 4-warstwowa)','(4-layer membrane)'],['(neopren 4 mm)','(4 mm neoprene)'],['Neopren zgnieciony','Crushed neoprene'],

@@ -79,7 +79,7 @@ Migracje wykonuje `migrate()` w `seed.js`, wołane przy starcie (`load()`) **i p
 | `under` | `g` kg wyporności gazu dla BSA 1,9 m², `tmin` °C dolna granica komfortu |
 | `bcd` | `b` kg wyporności w wodzie |
 | `wing` | `plate` (`steel`, `alu`, `soft`; domyślnie `alu`), `b?` nadpisanie |
-| `tank` | `vol` l, `mat` (`stal`, `alu`), `be` kg wyporność pusta w morzu 1,025 z zaworem, `vd` l objętość zewnętrzna |
+| `tank`, `stage` | `vol` l (sumaryczna), `n?` liczba butli w zestawie (etykieta), `mat` (`stal`, `alu`), `be` kg wyporność pusta w morzu 1,025 z zaworem, `vd` l objętość zewnętrzna |
 | `fins` | `b` kg wyporność pary, `mass?` g pary |
 | `misc` | `b` kg |
 
@@ -87,11 +87,13 @@ Migracje wykonuje `migrate()` w `seed.js`, wołane przy starcie (`load()`) **i p
 
 **Każde pole `p` ma odbiorcę** — przegląd z września 2026 usunął te, których nikt nie czytał: `lift` skrzydeł (model liczy wyporność zestawu z płyty i pęcherza kamizelki, nie z udźwigu), `bar` butli (ciśnienie robocze nie wchodzi do wzoru — liczy się `vol` i rezerwa) oraz `mat` płetw (materiał siedzi już w `b`). `mass` płetw zostaje: nie wchodzi do wzoru, ale jest podstawą szacunku `b` i widać ją na liście.
 
-Wybór w zestawie: jedna pozycja z `wetsuit`, `dry`, `under`, `tank`, `fins` oraz jedna z pary `bcd`/`wing`. Suchy skafander wyklucza pianki i ocieplacze mokre i odwrotnie.
+Wybór w zestawie: jedna pozycja z `wetsuit`, `dry`, `under`, `tank`, `fins` oraz jedna z pary `bcd`/`wing`. Suchy skafander wyklucza pianki i ocieplacze mokre i odwrotnie. **`stage` jest wyjątkiem: nie ma go w `SINGLE`**, więc butli dekompresyjnych można wybrać kilka i **dokładają się do podstawowej, nie zamiast niej** — dlatego mają osobną kategorię, osobny rząd w wyborze butli i nie zaspokajają wymogu butli w `setIssues()`. Fizycznie liczą się tym samym wzorem co `tank` (`itemBuoy`), z tym samym założeniem o rezerwie.
+
+**Twinsety** siedzą w kategorii `tank`, bo zastępują butlę podstawową. `p.n = 2` służy tylko do etykiety („Stal 2 × 12 l" zamiast mylącego „Stal 24 l"); `vol` jest sumaryczna, a `be` uwzględnia manifold i obejmy — pusty twinset ciągnie w dół mocniej niż dwie pojedyncze butle, co pilnuje test w `tests/model.test.js`.
 
 ## 4. Katalog sprzętu
 
-162 pozycje w 12 kategoriach. Marki: Mares, Cressi, Scubapro, Fourth Element, Bare, Aqualung, Tusa, Scubatech, Santi, Avatar, XDEEP, Tecline, Apeks, Hollis oraz pozycje ogólne.
+171 pozycji w 13 kategoriach. Marki: Mares, Cressi, Scubapro, Fourth Element, Bare, Aqualung, Tusa, Scubatech, Santi, Avatar, XDEEP, Tecline, Apeks, Hollis oraz pozycje ogólne.
 
 Pole `src` opisuje wiarygodność: `producent (…)`, `szacunek`, `szacunek z masy i materiału`, `grubość: producent; masa: szacunek`, `szacunek z wybranej płyty` (skrzydła). Producenci pianek, ocieplaczy i płetw nie publikują wyporności — dlatego katalog trzyma parametry fizyczne, a wyporność liczy model dla konkretnego nurka.
 

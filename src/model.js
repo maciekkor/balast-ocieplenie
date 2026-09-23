@@ -7,7 +7,7 @@ const COV = {full:0.90, longjohn:0.65, shorty:0.55, overhood:0.60, vest:0.40, ho
 const TORSO = {full:1, longjohn:0.75, shorty:0.85, overhood:0.85, vest:0.6, hood:0, gloves:0, boots:0};
 const PLATE = {steel:-1.9, alu:-0.5, soft:0.5};
 const BUILD = {slim:-3, athletic:-6, muscular:-10, average:0, fuller:3, obese:5};
-const PRIOR_SD = {wetsuit:0.8, over:0.8, hood:0.3, gloves:0.2, boots:0.2, dry:1.0, under:1.2, bcd:0.5, wing:0.5, tank:0.4, fins:0.3};
+const PRIOR_SD = {wetsuit:0.8, over:0.8, hood:0.3, gloves:0.2, boots:0.2, dry:1.0, under:1.2, bcd:0.5, wing:0.5, tank:0.4, stage:0.4, fins:0.3};
 const SD_BASE = 2.0, SD_NOISE = 0.7, HALF_LIFE = 30;
 // doświadczenie: przesunięcie startowe korekty osobistej i jej niepewność
 function totalDives(st){ return (+st.profile.divesBefore || 0) + st.dives.length; }
@@ -55,7 +55,7 @@ function itemBuoy(it, pr, ctx){
     case 'under': return (p.g || 0) * bsa(pr) / 1.9;
     case 'bcd': return p.b || 0;
     case 'wing': return (p.b != null ? p.b : 0.3 + (PLATE[p.plate] ?? -0.5));
-    case 'tank': return p.be + (p.vd || p.vol * 1.15) * (rho - 1.025) - p.vol * ctx.reserve * AIR;
+    case 'tank': case 'stage': return p.be + (p.vd || p.vol * 1.15) * (rho - 1.025) - p.vol * ctx.reserve * AIR;
     case 'misc': case 'fins': return p.b || 0;
   }
   return 0;

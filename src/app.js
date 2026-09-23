@@ -308,7 +308,7 @@ function quickAdd(){
     <div class="btnrow"><select id="qq-own" aria-label="${tr('Rodzaj pozycji ogólnej')}" style="width:auto;flex:1">${CAT_ORDER.map(c => `<option value="${c}"${qa.cat === c ? ' selected' : ''}>${catOne(c)}</option>`).join('')}</select><button class="sm" data-act="quick-own">${tr('Dodaj pozycję ogólną')}</button></div>
   </div>`;
 }
-const OWN_DEFAULTS = {wetsuit:{t:5, cover:'full'}, over:{t:3, cover:'vest', hood:true}, hood:{t:5, cover:'hood', hood:true}, gloves:{t:3, cover:'gloves'}, boots:{t:5, cover:'boots'}, dry:{shell:'trilam', b:0.3}, under:{g:4, tmin:8}, bcd:{b:1.0}, wing:{plate:'alu'}, tank:{vol:12, mat:'stal', be:-1.4, vd:13.8}, fins:{b:0, mass:1500}, misc:{b:0}};
+const OWN_DEFAULTS = {wetsuit:{t:5, cover:'full'}, over:{t:3, cover:'vest', hood:true}, hood:{t:5, cover:'hood', hood:true}, gloves:{t:3, cover:'gloves'}, boots:{t:5, cover:'boots'}, dry:{shell:'trilam', b:0.3}, under:{g:4, tmin:8}, bcd:{b:1.0}, wing:{plate:'alu'}, tank:{vol:12, mat:'stal', be:-1.4, vd:13.8}, stage:{vol:11.1, mat:'alu', be:1.5, vd:15.7}, fins:{b:0, mass:1500}, misc:{b:0}};
 function quickItem(w){
   const rental = ui.quick && ui.quick.kind === 'rental';
   if (rental){ w.rental = true; w.year = null; w.model += ' ' + tr('(wypożyczony)'); }
@@ -323,14 +323,21 @@ const sameSet = (a, b) => a.length === b.length && a.every(x => b.some(y => y.ui
 
 // Standardowe butle prosto z katalogu — wybór jednym tapnięciem, bez wpisywania do szafy.
 const STD_TANKS = CATALOG.filter(c => c.cat === 'tank');
-function tankPicker(selected, act){
-  const mine = P().wardrobe.some(w => w.cat === 'tank' && selected.includes(w.uid));
-  return `<div class="group"><div class="label">${tr('Butla standardowa')} <span class="muted">${tr('bez dodawania do szafy')}</span></div>
-    <div class="chips">${STD_TANKS.map(c => {
+const STD_STAGES = CATALOG.filter(c => c.cat === 'stage');
+function tankRow(list, label, hint, selected, act){
+  return `<div class="group"><div class="label">${label} <span class="muted">${hint}</span></div>
+    <div class="chips">${list.map(c => {
       const uid = 'cat:' + c.id, on = selected.includes(uid);
       return `<button class="chip" data-act="${act || 'plan-toggle'}" data-uid="${esc(uid)}" aria-pressed="${on}">${esc(frag(c.brand))} ${esc(frag(c.model))}</button>`;
-    }).join('')}</div>
-    ${mine ? `<p class="small muted" style="margin:6px 0 0">${tr('Wybrana jest Twoja butla z szafy — tapnięcie standardowej ją zastąpi.')}</p>` : ''}</div>`;
+    }).join('')}</div>`;
+}
+function tankPicker(selected, act){
+  const mine = P().wardrobe.some(w => w.cat === 'tank' && selected.includes(w.uid));
+  // Butla podstawowa jest jedna — wybór nowej zastępuje poprzednią. Stage odwrotnie: dokłada się
+  // do zestawu i można mieć kilka, więc siedzi w osobnym rzędzie, żeby nikt nie szukał, czemu nic nie zniknęło.
+  return tankRow(STD_TANKS, tr('Butla standardowa'), tr('bez dodawania do szafy'), selected, act) +
+    `${mine ? `<p class="small muted" style="margin:6px 0 0">${tr('Wybrana jest Twoja butla z szafy — tapnięcie standardowej ją zastąpi.')}</p>` : ''}</div>` +
+    tankRow(STD_STAGES, tr('Butla stage'), tr('dokładana do podstawowej'), selected, act) + '</div>';
 }
 
 // ---------- widoki ----------
@@ -491,7 +498,7 @@ function paramEditor(w){
   if (w.cat === 'fins') h += n('b', 'Wyporność pary w wodzie (kg)') + n('mass', 'Masa pary (g)', '10');
   if (w.cat === 'boots') h += n('mass', 'Masa pary (g)', '10');
   if (w.cat === 'wing') h += sel('plate', 'Płyta', [['alu',tr('Aluminium')],['steel',tr('Stal')],['soft',tr('Miękka / brak')]]);
-  if (w.cat === 'tank') h += n('vol', 'Pojemność (l)') + n('be', 'Wyporność pusta, morze (kg)') + n('vd', 'Objętość zewnętrzna (l)');
+  if (w.cat === 'tank' || w.cat === 'stage') h += n('vol', 'Pojemność (l)') + n('be', 'Wyporność pusta, morze (kg)') + n('vd', 'Objętość zewnętrzna (l)');
   return `<div class="editor">${h}</div>${foot}</div>`;
 }
 
@@ -669,7 +676,7 @@ const WIZ_CATS = [
   {cats:['hood','gloves','boots'], label:'Kaptur, rękawice, buty', hint:'Drobiazgi, które dokładają trochę wyporności i sporo komfortu.'},
   {cats:['bcd','wing'], label:'Kamizelka albo skrzydło', need:true, hint:'Jacket, skrzydło z płytą — wybierz to, na czym nurkujesz.'},
   {cats:['fins'], label:'Płetwy', hint:'Gumowe ciągną w dół mocniej niż plastikowe.'},
-  {cats:['tank'], label:'Butla', hint:'Możesz pominąć: na ekranie Oblicz wybierzesz butlę jednym tapnięciem spośród standardowych.'},
+  {cats:['tank','stage'], label:'Butla', hint:'Możesz pominąć: na ekranie Oblicz wybierzesz butlę jednym tapnięciem spośród standardowych. Stage dokłada się do podstawowej, nie zamiast niej.'},
   {cats:['misc'], label:'Reszta', hint:'Latarka, aparat. Automat masz już w szafie.'}
 ];
 const wizMissing = () => WIZ_CATS.filter(c => c.need && !P().wardrobe.some(w => c.cats.includes(w.cat)));
@@ -718,8 +725,11 @@ function whoHtml(){
 function summaryHtml(){
   const pl = P().plan, items = resolveItems(pl.items, P()), ctx = planCtx(pl), iss = setIssues(items);
   const p = predictLead(items, dst(), ctx, L), delta = (+P().profile.coldTol || 0) + T.delta, tef = tEf(pl, delta), th = thermalOfSet(items, pl.depth);
-  const short = it => it.cat === 'tank' ? (it.p.mat === 'alu' ? 'Alu ' : tr('Stal') + ' ') + fmt(it.p.vol, it.p.vol % 1 ? 1 : 0) + ' l' : nm(it).replace(/ \((wypożyczon[ay]|własny|rented|own)\)/, '');
-  const order = ['wetsuit','over','hood','dry','under','bcd','wing','tank','fins'];
+  const vlab = p => { const n = p.n || 1, v = p.vol / n; return (n > 1 ? n + ' × ' : '') + fmt(v, v % 1 ? 1 : 0) + ' l'; };
+  const short = it => it.cat === 'tank' || it.cat === 'stage'
+    ? (it.cat === 'stage' ? 'Stage ' : '') + (it.p.mat === 'alu' ? 'Alu ' : tr('Stal') + ' ') + vlab(it.p)
+    : nm(it).replace(/ \((wypożyczon[ay]|własny|rented|own)\)/, '');
+  const order = ['wetsuit','over','hood','dry','under','bcd','wing','tank','stage','fins'];
   const shown = items.filter(i => order.includes(i.cat)).sort((a, b) => order.indexOf(a.cat) - order.indexOf(b.cat));
   return `<div class="sb" role="status" aria-live="polite">
     <div class="sb-lead"><div class="sb-head"><span class="label">${tr('Ołów')}</span>
