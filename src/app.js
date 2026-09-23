@@ -361,8 +361,10 @@ const sameSet = (a, b) => a.length === b.length && a.every(x => b.some(y => y.ui
 const STD_TANKS = CATALOG.filter(c => c.cat === 'tank');
 const STD_STAGES = CATALOG.filter(c => c.cat === 'stage');
 function tankRow(list, label, hint, selected, act){
+  // Butle idą w dwóch kolumnach: nazwa butli („Stal 2×12 l / 232 bar") jest za długa,
+  // żeby dwa kafelki same zmieściły się w rzędzie, a lista jest długa i przewijanie boli.
   return `<div class="group"><div class="label">${label} <span class="muted">${hint}</span></div>
-    <div class="chips">${list.map(c => {
+    <div class="chips cols2">${list.map(c => {
       const uid = 'cat:' + c.id, on = selected.includes(uid);
       return `<button class="chip" data-act="${act || 'plan-toggle'}" data-uid="${esc(uid)}" aria-pressed="${on}">${esc(frag(c.brand))} ${esc(frag(c.model))}</button>`;
     }).join('')}</div>`;
@@ -762,7 +764,7 @@ function whoHtml(){
 function summaryHtml(){
   const pl = P().plan, items = resolveItems(pl.items, P()), ctx = planCtx(pl), iss = setIssues(items);
   const p = predictLead(items, dst(), ctx, L), delta = (+P().profile.coldTol || 0) + T.delta, tef = tEf(pl, delta), th = thermalOfSet(items, pl.depth);
-  const vlab = p => { const n = p.n || 1, v = p.vol / n; return (n > 1 ? n + ' × ' : '') + fmt(v, v % 1 ? 1 : 0) + ' l'; };
+  const vlab = p => { const n = p.n || 1, v = p.vol / n; return (n > 1 ? n + '×' : '') + fmt(v, v % 1 ? 1 : 0) + ' l'; };
   const short = it => it.cat === 'tank' || it.cat === 'stage'
     ? (it.cat === 'stage' ? 'Stage ' : '') + (it.p.mat === 'alu' ? 'Alu ' : tr('Stal') + ' ') + vlab(it.p)
     : nm(it).replace(/ \((wypożyczon[ay]|własny|rented|own)\)/, '');
