@@ -34,6 +34,7 @@ const EN = {
   'Dane zostają w tym telefonie: bez konta, bez serwera, bez wysyłania czegokolwiek.':'Your data stays on this phone: no account, no server, nothing sent anywhere.',
   'Bez danych o Tobie nie da się policzyć wyporności ciała, a to podstawa całego wyniku — dlatego kreatora nie można pominąć. Zajmie minutę, wszystko zmienisz później.':'Without your details I cannot work out your body buoyancy, and that is the basis of the whole result — so the setup cannot be skipped. It takes a minute, and you can change everything later.',
   'Wypełnij profil':'Fill in my profile',
+  'Balast i Ocieplenie':'Ballast & Thermal',
   'Przejdziemy przez kategorie po kolei. Dodaj to, w czym nurkujesz — resztę uzupełnisz później w Szafie.':'We will go category by category. Add what you dive in — the rest goes into the Wardrobe later.',
   'Sprzęt {n} z {m}':'Gear {n} of {m}','wymagane':'required',
   'Bez tego nie policzę ołowiu — wybierz jedną pozycję.':'Without this there is no ballast to compute — pick one item.',

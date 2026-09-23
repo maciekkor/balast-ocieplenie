@@ -571,7 +571,8 @@ function viewProfile(){
     <div class="btnrow"><button class="sm primary" data-act="export-file">${tr('Zapisz kopię do pliku')}</button><button class="sm" data-act="import-file">${tr('Wczytaj kopię z pliku')}</button></div>
     <input id="bk-file" type="file" accept="application/json,.json" hidden>
     <div class="btnrow" style="margin-top:18px"><button class="danger sm" data-act="wipe">${tr(ui.confirmWipe ? 'Na pewno? Kliknij ponownie' : 'Wyczyść wszystkie dane')}</button><button class="sm ghost" data-act="seed">${tr('Wczytaj przykład')}</button></div>
-  </section></div>`;
+  </section>
+  <p class="credit">${tr('Balast i Ocieplenie')} · © ${new Date().getFullYear()} Maciej Korzeniowski</p></div>`;
 }
 
 // ---------- kreator profilu (dane domyślne: pierwsze uruchomienie, wyczyszczenie danych, nowy nurek) ----------

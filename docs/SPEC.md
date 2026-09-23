@@ -184,6 +184,8 @@ Karta planu trzyma te założenia pod przyciskiem **`?`** w nagłówku (`ui.plan
 4. **Akweny:** presety i własne; gęstość wody i 12 miesięcy temperatur.
 5. **Profil:** te same kafelki i suwaki co w kreatorze (język z flagami, płeć, wiek w 5 zakresach, wzrost i waga suwakami, budowa jako sylwetki, tolerancja zimna w 5 stopniach z wartością w °C, doświadczenie w 4 poziomach), karta **Nurkowie** (lista z liczbą nurkowań i sprzętu, przełączanie, dodanie nurka przez kreator, usunięcie z potwierdzeniem — ostatniego nurka nie da się usunąć), język, dane ciała, tolerancja zimna, nurkowania poza dziennikiem, czego nauczył się model, reset nauki, kopia zapasowa (zapis i odczyt pliku `.json`, bez pokazywania danych na ekranie), czyszczenie, wczytanie przykładu.
 
+Na dole Profilu stoi jedna linijka: nazwa aplikacji i **© Maciej Korzeniowski** z bieżącym rokiem (`.credit`). Tylko tam — to miejsce „o aplikacji", a nie coś, co ma towarzyszyć liczeniu balastu.
+
 Przełącznik nurków siedzi w nagłówku (`#who`) i pojawia się dopiero przy co najmniej dwóch profilach; przy jednym nagłówek pokazuje licznik nurkowań jak dotąd.
 
 ### Wczytanie nurkowania z komputera
