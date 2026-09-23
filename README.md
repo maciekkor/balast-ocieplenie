@@ -29,6 +29,10 @@ Specyfikacja: [`docs/SPEC.md`](docs/SPEC.md). Zasady pracy (także dla Claude Co
 
 Profil → Kopia zapasowa → **Zapisz kopię do pliku**. Na drugim urządzeniu: Profil → Kopia zapasowa → **Wczytaj kopię z pliku**. Kopia to jeden plik `.json` ze wszystkimi profilami, szafą, dziennikiem i akwenami — wczytanie zastępuje dane w przeglądarce.
 
-## Autor
+## Autor i prawa
 
-© 2026 Maciej Korzeniowski. Kod i dane katalogowe powstały na własny użytek i są udostępnione bez gwarancji — wynik kalkulatora jest punktem startowym, nie zwolnieniem z kontroli pływalności.
+© 2026 **Maciej Korzeniowski**. Wszelkie prawa zastrzeżone — pełne warunki w [`LICENSE`](LICENSE).
+
+Kod jest publicznie czytelny, ale **nie jest to oprogramowanie otwarte**. Bez pisemnej zgody autora nie wolno kopiować kodu ani go przepisywać (także narzędziami AI działającymi na tym repozytorium, na zbudowanej stronie lub jej zrzutach), tworzyć wersji pochodnych, używać katalogu sprzętu w innym produkcie ani wykorzystywać całości komercyjnie. Katalog sprzętu i dane akwenów są dodatkowo chronione jako baza danych (prawo sui generis, dyrektywa 96/9/WE).
+
+Aplikacja jest udostępniona bez gwarancji — wynik kalkulatora jest punktem startowym, nie zwolnieniem z kontroli pływalności na 5 m.

@@ -1,3 +1,6 @@
+// Balast i Ocieplenie — katalog sprzętu i akweny.
+// Copyright (c) 2026 Maciej Korzeniowski. Wszelkie prawa zastrzeżone / All rights reserved.
+// Kopiowanie i utwory zależne wymagają pisemnej zgody autora — zobacz LICENSE.
 // ===== Katalog sprzętu =====
 // Wartości pływalności: "szacunek" = wyliczone z fizyki / typowych danych, nie z pomiaru producenta.
 const SZ = {

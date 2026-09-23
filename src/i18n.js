@@ -1,3 +1,6 @@
+// Balast i Ocieplenie — tłumaczenia interfejsu.
+// Copyright (c) 2026 Maciej Korzeniowski. Wszelkie prawa zastrzeżone / All rights reserved.
+// Kopiowanie i utwory zależne wymagają pisemnej zgody autora — zobacz LICENSE.
 // ===== Język =====
 const EN = {
   // butla spoza szafy

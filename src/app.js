@@ -1,3 +1,6 @@
+// Balast i Ocieplenie — stan, widoki i zdarzenia aplikacji.
+// Copyright (c) 2026 Maciej Korzeniowski. Wszelkie prawa zastrzeżone / All rights reserved.
+// Kopiowanie i utwory zależne wymagają pisemnej zgody autora — zobacz LICENSE.
 // ===== Aplikacja =====
 const KEY = 'balast-ocieplenie.v1';
 let S, L, T, memOnly = false, tab = 'calc', ui = {draft:null, editGear:null, editSite:null, addQ:'', addCat:'', confirmWipe:false, quick:null, siteQ:null, hl:0, wiz:0, delDiver:null, explain:false, planInfo:false, thermInfo:false, gateSteps:false, wizCat:0};

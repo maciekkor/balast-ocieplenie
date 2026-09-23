@@ -29,6 +29,7 @@ Brak zależności npm. Wymagany Node ≥ 20.
 - **Bramka instalacyjna:** telefon w przeglądarce dostaje `viewGate()` zamiast zakładek, ale miękko — „Użyję w przeglądarce” (`S.installSkip`) wyłącza ją na stałe, a Profil pozwala wrócić. Na iOS zainstalowana aplikacja ma osobny magazyn niż Safari, więc przy istniejących danych bramka musi najpierw proponować kopię zapasową. Gdy aplikacja jest już zainstalowana (`getInstalledRelatedApps` na Androidzie, poszlaka `S.gateSeen` bez danych na iOS), bramka odsyła do ikony zamiast namawiać do instalacji — na iOS dane z aplikacji nie są w przeglądarce widoczne.
 - **Lokalizacja:** `locateSite()` pyta telefon o pozycję tylko przy `S.geo === 'on'`; pozycji nie zapisujemy i nie wysyłamy, porównujemy ją wyłącznie z listą akwenów w pamięci.
 - **Kreator kończy się sprzętem:** krok 4 prowadzi przez kategorie (`WIZ_CATS`), a wymagane są tylko skafander i kamizelka/skrzydło — butli nie wymagamy, bo wybiera się ją na Oblicz spośród standardowych. Dodawanie (karta kategorii) i przegląd (karta „Moja szafa”) są rozdzielone. Pierwsze uruchomienie to `freshState()` (pusta szafa), a `seedState()` służy już tylko „Wczytaj przykład”.
+- **Prawa autorskie:** licencja jest zastrzeżona (`LICENSE`). Nagłówki w `src/*.js`, baner wstawiany przez `build.mjs` do `dist/index.html` i `dist/sw.js` oraz `public/robots.txt` mają zostać — to ślad autorstwa, nie ozdoba.
 - **Model:** zmiana wzoru lub stałej → test z konkretną liczbą w `tests/model.test.js` + opis w `docs/SPEC.md` (sekcje 5–6). Punkt kontrolny balastu to zawsze 5 m, rezerwa, pusta kamizelka.
 - **Bezpieczeństwo nurka:** zostaw komunikat o kontroli pływalności na 5 m; nie przedstawiaj szacunków jako pewnych.
 - **Klawiatura:** pole tekstowe na niskim ekranie włącza `body.kb` (chowa nawigację i pasek, przewija pole na górę). Nowe pola tekstowe testuj przy wysokości ~420 px.
@@ -46,4 +47,4 @@ Push na `main` → workflow uruchamia testy, build i publikuje `dist/` na GitHub
 
 ## Backlog
 
-Lista w `docs/SPEC.md`, sekcja 10. Bierz zadania po kolei, chyba że użytkownik wskaże inne.
+Lista w `docs/SPEC.md`, sekcja 11. Bierz zadania po kolei, chyba że użytkownik wskaże inne.
