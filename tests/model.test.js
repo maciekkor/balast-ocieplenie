@@ -74,6 +74,40 @@ test('nauka: nurkowanie „za lekko” podnosi prognozę', () => {
   assert.ok(after > before + 0.5, `${before} -> ${after}`);
 });
 
+test('zasolenie akwenu: gęstość wody zmienia wyporność każdej kategorii', () => {
+  const pr = A.diverState(A.seedState()).profile;
+  const at = (id, rho) => A.itemBuoy(A.fromCat(id), pr, {rho, depth:5, reserve:50, year:2026});
+  // 1.025 to punkt kalibracji: w morzu pozycja ma dokładnie tyle, ile mówi katalog
+  assert.ok(Math.abs(at('santi-elite', 1.025) - 0.3) < 1e-9, 'suchy skafander w morzu = wartość z katalogu');
+  assert.ok(Math.abs(at('mares-prestige', 1.025) - 1.0) < 1e-9, 'kamizelka w morzu = wartość z katalogu');
+  assert.ok(Math.abs(at('xdeep-zeos28', 1.025) + 0.2) < 1e-9, 'skrzydło w morzu = wartość z płyty');
+  assert.ok(Math.abs(at('misc-reg', 1.025) + 0.9) < 1e-9, 'automat w morzu = wartość z katalogu');
+  // w wodzie słodkiej ta sama rzecz wypiera tyle samo litrów, ale mniej kilogramów
+  for (const id of ['santi-elite','santi-bz400x','mares-prestige','xdeep-zeos28','fin-mares-aq-plus','misc-reg','sp-everflex-75','st-12-232'])
+    assert.ok(at(id, 1.000) < at(id, 1.029) - 0.02, id + ': wyporność nie reaguje na zasolenie');
+  // konkretne liczby: suchy skafander 0,188 kg w słodkiej wobec 0,300 w morzu (V ≈ 4,5 l × 0,025)
+  assert.ok(Math.abs(at('santi-elite', 1.000) - 0.188) < 0.005, 'suchy skafander w słodkiej wodzie: ' + at('santi-elite', 1.000));
+  assert.ok(Math.abs(at('mares-prestige', 1.000) - 0.888) < 0.005, 'kamizelka w słodkiej wodzie: ' + at('mares-prestige', 1.000));
+});
+
+test('zasolenie akwenu: w Bałtyku mniej ołowiu niż w Morzu Czerwonym', () => {
+  const pr = A.diverState(A.seedState()).profile;
+  const lead = rho => {
+    const items = ['santi-elite','santi-bz400x','xdeep-zeos28','fin-mares-aq-plus','misc-reg','st-12-232'].map(A.fromCat);
+    return A.roundUpHalf(A.toDry(A.physics(items, pr, {rho, depth:5, reserve:50, year:2026}).total, rho));
+  };
+  const fresh = lead(1.000), baltic = lead(1.005), red = lead(1.029);
+  assert.ok(fresh < baltic, `słodka ${fresh} nie jest lżejsza od Bałtyku ${baltic}`);
+  assert.ok(baltic < red, `Bałtyk ${baltic} nie jest lżejszy od Morza Czerwonego ${red}`);
+  // różnica jest duża — kilka kilogramów, nie zaokrąglenie
+  assert.ok(red - fresh >= 2.5, `różnica słodka→Czerwone tylko ${red - fresh} kg`);
+  // gęstości w presetach są ułożone tak, jak w rzeczywistości
+  const rho = id => A.SITE_PRESETS.find(s => s.id === id).rho;
+  assert.ok(rho('deepspot') < rho('baltic'), 'basen musi być słodszy od Bałtyku');
+  assert.ok(rho('baltic') < rho('croatia'), 'Bałtyk musi być słodszy od Adriatyku');
+  assert.ok(rho('croatia') < rho('marsaalam'), 'Adriatyk musi być słodszy od Morza Czerwonego');
+});
+
 test('płetwy i buty z masą: wyporność liczona', () => {
   const pr = A.diverState(A.seedState()).profile;
   assert.ok(A.itemBuoy(A.fromCat('fin-sp-jet'), pr, ctx) < -0.5);
@@ -182,6 +216,39 @@ test('import Suunto: bez próbek liczy z nagłówka, śmieci odrzuca', () => {
   assert.equal(A.parseSuuntoJson('{"foo":1}').why, 'notSuunto');
   assert.equal(A.parseSuuntoJson(JSON.stringify({DeviceLog: {Header: {ActivityType: 1, DateTime: '2026-01-01T10:00:00+01:00'}}})).why, 'notDive');
   assert.equal(A.kelvinToC(273.15), 0);
+});
+
+test('najbliższy akwen z przycisku: liczy się dystans, nie zasięg rejonu', () => {
+  const sites = A.seedSites();
+  const near = (lat, lon) => { const m = A.nearestSite({lat, lon}, sites); return m && m.id; };
+  // zgłoszone z Warszawy: Deepspot 45 km, ale poza swoim promieniem — a Bałtyk to teraz pas wybrzeża, nie koło o promieniu 400 km
+  assert.equal(near(52.2297, 21.0122), 'deepspot', 'z Warszawy najbliżej jest Deepspot, nie Bałtyk');
+  assert.equal(A.matchSite({lat: 52.2297, lon: 21.0122}, sites), null, 'reguła rejonowa nie ma z Warszawy żadnego trafienia — bo nikt tam nie nurkuje');
+  assert.equal(near(52.22, 18.25), 'honoratka', 'spod Konina najbliżej Honoratka');
+  assert.equal(near(54.52, 18.53), 'baltic', 'z Gdyni najbliżej Bałtyk');
+  assert.equal(near(50.06, 19.94), 'zakrzowek', 'z Krakowa najbliżej Zakrzówek — leży w samym mieście');
+  assert.equal(near(50.20, 19.28), 'koparki', 'z Jaworzna najbliżej Koparki');
+  assert.equal(near(50.57, 21.68), 'tarnobrzeskie', 'z Tarnobrzega najbliżej Jezioro Tarnobrzeskie');
+  assert.equal(near(53.75, 21.30), 'pilakno', 'spod Mrągowa najbliżej Piłakno');
+  assert.equal(near(35.68, 139.69), null, 'z Tokio żaden akwen nie jest blisko');
+  assert.equal(A.nearestSite(null, sites), null);
+});
+
+test('akwen z listy nurkowisk: odległość do najbliższego, promień na punkt', () => {
+  const sites = A.seedSites(), baltic = sites.find(s => s.id === 'baltic');
+  // Gdynia: środek Bałtyku z jednym punktem leżał 180 km dalej, lista nurkowisk daje kilka km
+  assert.ok(A.siteDistKm({lat: 54.52, lon: 18.53}, baltic) < 10, 'z Gdyni do Bałtyku to kilka km');
+  // akwen bez listy liczy się od swojego środka
+  const deep = sites.find(s => s.id === 'deepspot');
+  assert.ok(A.siteDistKm({lat: deep.lat, lon: deep.lon}, deep) < 0.1);
+  // promień bierzemy z punktu, nie z akwenu: punkt o r = 20 łapie pozycję 15 km od siebie,
+  // choć domyślny promień akwenu to 15
+  const wide = {id:'x', lat:54.83, lon:18.20, r:1, pts:[[54.83, 18.20, 20]]};
+  assert.equal(A.matchSite({lat: 54.70, lon: 18.20}, [wide]).id, 'x', 'promień punktu ma pierwszeństwo przed promieniem akwenu');
+  assert.equal(A.matchSite({lat: 54.20, lon: 18.20}, [wide]), null, 'poza promieniem punktu już nie łapie');
+  // każdy punkt to [lat, lon, r] — trzy liczby albo dwie
+  for (const s of sites) for (const pt of (s.pts || []))
+    assert.ok(pt.length >= 2 && pt.length <= 3 && pt.every(x => typeof x === 'number'), s.id + ': zły punkt ' + JSON.stringify(pt));
 });
 
 test('dopasowanie akwenu do pozycji z komputera', () => {

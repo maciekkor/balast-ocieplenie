@@ -40,6 +40,20 @@ function ageFactor(it, year){
 }
 function effT(p){ return p.tl != null ? (p.t + p.tl) / 2 : p.t; }
 
+// Wyporność wpisana w katalogu w kilogramach dotyczy morza 1,025. Ta sama rzecz w innej wodzie
+// wypiera tyle samo litrów, ale inaczej się to przelicza na kilogramy: B(ρ) = B + V·(ρ − 1,025).
+// Objętość liczymy z masy, gdy ją znamy (V = (masa + B)/1,025), a w pozostałych kategoriach
+// bierzemy typową — to te same rzędy wielkości co PLATE czy COV, opisane w SPEC 5.
+const VDISP = {dry:4.5, dryCrushed:8.5, bcd:4.5, wing:4, fins:1.5, misc:1.6};
+function dispVol(it){
+  const p = it.p;
+  if (p.vd != null) return p.vd;                                  // objętość podana wprost (butle)
+  if (p.mass) return (p.mass / 1000 + (p.b || 0)) / 1.025;        // znana masa: objętość wprost z fizyki
+  if (it.cat === 'dry') return p.shell === 'crushed' ? VDISP.dryCrushed : VDISP.dry;
+  return VDISP[it.cat] || 0;
+}
+const atRho = (b, it, rho) => b + dispVol(it) * (rho - 1.025);
+
 // wyporność pojedynczej sztuki sprzętu na głębokości d (kg, + unosi)
 function itemBuoy(it, pr, ctx){
   const p = it.p, rho = ctx.rho;
@@ -51,12 +65,12 @@ function itemBuoy(it, pr, ctx){
     return vol * (rho - RHO_NEO) * (1 - c) * ageFactor(it, ctx.year) + sole;
   }
   switch (it.cat){
-    case 'dry': return p.b || 0;
-    case 'under': return (p.g || 0) * bsa(pr) / 1.9;
-    case 'bcd': return p.b || 0;
-    case 'wing': return (p.b != null ? p.b : 0.3 + (PLATE[p.plate] ?? -0.5));
+    case 'dry': return atRho(p.b || 0, it, rho);
+    case 'under': return (p.g || 0) * bsa(pr) / 1.9 * (rho / 1.025);   // to gaz: ta sama objętość, inna gęstość wody
+    case 'bcd': return atRho(p.b || 0, it, rho);
+    case 'wing': return atRho(p.b != null ? p.b : 0.3 + (PLATE[p.plate] ?? -0.5), it, rho);
     case 'tank': case 'stage': return p.be + (p.vd || p.vol * 1.15) * (rho - 1.025) - p.vol * ctx.reserve * AIR;
-    case 'misc': case 'fins': return p.b || 0;
+    case 'misc': case 'fins': return atRho(p.b || 0, it, rho);
   }
   return 0;
 }
@@ -206,4 +220,4 @@ function learnThermal(st){
   return {delta: s / (w + 1.5), n: w, pts};
 }
 
-if (typeof module !== 'undefined') module.exports = {diverState, catalogItem, itemOf, bsa, bodyBuoy, bodyFat, itemBuoy, physics, learnLead, predictLead, thermalOfSet, tEf, learnThermal, toDry, roundUpHalf, compress};
+if (typeof module !== 'undefined') module.exports = {dispVol, diverState, catalogItem, itemOf, bsa, bodyBuoy, bodyFat, itemBuoy, physics, learnLead, predictLead, thermalOfSet, tEf, learnThermal, toDry, roundUpHalf, compress};

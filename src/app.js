@@ -42,6 +42,12 @@ function siteName(s){
   return s.name;
 }
 const waterLabel = rho => lbl().water[String(rho)] || tr('gęstość {x}', {x: rho});
+// Woda obok nazwy akwenu: „Bałtyk · Bałtyk · 7‰” wygląda jak błąd, więc gdy etykieta wody
+// zaczyna się od nazwy akwenu, zostaje z niej sama część o zasoleniu.
+function waterNote(site){
+  const w = waterLabel(site.rho), n = siteName(site);
+  return w.startsWith(n) ? w.slice(n.length).replace(/^\s*·\s*/, '') : w;
+}
 const monthOf = date => Math.max(0, Math.min(11, (+String(date).slice(5, 7) || 1) - 1));
 function planCtx(pl){ return {rho: siteOf(pl.siteId).rho, depth: 5, reserve: pl.reserve ?? 50, year: +String(pl.date).slice(0, 4) || new Date().getFullYear()}; }
 function fillTemps(pl){
@@ -164,11 +170,15 @@ function chipsFor(selected, act){
 }
 // nazwa bez dopisku o własności — tę niesie już ikona na chipie
 const bareName = w => nm(w).replace(/ \((wypożyczon[ay]|własny|rented|own)\)/, '');
+// Bez wpisanego tekstu lista idzie od najbliższego akwenu — nurek zwykle wybiera to, co ma pod nosem.
+// Gdy ktoś szuka po nazwie, kolejność zostaje alfabetyczna (czyli katalogowa), bo wtedy wie, czego chce.
 function siteMatches(q){
   const n = norm(q.trim());
-  if (!n) return S.sites.slice();
-  return S.sites.filter(s => { const name = norm(siteName(s)); return name.startsWith(n) || name.split(/[\s(),\-]+/).some(w => w.startsWith(n)); });
+  if (n) return S.sites.filter(s => { const name = norm(siteName(s)); return name.startsWith(n) || name.split(/[\s(),\-]+/).some(w => w.startsWith(n)); });
+  if (!lastPos) return S.sites.slice();
+  return S.sites.map(s => ({s, km: siteDistKm(lastPos, s)})).sort((a, b) => a.km - b.km).map(x => x.s);
 }
+const siteKm = s => lastPos ? Math.round(siteDistKm(lastPos, s)) : null;
 function hlName(name, q){
   const n = norm(q.trim()); if (!n) return esc(name);
   const nn = norm(name); let i = -1;
@@ -181,7 +191,7 @@ function siteCombo(pl, pre){
   return `<div class="f wide combo"><label for="${pre}site">${tr('Akwen')}</label>
     <input id="${pre}site" type="text" autocomplete="off" spellcheck="false" role="combobox" aria-autocomplete="list" aria-expanded="${open}" aria-controls="${pre}site-list"
       data-act="siteq" data-pre="${pre}" placeholder="${tr('Wpisz pierwsze litery')}" value="${esc(open ? q : siteName(siteOf(pl.siteId)))}">
-    ${open ? `<ul class="combo-list" id="${pre}site-list" role="listbox">${list.map((s, i) => `<li role="option" aria-selected="${i === ui.hl}"><button type="button" tabindex="-1" class="${i === ui.hl ? 'hl' : ''}" data-act="site-pick" data-pre="${pre}" data-id="${esc(s.id)}">${hlName(siteName(s), q)}</button></li>`).join('')
+    ${open ? `<ul class="combo-list" id="${pre}site-list" role="listbox">${list.map((s, i) => `<li role="option" aria-selected="${i === ui.hl}"><button type="button" tabindex="-1" class="${i === ui.hl ? 'hl' : ''}" data-act="site-pick" data-pre="${pre}" data-id="${esc(s.id)}">${hlName(siteName(s), q)}${siteKm(s) != null ? `<small class="km">${tr('{n} km', {n: siteKm(s)})}</small>` : ''}</button></li>`).join('')
       || `<li class="none">${tr('Brak akwenu zaczynającego się od „{q}”', {q: esc(q)})}</li>`}</ul>` : ''}
   </div>`;
 }
@@ -280,7 +290,8 @@ function advisor(pl, curItems){
 function locateSite(silent){
   if (!navigator.geolocation) return silent || toast(tr('Ten telefon nie udostępnia lokalizacji'));
   navigator.geolocation.getCurrentPosition(pos => {
-    const m = matchSite({lat: pos.coords.latitude, lon: pos.coords.longitude}, S.sites);
+    lastPos = {lat: pos.coords.latitude, lon: pos.coords.longitude};
+    const m = nearestSite(lastPos, S.sites);
     if (!m) return silent || toast(tr('Żaden akwen z listy nie leży blisko Ciebie'));
     if (P().plan.siteId === m.id) return silent || toast(tr('Akwen już pasuje do Twojej pozycji'));
     P().plan.siteId = m.id; fillTemps(P().plan);
@@ -346,7 +357,7 @@ function leadDetailHtml(pl, items, p){
   if (iss.length) return `<section class="card" id="lead-detail"><h2>${tr('Balast')}</h2>
     <p style="margin:10px 0 0">${tr('Najpierw dodaj {x} do zestawu. To one ważą najwięcej w bilansie wyporności, więc liczba bez nich byłaby zgadywaniem.', {x: issAcc(iss)})}</p></section>`;
   return `<section class="card" id="lead-detail"><h2>${tr('Balast')} <small>${tr('zakres 80%: {a}–{b} kg', {a: fmt(Math.max(0, p.lo)), b: fmt(p.hi)})}</small></h2>
-    <div class="small muted">${esc(siteName(site))} · ${L.n ? tr('nauka z {n} nurk. w dzienniku', {n: L.n}) : tr('bez nauki, tylko fizyka')} · ${tr('doświadczenie: {n} nurk. ({l})', {n: L.total, l: tr(L.exp.label)})}</div>
+    <div class="small muted">${esc(siteName(site))} · ${esc(waterNote(site))} · ${L.n ? tr('nauka z {n} nurk. w dzienniku', {n: L.n}) : tr('bez nauki, tylko fizyka')} · ${tr('doświadczenie: {n} nurk. ({l})', {n: L.total, l: tr(L.exp.label)})}</div>
     ${scaleHtml(p)}
     <div class="note">${esc(distribution(p, items))} ${tr('Przy pierwszym nurkowaniu w tej konfiguracji zrób kontrolę na 5 m z rezerwą i pustą kamizelką.')}</div>
   </section>
@@ -746,8 +757,10 @@ function render(){
   let sel = null; try { sel = fid && ae.selectionStart != null ? [ae.selectionStart, ae.selectionEnd] : null; } catch(_){}
   document.documentElement.lang = LANG;
   document.querySelectorAll('[data-t]').forEach(e => e.textContent = tr(e.dataset.t));
-  $('#lang').textContent = LANG === 'pl' ? 'EN' : 'PL';
+  // przycisk pokazuje flagę języka, na który przełącza — nazwa dla czytnika ekranu mówi to samo słowami
+  $('#lang').innerHTML = LANG === 'pl' ? FLAG.en : FLAG.pl;
   $('#lang').setAttribute('aria-label', LANG === 'pl' ? 'Switch to English' : 'Przełącz na polski');
+  $('#lang').setAttribute('title', LANG === 'pl' ? 'English' : 'Polski');
   const gate = gateOn(), wiz = !gate && wizardOn();
   $('#summary').innerHTML = !gate && !wiz && tab === 'calc' ? summaryHtml() : '';
   document.querySelector('nav.tabs').hidden = gate || wiz;
@@ -843,6 +856,7 @@ const ANDROID = /Android/.test(navigator.userAgent);
 const INAPP = /FBAN|FBAV|Instagram|Messenger|LinkedIn|Twitter|Snapchat|Pinterest|TikTok|MicroMessenger/.test(navigator.userAgent);
 const standalone = () => ['standalone','fullscreen','minimal-ui'].some(m => matchMedia('(display-mode: ' + m + ')').matches) || navigator.standalone === true;
 let installPrompt = null, installedApp = false, installedNow = false;
+let lastPos = null;          // ostatnia pozycja z telefonu — żyje tylko w pamięci karty, nie trafia do S
 // Czy aplikacja stoi już na ekranie telefonu? Na Androidzie mówi to wprost przeglądarka
 // (getInstalledRelatedApps, Chrome 84+); na iOS żadne API tego nie zdradza, więc zostaje poszlaka:
 // instrukcję instalacji ktoś tu już widział, a w tej przeglądarce nie ma żadnych danych.

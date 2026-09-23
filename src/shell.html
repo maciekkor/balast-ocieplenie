@@ -41,12 +41,14 @@ h1,h2,h3{font-family:var(--f-display);font-weight:600;letter-spacing:.01em;margi
 .top{display:flex;align-items:baseline;justify-content:space-between;gap:12px;padding-block:12px 8px}
 .top h1{font-size:clamp(16px,5vw,21px);text-transform:uppercase;letter-spacing:.04em;white-space:nowrap;min-width:0;overflow:hidden;text-overflow:ellipsis}
 .toprow{display:flex;align-items:center;gap:8px;flex-shrink:0}
-.langbtn{font:600 12px var(--f-mono);padding:4px 8px;border-radius:6px;letter-spacing:.05em}
+.langbtn{padding:4px 5px;border-radius:6px;line-height:0}
+.langbtn svg.flag{width:20px;height:13px;stroke:none;border-radius:2px;display:block}
 .combo{position:relative}
 .combo-list{position:absolute;left:0;right:0;top:100%;margin:4px 0 0;padding:4px;list-style:none;background:var(--surface);border:1px solid var(--line);border-radius:8px;box-shadow:var(--shadow);z-index:8;max-height:260px;overflow:auto}
 .combo-list button{display:block;width:100%;text-align:left;border:0;background:transparent;padding:9px 10px;border-radius:6px;font-weight:400}
 .combo-list button:hover,.combo-list button.hl{background:var(--teal-soft)}
 .combo-list b{color:var(--teal)}
+.combo-list .km{float:right;font:400 12px var(--f-mono);color:var(--muted);margin-left:10px}
 .combo-list .none{padding:9px 10px;color:var(--muted);font-size:14px}
 .datebox{position:relative;display:flex;gap:6px;max-width:260px}
 .datebox input[type=text]{flex:1;min-width:0;padding-inline:8px;font-variant-numeric:tabular-nums}

@@ -65,16 +65,47 @@ function distanceKm(a, b, c, d){
 // Porównujemy odległość mierzoną promieniem akwenu (km / r), a nie w kilometrach:
 // inaczej wielkie rejony („Bałtyk”, promień 400 km) wygrywałyby z kamieniołomem,
 // nad którym nurek właśnie stoi — tak Honoratka wychodziła jako Bałtyk.
+// Akwen to lista nurkowisk: [szerokość, długość, promień?]. Promień jest na punkt, bo zatoka
+// bywa rozległa, a kamieniołom ma sto metrów; bez własnego promienia punkt bierze `r` akwenu.
+// Liczby punktów nie ograniczamy — im dokładniejsza lista, tym uczciwsze dopasowanie.
+// Zwracamy dwie miary: km do najbliższego punktu (kto jest bliżej) i km/r (czy pozycja mieści się w zasięgu).
+function siteHit(gps, s){
+  const pts = Array.isArray(s.pts) && s.pts.length ? s.pts : [[s.lat, s.lon]];
+  let km = Infinity, score = Infinity;
+  for (const pt of pts){
+    const la = pt[0], lo = pt[1], r = pt[2] || s.r || 25;
+    if (typeof la !== 'number' || typeof lo !== 'number') continue;
+    const d = distanceKm(gps.lat, gps.lon, la, lo);
+    if (d < km) km = d;
+    if (d / r < score) score = d / r;
+  }
+  return {km, score};
+}
+const siteDistKm = (gps, s) => siteHit(gps, s).km;
 function matchSite(gps, sites){
   if (!gps || !Array.isArray(sites)) return null;
   let best = null;
   for (const s of sites){
     if (typeof s.lat !== 'number' || typeof s.lon !== 'number') continue;
-    const r = s.r || 25;
-    const km = distanceKm(gps.lat, gps.lon, s.lat, s.lon);
-    if (km <= r && (!best || km / r < best.score)) best = {id: s.id, km: Math.round(km), score: km / r};
+    const h = siteHit(gps, s);
+    if (h.score <= 1 && (!best || h.score < best.score)) best = {id: s.id, km: Math.round(h.km), score: h.score};
   }
   return best && {id: best.id, km: best.km};
 }
 
-if (typeof module !== 'undefined') module.exports = {parseSuuntoJson, kelvinToC, matchSite, distanceKm};
+// Dwa różne pytania, więc dwie funkcje. matchSite(): „w którym rejonie jestem" — pozycja
+// z komputera pada nad samym akwenem, więc liczy się zasięg rejonu. nearestSite(): „który akwen
+// mam najbliżej" — nurek stoi w domu albo w drodze, więc zasięg nie ma znaczenia, liczy się dystans.
+// Bez tego rozróżnienia Warszawa dostawała Bałtyk (368 km, ale w promieniu 400) zamiast Deepspotu (45 km).
+function nearestSite(gps, sites, maxKm){
+  if (!gps || !Array.isArray(sites)) return null;
+  let best = null;
+  for (const s of sites){
+    if (typeof s.lat !== 'number' || typeof s.lon !== 'number') continue;
+    const km = siteDistKm(gps, s);
+    if (km <= (maxKm || 500) && (!best || km < best.km)) best = {id: s.id, km: Math.round(km)};
+  }
+  return best;
+}
+
+if (typeof module !== 'undefined') module.exports = {parseSuuntoJson, kelvinToC, matchSite, nearestSite, siteDistKm, siteHit, distanceKm};
