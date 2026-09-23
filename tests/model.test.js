@@ -197,16 +197,21 @@ test('najbliższy akwen z przycisku: liczy się dystans, nie zasięg rejonu', ()
   assert.equal(A.nearestSite(null, sites), null);
 });
 
-test('akwen z listy punktów: odległość do najbliższego nurkowiska', () => {
+test('akwen z listy nurkowisk: odległość do najbliższego, promień na punkt', () => {
   const sites = A.seedSites(), baltic = sites.find(s => s.id === 'baltic');
-  assert.ok(baltic.pts.length <= 10, 'najwyżej 10 punktów na akwen');
-  // Gdynia: środek Bałtyku z jednym punktem leżał 180 km dalej, lista punktów daje kilka km
-  const km = A.siteDistKm({lat: 54.52, lon: 18.53}, baltic);
-  assert.ok(km < 10, `z Gdyni do Bałtyku powinno być kilka km, jest ${Math.round(km)}`);
-  // akwen bez listy punktów liczy się od swojego środka
+  // Gdynia: środek Bałtyku z jednym punktem leżał 180 km dalej, lista nurkowisk daje kilka km
+  assert.ok(A.siteDistKm({lat: 54.52, lon: 18.53}, baltic) < 10, 'z Gdyni do Bałtyku to kilka km');
+  // akwen bez listy liczy się od swojego środka
   const deep = sites.find(s => s.id === 'deepspot');
-  assert.ok(Math.abs(A.siteDistKm({lat: deep.lat, lon: deep.lon}, deep)) < 0.1);
-  for (const s of sites) assert.ok(!s.pts || s.pts.length <= 10, s.id + ': za dużo punktów');
+  assert.ok(A.siteDistKm({lat: deep.lat, lon: deep.lon}, deep) < 0.1);
+  // promień bierzemy z punktu, nie z akwenu: punkt o r = 20 łapie pozycję 15 km od siebie,
+  // choć domyślny promień akwenu to 15
+  const wide = {id:'x', lat:54.83, lon:18.20, r:1, pts:[[54.83, 18.20, 20]]};
+  assert.equal(A.matchSite({lat: 54.70, lon: 18.20}, [wide]).id, 'x', 'promień punktu ma pierwszeństwo przed promieniem akwenu');
+  assert.equal(A.matchSite({lat: 54.20, lon: 18.20}, [wide]), null, 'poza promieniem punktu już nie łapie');
+  // każdy punkt to [lat, lon, r] — trzy liczby albo dwie
+  for (const s of sites) for (const pt of (s.pts || []))
+    assert.ok(pt.length >= 2 && pt.length <= 3 && pt.every(x => typeof x === 'number'), s.id + ': zły punkt ' + JSON.stringify(pt));
 });
 
 test('dopasowanie akwenu do pozycji z komputera', () => {
