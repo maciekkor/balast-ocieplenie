@@ -308,3 +308,21 @@ Rozpoznanie na przyszłość — zbieranie danych do globalnego modelu i monetyz
 | B6 | Testy e2e (Playwright) | pasek, wyszukiwanie akwenu, data, EN, offline |
 | B7 | Usunąć nieużywane klucze tłumaczeń (`odczuw.`, `odczuwalnie {t} °C`, `Twój zestaw daje komfort od`) | porządki; klucze po schowkowej kopii zapasowej już usunięte |
 | B8 | Dostępność: pełna obsługa klawiatury w chipach i doradcy, role ARIA wykresu | |
+
+### Pod bazy nurkowe i centra szkoleniowe
+
+Analiza (bolączki bazy, kolejność, co wymaga backendu, pytania do zadania przed budową) jest w **`docs/POMYSLY.md` sekcja 3**. Wszystko poniżej mieści się w zasadzie „dane tylko lokalnie" — działa na jednym tablecie bazy, bez konta i bez serwera. Synchronizacja między urządzeniami leży poza tą listą, bo bez backendu się nie da.
+
+| # | Zadanie | Uwagi |
+| --- | --- | --- |
+| B10 | Szybkie liczenie bez profilu („lada") | jeden ekran: wzrost, waga, skafander, butla → ołów; nic nie trafia do `S`. Pierwsza funkcja do pokazania bazie, bo nie wymaga zakładania czegokolwiek |
+| B12 | Tabela ołowiu do wydruku | macierz „waga nurka × typowy zestaw wypożyczalni" z katalogu, `@media print`. Działa nawet wtedy, gdy nikt nie otworzy aplikacji |
+| B11 | Karta wydania sprzętu do druku | nazwisko, sprzęt z rozmiarami, ołów, akwen, data; `@media print` — dziś w projekcie nie ma żadnego stylu do druku |
+| B14 | Lista nurków: wyszukiwanie, sortowanie po ostatnim nurkowaniu, archiwum | `diversCard()` to płaska lista bez filtra — przy 40 kursantach nie do użycia |
+| B15 | Skrócony kreator dla gościa/kursanta | wzrost i waga, reszta domyślna, profil oznaczony jako gość; zakładanie ma trwać 20 s |
+| B9 | Magazyn bazy: szafa wspólna dla profili | **warunek wstępny większości pozostałych** — dziś `wardrobe` należy do nurka (`S.profiles[].wardrobe`), więc sprzęt wypożyczalni musiałby być kopiowany na każdego kursanta. Wymaga migracji `S` |
+| B18 | Eksport CSV dziennika i wydań | dziś jedyne wyjście to kopia zapasowa JSON, czyli format dla aplikacji, nie dla człowieka |
+| B13 | Przekazanie profilu kodem QR | profil i zestaw w części `#` adresu — bez serwera; kursant skanuje i ma swoje liczby u siebie |
+| B17 | Protokół kontroli pływalności na 5 m | prowadzona procedura z zapisem poprawki; jednocześnie najlepsza jakościowo dana dla nauki modelu |
+| B16 | Nazwa i logo bazy w nagłówku | ustawiane raz, trzymane lokalnie |
+| B19 | Rozkład ołowiu: pas, kieszenie trymowe, kamizelka | `distribution()` daje dziś jedno zdanie; instruktor i tak to tłumaczy |
