@@ -116,6 +116,8 @@ test('build: logo na ciemne tło jedzie z aplikacją i działa offline', () => {
     const css = readFileSync(path.join(ROOT, 'src', 'shell.html'), 'utf8');
     assert.equal((css.match(/--logo-l:none; --logo-d:block/g) || []).length, 2, 'oba ciemne bloki');
     assert.ok(css.includes('--logo-l:block; --logo-d:none'), 'jasny blok');
+    assert.equal((css.match(/--logo-plate:#EEF3F3/g) || []).length, 2, 'plakietka w obu ciemnych blokach');
+    assert.ok(css.includes('--logo-plate:transparent'), 'w jasnym plakietki nie widać');
   } finally { done(); }
 });
 

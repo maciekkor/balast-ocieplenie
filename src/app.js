@@ -794,7 +794,10 @@ function summaryHtml(){
 // Nagłówek: logo centrum, pod nim mała nazwa aplikacji. Raz, przy starcie — render() go nie przepisuje.
 // Logo centrum; z `logoDark` dwa obrazki, a który widać, rozstrzygają tokeny motywu (--logo-l/--logo-d),
 // więc działa i przy „jak w telefonie”, i przy wymuszonym motywie.
+// `logoPlate` kładzie oryginalne logo na jasnej plakietce w ciemnym motywie — dla logotypów, których
+// nie wolno przemalować, a które mają ciemne elementy.
 function brandLogo(cls){
+  cls = [cls, BRAND.logoPlate ? 'plate' : ''].filter(Boolean).join(' ');
   const alt = esc(brandText(BRAND.name, LANG)), c = cls ? cls + ' ' : '';
   return BRAND.logoDark
     ? `<img class="${c}lg-l" src="${esc(BRAND.logo)}" alt="${alt}"><img class="${c}lg-d" src="${esc(BRAND.logoDark)}" alt="${alt}">`

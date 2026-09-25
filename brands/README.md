@@ -28,6 +28,7 @@ Katalogi zaczynające się od `_` są pomijane — `_example/` to szablon, nie o
 | `name` | tak | nazwa centrum — napis albo `{"pl": "…", "en": "…"}` |
 | `appName` | tak | nazwa pod ikoną na ekranie telefonu, **najwyżej 12 znaków** (dłuższą telefon utnie) |
 | `logo` | tak | logo do nagłówka, powitania i Profilu; najlepiej SVG, poziome |
+| `logoPlate` | nie | `true` — w ciemnym motywie logo stoi na jasnej plakietce. Dla logotypów z ciemnymi elementami, których nie chcemy przemalowywać (zamiast `logoDark`) |
 | `logoDark` | nie | wersja na ciemne tło, gdy zwykłe ma ciemne elementy, które w ciemnym motywie zniknęłyby (np. granatowy napis). Najlepiej oficjalna wersja „negatyw” od centrum |
 | `icon192`, `icon512` | tak | ikona aplikacji, PNG 192×192 i 512×512, kwadrat bez przezroczystych rogów |
 | `appleIcon` | tak | ikona dla iPhone'a, PNG 180×180 |

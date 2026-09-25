@@ -13,7 +13,7 @@
   --f-display:"Barlow Condensed","Arial Narrow",system-ui,sans-serif;
   --f-body:"Source Sans 3",system-ui,-apple-system,"Segoe UI",sans-serif;
   --f-mono:"JetBrains Mono",ui-monospace,Menlo,Consolas,monospace;
-  --logo-l:block; --logo-d:none;          /* wersje centrów: które logo widać (jasne tło / ciemne tło) */
+  --logo-l:block; --logo-d:none; --logo-plate:transparent;          /* wersje centrów: które logo widać (jasne tło / ciemne tło) */
   color-scheme:light;
 }
 @media (prefers-color-scheme: dark){
@@ -22,7 +22,7 @@
     --accent:#F0773F; --accent-ink:#1A0B03; --teal:#5DB8BD; --teal-soft:#123338;
     --pos:#5DB8BD; --neg:#D39A5F; --good:#5CC28A; --warn:#E3B04F; --bad:#F07A6E;
     --good-soft:#12301F; --warn-soft:#33270F; --bad-soft:#3A1715;
-    --shadow:0 1px 2px rgba(0,0,0,.3),0 4px 16px rgba(0,0,0,.25); --logo-l:none; --logo-d:block; color-scheme:dark;
+    --shadow:0 1px 2px rgba(0,0,0,.3),0 4px 16px rgba(0,0,0,.25); --logo-l:none; --logo-d:block; --logo-plate:#EEF3F3; color-scheme:dark;
   }
 }
 :root[data-theme="dark"]{
@@ -30,7 +30,7 @@
   --accent:#F0773F; --accent-ink:#1A0B03; --teal:#5DB8BD; --teal-soft:#123338;
   --pos:#5DB8BD; --neg:#D39A5F; --good:#5CC28A; --warn:#E3B04F; --bad:#F07A6E;
   --good-soft:#12301F; --warn-soft:#33270F; --bad-soft:#3A1715;
-  --shadow:0 1px 2px rgba(0,0,0,.3),0 4px 16px rgba(0,0,0,.25); --logo-l:none; --logo-d:block; color-scheme:dark;
+  --shadow:0 1px 2px rgba(0,0,0,.3),0 4px 16px rgba(0,0,0,.25); --logo-l:none; --logo-d:block; --logo-plate:#EEF3F3; color-scheme:dark;
 }
 *{box-sizing:border-box}
 html,body{background:var(--ground)}
@@ -73,6 +73,7 @@ h1,h2,h3{font-family:var(--f-display);font-weight:600;letter-spacing:.01em;margi
 .brand-logo{display:block;height:44px;width:auto;max-width:100%;object-fit:contain}
 .brand-logo.wel{height:52px;margin:0 0 12px}
 img.lg-l{display:var(--logo-l)} img.lg-d{display:var(--logo-d)}
+img.plate{box-sizing:content-box;background:var(--logo-plate);padding:3px 7px;border-radius:7px}
 .brand-links{margin:8px 0 0;font-size:14px;overflow-wrap:anywhere}
 .brand-links a{color:var(--teal)}
 /* aktualności centrum: grafika na całą szerokość karty, podpis i dwa przyciski */
