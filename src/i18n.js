@@ -115,7 +115,7 @@ const EN = {
   'Nie udało się ustalić lokalizacji':'Could not get your location',
   'Ustawiać akwen po Twojej lokalizacji?':'Pick the site from your location?',
   'Telefon zapyta o zgodę. Pozycja zostaje w telefonie — służy tylko do wskazania najbliższego akwenu z listy.':'Your phone will ask for permission. The position stays on the phone — it only points at the nearest site on the list.',
-  'Wybiorę sam':'I will pick it myself','Najbliższy akwen':'Nearest site','Najbliższy':'Nearest','Motyw':'Theme','Jak w telefonie':'Match phone','Jasny':'Light','Ciemny':'Dark','Tak, najbliższy akwen':'Yes, nearest site',
+  'Wybiorę sam':'I will pick it myself','Najbliższy akwen':'Nearest site','Aktualności':'News','Szczegóły':'Details','Ukryj':'Hide','Aktualności wróciły na ekran Oblicz':'News is back on the Calculate screen','Przeniesiono dane z aplikacji Balast i Ocieplenie':'Your data has been moved over from Balast i Ocieplenie','Aplikację udostępnia {x}.':'This app is provided by {x}.','Pokaż ukryte aktualności':'Show hidden news','Masz już profil w aplikacji Balast i Ocieplenie na tym telefonie.':'You already have a profile in Balast i Ocieplenie on this phone.','Przenieś moje dane':'Move my data over','Najbliższy':'Nearest','Motyw':'Theme','Jak w telefonie':'Match phone','Jasny':'Light','Ciemny':'Dark','Tak, najbliższy akwen':'Yes, nearest site',
   'Dodano — ustaw rozmiar':'Added — pick the size',
   'To wyporność sprzętu decyduje o ołowiu, więc bez niego nie ma czego liczyć. Dodaj to, w czym nurkujesz — resztę uzupełnisz w Szafie.':'Ballast follows the buoyancy of your gear, so there is nothing to compute without it. Add what you dive in — the rest goes into the Wardrobe later.',
   'Dodaj jeszcze: {x}':'Add one more thing: {x}',

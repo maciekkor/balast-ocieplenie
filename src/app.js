@@ -2,7 +2,10 @@
 // Copyright (c) 2026 Maciej Korzeniowski. Wszelkie prawa zastrzeżone / All rights reserved.
 // Kopiowanie i utwory zależne wymagają pisemnej zgody autora — zobacz LICENSE.
 // ===== Aplikacja =====
-const KEY = 'balast-ocieplenie.v1';
+// Wersje centrów leżą pod tym samym adresem co główna (…/balast-ocieplenie/<id>/), a localStorage
+// jest wspólny dla całego adresu — każda wersja trzyma więc dane pod własnym kluczem.
+const MAIN_KEY = 'balast-ocieplenie.v1';
+const KEY = BRAND ? MAIN_KEY + '@' + BRAND.id : MAIN_KEY;
 let S, L, T, memOnly = false, tab = 'calc', ui = {draft:null, editGear:null, editSite:null, addQ:'', addCat:'', confirmWipe:false, quick:null, siteQ:null, hl:0, wiz:0, delDiver:null, explain:false, planInfo:false, thermInfo:false, gateSteps:false, wizCat:0};
 const $ = s => document.querySelector(s);
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -428,6 +431,7 @@ function viewCalc(){
   const pl = P().plan, items = resolveItems(pl.items, P()), ctx = planCtx(pl);
   const p = predictLead(items, dst(), ctx, L);
   return `<div class="stack">
+  ${newsCard()}
   <section class="card" id="plan-card"><div class="card-head"><h2>${tr('Planowane nurkowanie')}</h2>
       <button class="sb-q" data-act="plan-info" aria-expanded="${!!ui.planInfo}" title="${tr('Założenia')}" aria-label="${tr('Założenia')}">${ICON.ask}</button></div>
     ${planFields(pl, 'p-')}
@@ -594,6 +598,7 @@ function viewProfile(){
   const sd0 = Math.sqrt(L.cov[0][0]);
   const learnedItems = L.feats.map((w, i) => ({w, v: L.theta[i + 1], sd: Math.sqrt(L.cov[i + 1][i + 1])})).filter(x => Math.abs(x.v) >= 0.05);
   return `<div class="stack">
+  ${brandCard()}
   ${diversCard()}
   <section class="card"><h2>${tr('Profil nurka')}</h2>
     ${langTiles()}
@@ -653,7 +658,11 @@ const wizNav = (back, next) => `<div class="btnrow"><button class="primary" data
 function viewWizard(){
   const pr = P().profile, step = ui.wiz;
   if (step === 0) return `<div class="stack"><section class="card">
+    ${BRAND ? `<img class="brand-logo wel" src="${esc(BRAND.logo)}" alt="${esc(brandText(BRAND.name, LANG))}">` : ''}
     <h2>${tr('Witaj')}</h2>
+    ${BRAND ? `<p class="small muted" style="margin:4px 0 0">${tr('Aplikację udostępnia {x}.', {x: esc(brandText(BRAND.name, LANG))})}</p>` : ''}
+    ${mainState() ? `<div class="opt" style="margin-top:10px;grid-template-columns:1fr"><div class="items">${tr('Masz już profil w aplikacji Balast i Ocieplenie na tym telefonie.')}</div>
+      <div class="btnrow" style="margin-top:6px"><button class="sm primary" data-act="brand-import">${tr('Przenieś moje dane')}</button></div></div>` : ''}
     <p style="margin:8px 0 0">${tr('Policzę, ile ołowiu zabrać i jaki zestaw ocieplenia założyć, a po każdym nurkowaniu nauczę się z Twojej oceny. Najpierw kilka pytań o Ciebie — bez nich wynik byłby zgadywaniem.')}</p>
     <p class="small muted" style="margin:8px 0 0">${tr('Dane zostają w tym telefonie: bez konta, bez serwera, bez wysyłania czegokolwiek.')}</p>
     ${langTiles()}
@@ -780,6 +789,60 @@ function summaryHtml(){
       <div class="sb-therm"><span>${tr('woda')} <b class="mono">${fmt(tBreak(pl).t)}°</b> · ${tr('komfort od')} <b class="mono">${fmt(th.comfort - delta)}°</b></span>${thermalVerdict(tef - th.comfort)}</div>
       ${iss.length ? `<div class="sb-warn">${tr('Dodaj {x} — bez tego nie policzę ołowiu.', {x: issAcc(iss)})}</div>` : ''}</div></div>`;
 }
+// ---------- wersja centrum nurkowego ----------
+// BRAND wstawia build.mjs z brands/<id>/brand.json; w głównej wersji to null i nic z tego się nie pokazuje.
+// Nagłówek: logo centrum, pod nim mała nazwa aplikacji. Raz, przy starcie — render() go nie przepisuje.
+function brandHeader(){
+  if (!BRAND) return;
+  const h = $('.top h1'); h.className = 'brand';
+  h.innerHTML = `<img src="${esc(BRAND.logo)}" alt="${esc(brandText(BRAND.name, 'pl'))}"><small>Balast &amp; Ocieplenie</small>`;
+}
+// Aktualności centrum (wyjazdy, kursy): 1–2 grafiki na górze Oblicz, bo tam nurek zagląda przed każdym
+// nurkowaniem. Znikają same po terminie („until”), a „Ukryj” chowa je do czasu nowej grafiki.
+// Grafiki leżą w paczce aplikacji (ten sam adres), więc działają offline i niczego nie pobieramy z zewnątrz.
+// Dwie aktualności idą w pasek przewijany w bok: karta ma wtedy wysokość jednej, a planowane
+// nurkowanie nie wypada poza ekran przy każdym otwarciu aplikacji.
+function newsCard(){
+  if (!BRAND) return '';
+  const list = activeNews(BRAND.news, today(), S.newsSeen);
+  if (!list.length) return '';
+  const name = brandText(BRAND.name, LANG);
+  return `<section class="card news" id="news-card"><h2>${tr('Aktualności')} <small>${esc(name)}</small></h2>
+    <div class="news-list${list.length > 1 ? ' many' : ''}">${list.map(n => {
+      const t = brandText(n.title, LANG), x = brandText(n.text, LANG), img = `<img src="${esc(n.img)}" alt="${esc(t || name)}" loading="lazy">`;
+      return `<figure class="news-item">${n.url ? `<a href="${esc(n.url)}" target="_blank" rel="noopener">${img}</a>` : img}
+        ${t || x ? `<figcaption>${t ? `<b>${esc(t)}</b>` : ''}${x ? `<span>${esc(x)}</span>` : ''}</figcaption>` : ''}
+        <div class="btnrow">${n.url ? `<a class="btn sm" href="${esc(n.url)}" target="_blank" rel="noopener">${tr('Szczegóły')}</a>` : ''}
+          <button class="sm ghost" data-act="news-hide" data-id="${esc(newsId(n))}">${tr('Ukryj')}</button></div></figure>`;
+    }).join('')}</div></section>`;
+}
+// Karta centrum w Profilu: kto udostępnia aplikację i jak się z nim skontaktować — to jest
+// ten kontakt z wyszkolonym nurkiem, o który centrum chodzi. Stąd też wracają ukryte aktualności.
+function brandCard(){
+  if (!BRAND) return '';
+  const c = BRAND.contact || {}, name = brandText(BRAND.name, LANG);
+  const links = [
+    c.url && `<a href="${esc(c.url)}" target="_blank" rel="noopener">${esc(c.url.replace(/^https:\/\/(www\.)?/, '').replace(/\/$/, ''))}</a>`,
+    c.phone && `<a href="tel:${esc(String(c.phone).replace(/[^\d+]/g, ''))}">${esc(c.phone)}</a>`,
+    c.email && `<a href="mailto:${esc(c.email)}">${esc(c.email)}</a>`
+  ].filter(Boolean);
+  const hidden = (BRAND.news || []).some(n => S.newsSeen.includes(newsId(n)));
+  return `<section class="card brand-card"><img class="brand-logo" src="${esc(BRAND.logo)}" alt="${esc(name)}">
+    <p class="small muted" style="margin:8px 0 0">${tr('Aplikację udostępnia {x}.', {x: esc(name)})}</p>
+    ${links.length ? `<p class="brand-links">${links.join('<span aria-hidden="true"> · </span>')}</p>` : ''}
+    ${hidden ? `<div class="btnrow"><button class="sm" data-act="news-reset">${tr('Pokaż ukryte aktualności')}</button></div>` : ''}</section>`;
+}
+// Nurek, który zna już główną aplikację, nie musi zaczynać od zera: ten sam adres, więc jej dane
+// są w zasięgu. Działa tylko w przeglądarce — zainstalowana aplikacja na iOS ma osobną pamięć.
+function mainState(){
+  if (!BRAND) return null;
+  try {
+    const raw = localStorage.getItem(MAIN_KEY); if (!raw) return null;
+    const o = migrate(JSON.parse(raw));
+    return o && o.profiles.some(p => p.onboarded) ? o : null;
+  } catch(_){ return null; }
+}
+
 function render(){
   const ae = document.activeElement, fid = ae && ae.id && view.contains(ae) ? ae.id : null;
   let sel = null; try { sel = fid && ae.selectionStart != null ? [ae.selectionStart, ae.selectionEnd] : null; } catch(_){}
@@ -902,7 +965,7 @@ const gateOn = () => (IOS || ANDROID) && !standalone() && !S.installSkip;
 // czy nurek ma już coś do stracenia — na iOS aplikacja z ekranu ma osobną pamięć niż Safari
 const hasData = () => P().onboarded || P().dives.length || P().wardrobe.length > 1 || S.profiles.length > 1;
 
-const homeIcon = () => `<figure class="home-icon"><img src="icons/icon-192.png" alt="" width="64" height="64"><figcaption>Balast</figcaption></figure>
+const homeIcon = () => `<figure class="home-icon"><img src="${BRAND ? esc(BRAND.icon192) : 'icons/icon-192.png'}" alt="" width="64" height="64"><figcaption>${BRAND ? esc(BRAND.appName) : 'Balast'}</figcaption></figure>
   <p class="small muted" style="text-align:center;margin:6px 0 0">${tr('Tej ikony szukaj na ekranie telefonu.')}</p>`;
 
 function viewGate(){
@@ -1032,6 +1095,11 @@ view.addEventListener('click', e => {
   const b = e.target.closest('[data-act]'); if (!b || b.tagName === 'INPUT' || b.tagName === 'SELECT') return;
   const a = b.dataset.act;
   if (a === 'lang-pick') return setLang(b.dataset.v);
+  if (a === 'news-hide'){ S.newsSeen = S.newsSeen.concat(b.dataset.id).slice(-60); return commit(); }
+  if (a === 'news-reset'){ S.newsSeen = []; toast(tr('Aktualności wróciły na ekran Oblicz')); return commit(); }
+  if (a === 'brand-import'){ const o = mainState(); if (!o) return;
+    o.newsSeen = []; S = o; LANG = S.lang === 'en' ? 'en' : 'pl'; tab = 'calc';
+    toast(tr('Przeniesiono dane z aplikacji Balast i Ocieplenie')); commit(); window.scrollTo(0, 0); return; }
   if (a === 'theme-pick'){ S.theme = THEMES.includes(b.dataset.v) ? b.dataset.v : 'auto'; applyTheme(); return commit(); }
   if (a.startsWith('pick-')){
     const pr = P().profile, v = b.dataset.v;
@@ -1298,7 +1366,7 @@ view.addEventListener('change', e => {
   }
 });
 
-load(); applyTheme(); recompute(); render();
+load(); applyTheme(); brandHeader(); recompute(); render();
 if (gateOn()){
   gateSeenBefore = !!S.gateSeen;          // poszlaka działa dopiero przy kolejnym wejściu
   if (!S.gateSeen){ S.gateSeen = true; save(); }

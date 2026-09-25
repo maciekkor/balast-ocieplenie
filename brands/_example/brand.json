@@ -1,0 +1,25 @@
+{
+  "id": "przyklad",
+  "name": {"pl": "Centrum Nurkowe Przykład", "en": "Example Dive Centre"},
+  "appName": "Przykład",
+  "logo": "logo.svg",
+  "icon192": "icon-192.png",
+  "icon512": "icon-512.png",
+  "appleIcon": "apple-touch-icon.png",
+  "site": "koparki",
+  "colors": {
+    "light": {"accent": "#0E7C66", "accentInk": "#FFFFFF", "teal": "#0B5D57", "tealSoft": "#D7ECE8"},
+    "dark":  {"accent": "#3CC4A6", "accentInk": "#062A23", "teal": "#6FD3C0", "tealSoft": "#12332E"}
+  },
+  "contact": {"url": "https://example.com", "phone": "+48 600 000 000", "email": "kontakt@example.com"},
+  "news": [
+    {
+      "id": "2026-11-marsa-alam",
+      "img": "news/wyjazd.svg",
+      "title": {"pl": "Wyjazd: Marsa Alam, listopad", "en": "Trip: Marsa Alam, November"},
+      "text": {"pl": "7 dni, 18 nurkowań z łodzi. Zapisy do końca października.", "en": "7 days, 18 boat dives. Sign up by the end of October."},
+      "url": "https://example.com/wyjazdy",
+      "until": "2026-10-31"
+    }
+  ]
+}

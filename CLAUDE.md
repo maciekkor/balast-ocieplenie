@@ -14,7 +14,8 @@ Brak zależności npm. Wymagany Node ≥ 20.
 
 ## Struktura
 
-- `src/shell.html` — CSS i szkielet; `src/data.js` katalog i akweny; `src/model.js` fizyka i nauka (czyste funkcje, bez DOM); `src/import.js` wczytywanie nurkowania z pliku komputera; `src/seed.js` dane startowe i migracja; `src/i18n.js` tłumaczenia; `src/app.js` stan, widoki, zdarzenia; `src/sw.template.js` service worker.
+- `src/shell.html` — CSS i szkielet; `src/data.js` katalog i akweny; `src/model.js` fizyka i nauka (czyste funkcje, bez DOM); `src/import.js` wczytywanie nurkowania z pliku komputera; `src/seed.js` dane startowe i migracja; `src/i18n.js` tłumaczenia; `src/brand.js` wersje centrów (czyste funkcje, także dla buildu); `src/app.js` stan, widoki, zdarzenia; `src/sw.template.js` service worker.
+- `brands/<id>/` — wersje centrów nurkowych, każda publikowana pod `…/<id>/`; `brands/_example/` to szablon pomijany przez build.
 - `public/` — pliki statyczne kopiowane do `dist/`.
 - `dist/` — wynik buildu, **nie commituj** (jest w `.gitignore`); publikuje go GitHub Actions (`.github/workflows/pages.yml`).
 
@@ -36,13 +37,14 @@ Brak zależności npm. Wymagany Node ≥ 20.
 - **Ołów tylko z kompletnym zestawem:** bez butli i bez kamizelki/skrzydła (`setIssues()`) nie pokazujemy liczby nigdzie — ani w pasku, ani w karcie Balast, ani przy propozycjach doradcy, ani jako podpowiedź w dzienniku. Zamiast tego komunikat, czego dodać.
 - **Bezpieczeństwo nurka:** zostaw komunikat o kontroli pływalności na 5 m; nie przedstawiaj szacunków jako pewnych.
 - **Klawiatura:** pole tekstowe na niskim ekranie włącza `body.kb` (chowa nawigację i pasek, przewija pole na górę). Nowe pola tekstowe testuj przy wysokości ~420 px.
+- **Wersje centrów (`BRAND`):** konfiguracja z `brands/<id>/brand.json`, wstawiana przez build; w głównej `BRAND = null`. Nic, co dotyczy konkretnego centrum, nie trafia do `src/` — tylko do `brands/<id>/`. Wszystkie wersje dzielą adres, więc: dane pod `KEY` z `@<id>` (nigdy wprost `MAIN_KEY`, poza `mainState()`), service worker kasuje **tylko cache z własnym prefiksem**, a główny pomija podkatalogi centrów (`SKIP`). Aktualności są plikami w paczce centrum — aplikacja niczego nie pobiera z serwera centrum. Repo jest publiczne: pliki centrum dopiero po jego zgodzie. Szczegóły: `brands/README.md`, SPEC sekcja 7.
 - **Motyw:** `S.theme` (`auto`/`light`/`dark`) — kafelki pod językiem w dwóch miejscach: powitalny krok kreatora i Profil; wspólne dla profili. `auto` nie ustawia `data-theme`, wymuszenie ustawia je na `<html>`; nowe kolory dodawaj do **wszystkich trzech** bloków `:root` w `shell.html`, inaczej jeden z motywów zostanie z niedomalowanym tokenem. `applyTheme()` pilnuje też `<meta name="theme-color">`.
 - **UI:** format daty `rrrr-mm-dd`; przecinek dziesiętny w PL; ołów w górę do 0,5 kg; układ działa na 390 px bez poziomego przewijania, w jasnym i ciemnym motywie; kolory tylko z tokenów CSS.
 - **Akweny:** preset ma listę nurkowisk `pts: [[lat, lon, r?], …]` (bez limitu) albo sam `lat`/`lon`; promień jest **na punkt**, a `r` akwenu to domyślna wartość. `siteHit()` zwraca km do najbliższego punktu i `km/r` do oceny zasięgu — dokładanie punktów zawsze poprawia dopasowanie. `matchSite()` (import) wybiera akwen o najmniejszym `km / r`, `nearestSite()` (przycisk, lista) po prostu najbliższy. Współrzędnych nie ma w UI — `migrate()` bierze `lat`, `lon`, `r` i `pts` zawsze z presetu.
 - **Butle:** marką jest materiał (`Stal`/`Alu`), a nie „Twinset" — `2×` w nazwie wystarczy; rzędy butli i stage'ów są w siatce `.chips.cols2` (dwie kolumny). Dopisek `(stage)` zostaje, bo bez niego nazwy dublują się z butlami podstawowymi. Twinsety to `cat:'tank'` (zastępują butlę podstawową, `p.n` tylko do etykiety „2×12 l"), a butle stage to `cat:'stage'` — poza `SINGLE`, więc dokładają się do zestawu i można mieć kilka; stage nie zaspokaja wymogu butli w `setIssues()`.
 - **Sprzęt spoza szafy:** uid `cat:<id>` w `plan.items` bierze pozycję prosto z katalogu (szybki wybór butli). Każde wyszukiwanie sprzętu po uid rób przez `itemOf(uid, P())`, nigdy przez `wardrobe.find`.
 - **Plan ma tylko cztery pola** (akwen, miesiąc kafelkami, głębokość, temp. dna) — pełna data z kalendarzem żyje wyłącznie w formularzu nurkowania, bo w planie dzień niczego nie zmienia. Czas, nr nurkowania dnia, rezerwa i temp. powierzchni żyją w danych z założeniami normalizowanymi w `migrate()`, a edytuje się je w zwijanej sekcji formularza nurkowania — nie dodawaj ich z powrotem do planu.
-- **Wiele profili:** dane aktywnego nurka bierz przez `P()` (nigdy `S.profile` itd.), a do modelu podawaj `dst()`. Akweny i język są wspólne.
+- **Wiele profili:** dane aktywnego nurka bierz przez `P()` (nigdy `S.profile` itd.), a do modelu podawaj `dst()`. Akweny, język i motyw są wspólne.
 - **Kreator (`onboarded: false`)** renderuje się bez pełnego `render()` przy edycji pól i musi mieć stałą wysokość — inaczej przycisk „Dalej” ucieka spod palca między naciśnięciem a puszczeniem.
 - Po zmianach sprawdź w przeglądarce: pasek podsumowania przypięty, oba języki, formularz nurkowania, szafa, offline po instalacji.
 

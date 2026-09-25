@@ -10,14 +10,22 @@ const isoOf = d => d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, 
 const diverId = () => 'p-' + Math.random().toString(36).slice(2, 8);
 const BASE_PROFILE = {name:'', sex:'M', age:40, height:178, weight:80, build:'average', bf:'', coldTol:0, divesBefore:0};
 
+// Akwen, od którego startuje nowy nurek: w wersji centrum — jego domowy akwen (BRAND.site),
+// w głównej — Marsa Alam. Temperatury bierzemy z presetu na bieżący miesiąc.
+const HOME_SITE = () => (typeof BRAND !== 'undefined' && BRAND && BRAND.site) || 'marsaalam';
+function homePlanTemps(siteId, date){
+  const pre = SITE_PRESETS.find(x => x.id === siteId) || SITE_PRESETS[0], m = +date.slice(5, 7) - 1;
+  return {tSurf: pre.ts[m], tBottom: pre.tb[m]};
+}
 // Nurek bez danych: kreator dopyta o profil (onboarded=false), szafa ma tylko automat.
 function emptyDiver(){
+  const siteId = HOME_SITE(), date = isoOf(new Date());
   return {
     id: diverId(), onboarded: false,
     profile: Object.assign({}, BASE_PROFILE),
     wardrobe: [fromCat('misc-reg')],
     dives: [],
-    plan: {siteId:'marsaalam', date: isoOf(new Date()), depth:18, time:50, tSurf:26, tBottom:25, nDay:2, reserve:50, items:['misc-reg-1']}
+    plan: Object.assign({siteId, date, depth:18, time:50, nDay:2, reserve:50, items:['misc-reg-1']}, homePlanTemps(siteId, date))
   };
 }
 // Przykładowy nurek z kompletnym zestawem — „Wczytaj przykład” i pierwsze uruchomienie.
@@ -85,6 +93,8 @@ function migrate(o){
   });
   // motyw: nowe pole, stare kopie go nie mają — brak i wartość spoza listy znaczą „jak w telefonie"
   if (!['auto', 'light', 'dark'].includes(S.theme)) S.theme = 'auto';
+  // aktualności ukryte przez nurka (wersje centrów); pilnujemy typu i długości, bo lista tylko rośnie
+  S.newsSeen = Array.isArray(S.newsSeen) ? S.newsSeen.filter(x => typeof x === 'string').slice(-60) : [];
   if (!Array.isArray(S.sites) || !S.sites.length) S.sites = seedSites();
   // współrzędne akwenów z listy bierzemy zawsze z presetu: nie ma ich w edytorze,
   // a zapisane kopie mogą nieść stare lub brakujące wartości (Honoratka była o 12 km obok)

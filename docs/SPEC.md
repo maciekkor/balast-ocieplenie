@@ -26,15 +26,17 @@ Zasady nienegocjowalne:
 | `src/import.js` | `parseSuuntoJson()` — wczytanie nurkowania z pliku aplikacji Suunto. Czysta funkcja, bez DOM |
 | `src/seed.js` | `fromCat()`, `seedDiver()` (przykładowy nurek), `emptyDiver()` (nurek bez danych), `seedSites()`, `seedState()`, `migrate()` — dane startowe i migracja zapisanego stanu |
 | `src/i18n.js` | `EN` (słownik PL→EN kluczowany polskim tekstem), `LBL` (etykiety kategorii, miesięcy, budowy, krojów, wody), `SITE_EN`, `FRAG_EN` (tłumaczenie fragmentów nazw katalogowych), `tr()`, `frag()` |
+| `src/brand.js` | Wersje centrów: `brandErrors()` (walidacja `brand.json`), `activeNews()`, `brandTokensCss()`, `brandManifest()`, `brandText()`. Czyste funkcje — korzysta z nich i build, i aplikacja |
 | `src/app.js` | Stan, zapis, widoki (render przez template stringi), obsługa zdarzeń (delegacja na `#view`) |
-| `src/sw.template.js` | Service worker; `__VER__` podmieniany hashem przy buildzie |
+| `src/sw.template.js` | Service worker; build wstawia nazwę cache, prefiks do sprzątania, listę plików i podkatalogi do pominięcia |
+| `brands/<id>/` | Wersje centrów nurkowych: `brand.json` + logo, ikony, grafiki aktualności. `_example/` to szablon, build go pomija. Instrukcja w `brands/README.md` |
 | `public/` | `manifest.webmanifest`, ikony, `.nojekyll` — kopiowane do `dist/` |
-| `build.mjs` | Skleja `src/` w `dist/index.html`, generuje `dist/sw.js` |
+| `build.mjs` | Skleja `src/` w `dist/index.html`, generuje `dist/sw.js`; dla każdego centrum osobną aplikację w `dist/<id>/`. Zatrzymuje się na błędnym `brand.json` |
 | `tests/` | Testy `node:test` modelu, katalogu i i18n |
 
-Kolejność skryptów w buildzie: `data.js → model.js → import.js → seed.js → i18n.js → app.js` (wspólny zakres globalny, jak w przeglądarce).
+Kolejność skryptów w buildzie: `const BRAND = … → data.js → model.js → import.js → seed.js → i18n.js → brand.js → app.js` (wspólny zakres globalny, jak w przeglądarce). `BRAND` to konfiguracja centrum albo `null` w wersji głównej.
 
-Service worker: pliki aplikacji **najpierw sieć, potem pamięć** (świeża wersja po wdrożeniu), czcionki Google **najpierw pamięć, w tle odświeżenie**.
+Service worker: pliki aplikacji **najpierw sieć, potem pamięć** (świeża wersja po wdrożeniu), czcionki Google **najpierw pamięć, w tle odświeżenie**. Cache główny to `balast-main-<wersja>`, centrum — `balast-<id>-<wersja>`; każdy worker kasuje przy aktywacji **tylko cache z własnym prefiksem** (główny także stary format `balast-<hash>` sprzed podziału), a główny nie obsługuje podkatalogów centrów. Powód w sekcji „Wersje centrów nurkowych”.
 
 ## 3. Model danych (`S`, zapisywany w całości jako JSON)
 
@@ -47,6 +49,7 @@ S = {
   installSkip?: true,           // „Użyję w przeglądarce" — bramka instalacyjna już nie wraca
   tourDone?: true,              // samouczek już przeszedł — po kreatorze nie startuje drugi raz
   gateSeen?: true,              // instrukcja instalacji już się w tej przeglądarce pokazywała
+  newsSeen: [id],               // aktualności centrum ukryte przyciskiem „Ukryj” (tylko wersje centrów; w głównej pusta)
   sites: [ { id, name, rho /*kg/l*/, ts: [12 × °C powierzchnia], tb: [12 × °C dno], preset?: bool,
              lat?, lon?, r? /*przybliżony środek rejonu i promień w km — do rozpoznania akwenu z GPS*/ } ],
   profiles: [ {                 // każdy nurek osobno (B3)
@@ -257,6 +260,23 @@ Temperatury z komputera oznaczamy `tMeasured`, dzięki czemu zmiana akwenu albo 
 
 Plik ma zwykle ~1 MB (głównie próbki), ale do stanu trafia sam wynik — próbki są odrzucane.
 
+### Wersje centrów nurkowych
+
+Centrum nurkowe dostaje **tę samą aplikację pod własnym adresem** — `…/balast-ocieplenie/<id>/` — i ten adres daje kursantom. Po instalacji kursant ma na telefonie ikonę i nazwę centrum. To nie fork: katalog, akweny, model i tłumaczenia są wspólne, więc poprawka trafia do wszystkich wersji przy następnym wdrożeniu. Instrukcja dodania centrum i opis pól `brand.json` są w `brands/README.md`; tu jest to, co trzeba wiedzieć, zmieniając kod.
+
+**Co zmienia `BRAND`.** Nagłówek (logo centrum, pod nim mała nazwa aplikacji — `brandHeader()`, raz przy starcie), powitanie w kreatorze (logo i „Aplikację udostępnia …”), ikona w instrukcji instalacji (`homeIcon()`), kolory (cztery tokeny w **wszystkich trzech** blokach `:root`, `brandTokensCss()`), domowy akwen nowego nurka (`BRAND.site` → `emptyDiver()`), karta centrum z kontaktem w Profilu (`brandCard()`) i aktualności. Manifest, tytuł strony i nazwa pod ikoną na iPhonie są osobne dla każdego centrum.
+
+**Wspólny adres, wspólna pamięć przeglądarki.** Wszystkie wersje leżą pod `maciekkor.github.io`, a `localStorage` i Cache Storage są wspólne dla całego adresu. Stąd trzy zasady, każda z testem:
+- **Dane:** klucz `balast-ocieplenie.v1@<id>` zamiast `balast-ocieplenie.v1`. Kursant dwóch centrów ma dwie niezależne aplikacje. Kto ma dane w głównej aplikacji w tej samej przeglądarce, dostaje na powitaniu „Przenieś moje dane” (`mainState()` — kopia przez `migrate()`, oryginał zostaje). Zainstalowana aplikacja na iOS ma osobną pamięć i tego przycisku nie zobaczy.
+- **Offline:** dawny worker kasował przy aktywacji wszystkie cache poza własnym, więc wdrożenie wersji głównej wyłączyłoby tryb offline centrów. Teraz każdy sprząta wyłącznie swój prefiks.
+- **Zasięg:** zasięg głównego workera (`…/balast-ocieplenie/`) obejmuje podkatalogi centrów, więc główny pomija ścieżki z listy `SKIP` — te obsługuje worker centrum.
+
+**Aktualności.** Najwyżej dwie (`NEWS_MAX`) na górze Oblicz — tam nurek zagląda przed każdym nurkowaniem, a centrum chodzi o kontakt z wyszkolonymi nurkami. Grafika 16:9, opcjonalnie tytuł, zdanie i link „Szczegóły”; `from`/`until` wyznaczają termin, po którym aktualność znika sama. „Ukryj” zapisuje `id` w `S.newsSeen`; nowa grafika ma nowe `id`, więc pokazuje się także tym, którzy ukryli poprzednią. Dwie aktualności idą w pasek przewijany w bok: karta ma wysokość jednej (~370 px) i planowane nurkowanie zostaje na pierwszym ekranie telefonu. Ukryte wracają z karty centrum w Profilu.
+
+**Skąd aktualności — i dlaczego nie z serwera centrum.** Grafiki są częścią paczki aplikacji centrum (ten sam adres), więc działają offline, a aplikacja nie wysyła nigdzie żadnego żądania. Zmiana to podmiana pliku i wpisu w `brand.json` plus commit — wdrożenie zajmuje około minuty, telefony pobiorą nową wersję przy następnym otwarciu. Samodzielna edycja przez centrum wymagałaby pobierania treści z zewnątrz (każde otwarcie aplikacji zdradzałoby serwerowi centrum, kiedy kursant z niej korzysta), czyli zmiany zasady „żadnych zewnętrznych zasobów” — to decyzja, nie szczegół implementacji (B20).
+
+**Publiczne repozytorium.** Logo i grafiki centrum trafiają do `brands/` dopiero wtedy, gdy centrum zgodziło się na współpracę. Oferty, zrzuty i pliki centrów przed tą decyzją trzymamy poza repozytorium.
+
 ### Liczby wpisywane kciukiem
 
 Głębokość, czas, numer nurkowania dnia, obie temperatury, rezerwa i ołów w dzienniku to pola z przyciskami **−/+** (`stepField()`, klasa `.step`) z krokiem dobranym do wielkości: 1 m, 5 min, 1 °C, 10 bar, 0,5 kg. Wpisanie z klawiatury numerycznej działa jak wcześniej.
@@ -324,5 +344,6 @@ Analiza (bolączki bazy, kolejność, co wymaga backendu, pytania do zadania prz
 | B18 | Eksport CSV dziennika i wydań | dziś jedyne wyjście to kopia zapasowa JSON, czyli format dla aplikacji, nie dla człowieka |
 | B13 | Przekazanie profilu kodem QR | profil i zestaw w części `#` adresu — bez serwera; kursant skanuje i ma swoje liczby u siebie |
 | B17 | Protokół kontroli pływalności na 5 m | prowadzona procedura z zapisem poprawki; jednocześnie najlepsza jakościowo dana dla nauki modelu |
-| B16 | Nazwa i logo bazy w nagłówku | ustawiane raz, trzymane lokalnie |
+| B16 | Wersje centrów: osobna aplikacja pod własnym adresem, z logo, kolorami, ikoną i aktualnościami | **mechanizm gotowy** (`brands/`, `src/brand.js`, sekcja 7 „Wersje centrów nurkowych”); żadne centrum nie jest jeszcze opublikowane. Pierwsze centrum: pliki od nich, `brand.json`, sprawdzenie w obu motywach, merge |
+| B20 | Aktualności edytowane przez centrum samodzielnie | dziś centrum przysyła grafikę, a podmiana to commit. Samodzielna edycja wymaga pobierania treści z zewnątrz, czyli zmiany zasady o zasobach z `CLAUDE.md` — najpierw decyzja |
 | B19 | Rozkład ołowiu: pas, kieszenie trymowe, kamizelka | `distribution()` daje dziś jedno zdanie; instruktor i tak to tłumaczy |
