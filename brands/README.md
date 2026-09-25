@@ -27,7 +27,8 @@ Katalogi zaczynające się od `_` są pomijane — `_example/` to szablon, nie o
 | `id` | tak | małe litery, cyfry, myślnik; równe nazwie katalogu. Zajęte: `icons`, `brand`, `shots` |
 | `name` | tak | nazwa centrum — napis albo `{"pl": "…", "en": "…"}` |
 | `appName` | tak | nazwa pod ikoną na ekranie telefonu, **najwyżej 12 znaków** (dłuższą telefon utnie) |
-| `logo` | tak | logo do nagłówka i powitania; najlepiej SVG, poziome, czytelne na jasnym **i** ciemnym tle |
+| `logo` | tak | logo do nagłówka, powitania i Profilu; najlepiej SVG, poziome |
+| `logoDark` | nie | wersja na ciemne tło, gdy zwykłe ma ciemne elementy, które w ciemnym motywie zniknęłyby (np. granatowy napis). Najlepiej oficjalna wersja „negatyw” od centrum |
 | `icon192`, `icon512` | tak | ikona aplikacji, PNG 192×192 i 512×512, kwadrat bez przezroczystych rogów |
 | `appleIcon` | tak | ikona dla iPhone'a, PNG 180×180 |
 | `colors.light`, `colors.dark` | tak | cztery kolory `#RRGGBB` na każdy motyw: `accent` (przyciski, liczba ołowiu), `accentInk` (tekst na przycisku), `teal` (zaznaczenia), `tealSoft` (tło zaznaczeń) |

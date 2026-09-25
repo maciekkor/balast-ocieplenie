@@ -658,7 +658,7 @@ const wizNav = (back, next) => `<div class="btnrow"><button class="primary" data
 function viewWizard(){
   const pr = P().profile, step = ui.wiz;
   if (step === 0) return `<div class="stack"><section class="card">
-    ${BRAND ? `<img class="brand-logo wel" src="${esc(BRAND.logo)}" alt="${esc(brandText(BRAND.name, LANG))}">` : ''}
+    ${BRAND ? brandLogo('brand-logo wel') : ''}
     <h2>${tr('Witaj')}</h2>
     ${BRAND ? `<p class="small muted" style="margin:4px 0 0">${tr('Aplikację udostępnia {x}.', {x: esc(brandText(BRAND.name, LANG))})}</p>` : ''}
     ${mainState() ? `<div class="opt" style="margin-top:10px;grid-template-columns:1fr"><div class="items">${tr('Masz już profil w aplikacji Balast i Ocieplenie na tym telefonie.')}</div>
@@ -792,10 +792,18 @@ function summaryHtml(){
 // ---------- wersja centrum nurkowego ----------
 // BRAND wstawia build.mjs z brands/<id>/brand.json; w głównej wersji to null i nic z tego się nie pokazuje.
 // Nagłówek: logo centrum, pod nim mała nazwa aplikacji. Raz, przy starcie — render() go nie przepisuje.
+// Logo centrum; z `logoDark` dwa obrazki, a który widać, rozstrzygają tokeny motywu (--logo-l/--logo-d),
+// więc działa i przy „jak w telefonie”, i przy wymuszonym motywie.
+function brandLogo(cls){
+  const alt = esc(brandText(BRAND.name, LANG)), c = cls ? cls + ' ' : '';
+  return BRAND.logoDark
+    ? `<img class="${c}lg-l" src="${esc(BRAND.logo)}" alt="${alt}"><img class="${c}lg-d" src="${esc(BRAND.logoDark)}" alt="${alt}">`
+    : `<img${cls ? ` class="${cls}"` : ''} src="${esc(BRAND.logo)}" alt="${alt}">`;
+}
 function brandHeader(){
   if (!BRAND) return;
   const h = $('.top h1'); h.className = 'brand';
-  h.innerHTML = `<img src="${esc(BRAND.logo)}" alt="${esc(brandText(BRAND.name, 'pl'))}"><small>Balast &amp; Ocieplenie</small>`;
+  h.innerHTML = `${brandLogo('')}<small>Balast &amp; Ocieplenie</small>`;
 }
 // Aktualności centrum (wyjazdy, kursy): 1–2 grafiki na górze Oblicz, bo tam nurek zagląda przed każdym
 // nurkowaniem. Znikają same po terminie („until”), a „Ukryj” chowa je do czasu nowej grafiki.
@@ -827,7 +835,7 @@ function brandCard(){
     c.email && `<a href="mailto:${esc(c.email)}">${esc(c.email)}</a>`
   ].filter(Boolean);
   const hidden = (BRAND.news || []).some(n => S.newsSeen.includes(newsId(n)));
-  return `<section class="card brand-card"><img class="brand-logo" src="${esc(BRAND.logo)}" alt="${esc(name)}">
+  return `<section class="card brand-card">${brandLogo('brand-logo')}
     <p class="small muted" style="margin:8px 0 0">${tr('Aplikację udostępnia {x}.', {x: esc(name)})}</p>
     ${links.length ? `<p class="brand-links">${links.join('<span aria-hidden="true"> · </span>')}</p>` : ''}
     ${hidden ? `<div class="btnrow"><button class="sm" data-act="news-reset">${tr('Pokaż ukryte aktualności')}</button></div>` : ''}</section>`;

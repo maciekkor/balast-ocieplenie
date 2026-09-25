@@ -29,6 +29,7 @@ test('walidacja konfiguracji łapie typowe błędy', () => {
   bad({id: 'icons'}, /zajęte/);                   // kolizja z katalogiem aplikacji
   bad({appName: 'Centrum Nurkowe XYZ'}, /12 znaków/);
   bad({logo: 'brak.svg'}, /nie ma pliku brak\.svg/);
+  bad({logoDark: 'ciemne.svg'}, /logoDark: nie ma pliku ciemne\.svg/);
   bad({site: 'atlantyda'}, /akwenu „atlantyda”/);
   bad({colors: {light: {accent: 'blue', accentInk: '#fff', teal: '#000000', tealSoft: '#000000'}, dark: example().colors.dark}}, /colors\.light\.accent/);
   bad({news: [{img: 'news/wyjazd.svg', until: '31.10.2026'}]}, /until: data/);
@@ -97,6 +98,24 @@ test('build: centrum dostaje własną aplikację pod własnym adresem', () => {
     const main = readFileSync(path.join(out, 'index.html'), 'utf8');
     assert.ok(main.includes('const BRAND = null;'));
     assert.ok(readFileSync(path.join(out, 'sw.js'), 'utf8').includes('const SKIP = ["./przyklad/"]'));
+  } finally { done(); }
+});
+
+test('build: logo na ciemne tło jedzie z aplikacją i działa offline', () => {
+  const {res, out, done} = buildWith(dir => {
+    const b = JSON.parse(readFileSync(path.join(dir, 'brand.json'), 'utf8'));
+    cpSync(path.join(dir, 'logo.svg'), path.join(dir, 'logo-dark.svg'));
+    b.logoDark = 'logo-dark.svg'; writeFileSync(path.join(dir, 'brand.json'), JSON.stringify(b));
+  });
+  try {
+    assert.equal(res.status, 0, res.stderr);
+    const dir = path.join(out, 'przyklad');
+    assert.ok(readFileSync(path.join(dir, 'index.html'), 'utf8').includes('"logoDark":"brand/logo-dark.svg"'));
+    assert.ok(readFileSync(path.join(dir, 'sw.js'), 'utf8').includes('"./brand/logo-dark.svg"'));
+    // który logotyp widać, rozstrzygają tokeny motywu — muszą być we wszystkich trzech blokach
+    const css = readFileSync(path.join(ROOT, 'src', 'shell.html'), 'utf8');
+    assert.equal((css.match(/--logo-l:none; --logo-d:block/g) || []).length, 2, 'oba ciemne bloki');
+    assert.ok(css.includes('--logo-l:block; --logo-d:none'), 'jasny blok');
   } finally { done(); }
 });
 

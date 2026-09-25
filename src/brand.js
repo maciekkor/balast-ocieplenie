@@ -32,6 +32,8 @@ function brandErrors(b, has, sites){
   if (!b.appName || String(b.appName).length > 12) e.push('appName: nazwa pod ikoną w telefonie, najwyżej 12 znaków');
   for (const f of ['logo', 'icon192', 'icon512', 'appleIcon'])
     if (!b[f]) e.push(`${f}: brak pliku`); else if (has && !has(b[f])) e.push(`${f}: nie ma pliku ${b[f]}`);
+  // logo na ciemne tło — gdy zwykłe ma ciemne elementy, które w ciemnym motywie by zniknęły
+  if (b.logoDark != null && has && !has(b.logoDark)) e.push(`logoDark: nie ma pliku ${b.logoDark}`);
   for (const theme of ['light', 'dark']){
     const c = b.colors && b.colors[theme];
     if (!c) { e.push(`colors.${theme}: brak`); continue; }

@@ -122,7 +122,7 @@ for (const {b, dir} of brands){
   cpSync(dir, path.join(out, 'brand'), {recursive: true, filter: s => path.basename(s) !== 'brand.json'});
   const at = p => 'brand/' + p;
   const B = Object.assign({}, b, {
-    logo: at(b.logo), icon192: at(b.icon192), icon512: at(b.icon512), appleIcon: at(b.appleIcon),
+    logo: at(b.logo), logoDark: b.logoDark ? at(b.logoDark) : null, icon192: at(b.icon192), icon512: at(b.icon512), appleIcon: at(b.appleIcon),
     news: (b.news || []).map(n => Object.assign({}, n, {img: at(n.img)}))
   });
   const html = page(B);
@@ -131,7 +131,7 @@ for (const {b, dir} of brands){
   writeFileSync(path.join(out, 'manifest.webmanifest'), JSON.stringify(brandManifest(B), null, 2) + '\n');
   writeFileSync(path.join(out, 'sw.js'), worker({
     cache: `balast-${b.id}-${ver}`, prefix: `balast-${b.id}-`, legacy: false,
-    app: ['./', './index.html', './manifest.webmanifest', ...new Set([B.logo, B.icon192, B.icon512, B.appleIcon, ...B.news.map(n => n.img)].map(p => './' + p))],
+    app: ['./', './index.html', './manifest.webmanifest', ...new Set([B.logo, B.logoDark, B.icon192, B.icon512, B.appleIcon, ...B.news.map(n => n.img)].filter(Boolean).map(p => './' + p))],
     skip: []
   }));
   console.log(`dist/${b.id}/ gotowe — ${brandText(b.name, 'pl')}, wersja ${ver}, aktualności: ${B.news.length}`);
